@@ -1,12 +1,8 @@
-/// <reference lib="webworker" />
-
 // ============================================================================
 // SERVICE WORKER
 // ============================================================================
 // Provides offline support for cached Gurbani pages
 // ============================================================================
-
-declare const self: ServiceWorkerGlobalScope;
 
 const CACHE_NAME = 'sikhi-vidhya-v1';
 const STATIC_CACHE = 'sikhi-static-v1';
@@ -75,7 +71,7 @@ self.addEventListener('fetch', (event) => {
 });
 
 // Handle API requests - network first, cache fallback for Gurbani
-async function handleApiRequest(request: Request): Promise<Response> {
+async function handleApiRequest(request) {
   const url = new URL(request.url);
   
   // For Gurbani ang requests, try cache first for offline support
@@ -116,7 +112,7 @@ async function handleApiRequest(request: Request): Promise<Response> {
 }
 
 // Handle static requests - stale-while-revalidate
-async function handleStaticRequest(request: Request): Promise<Response> {
+async function handleStaticRequest(request) {
   const cache = await caches.open(STATIC_CACHE);
   const cachedResponse = await cache.match(request);
 
@@ -154,5 +150,3 @@ self.addEventListener('message', (event) => {
     );
   }
 });
-
-export {};
