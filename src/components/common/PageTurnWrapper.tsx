@@ -8,7 +8,6 @@
 // ============================================================================
 
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { useSwipeGesture } from '@/hooks/useSwipeGesture';
 import { cn } from '@/lib/utils';
 
 interface PageTurnWrapperProps {
@@ -38,7 +37,29 @@ export function PageTurnWrapper({
   const [swipeProgress, setSwipeProgress] = useState(0);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
 
+  // Use refs to avoid stale closure issues
+  const stateRef = useRef({
+    onNextPage,
+    onPrevPage,
+    canGoNext,
+    canGoPrev,
+    isAnimating,
+  });
+
+  // Keep refs updated
+  useEffect(() => {
+    stateRef.current = {
+      onNextPage,
+      onPrevPage,
+      canGoNext,
+      canGoPrev,
+      isAnimating,
+    };
+  }, [onNextPage, onPrevPage, canGoNext, canGoPrev, isAnimating]);
+
   const handlePageTurn = useCallback((direction: TurnDirection) => {
+    const { isAnimating, canGoNext, canGoPrev, onNextPage, onPrevPage } = stateRef.current;
+    
     if (isAnimating) return;
     if (direction === 'next' && !canGoNext) return;
     if (direction === 'prev' && !canGoPrev) return;
@@ -59,52 +80,89 @@ export function PageTurnWrapper({
         setIsAnimating(false);
         setTurnDirection(null);
       }, 50);
-    }, 400); // Match animation duration
-  }, [isAnimating, canGoNext, canGoPrev, onNextPage, onPrevPage]);
+    }, 400);
+  }, []);
 
-  // Swipe gesture handling
-  useSwipeGesture(containerRef, {
-    onSwipeLeft: () => handlePageTurn('next'),
-    onSwipeRight: () => handlePageTurn('prev'),
-    threshold: 50,
-    velocityThreshold: 0.2,
-  });
-
-  // Track swipe progress for visual feedback
+  // Combined touch handling - both for swipe detection AND visual feedback
   useEffect(() => {
     const element = containerRef.current;
     if (!element) return;
 
     let startX = 0;
+    let startY = 0;
+    let startTime = 0;
     let isSwiping = false;
+    let isHorizontalSwipe: boolean | null = null;
 
     const handleTouchStart = (e: TouchEvent) => {
-      startX = e.touches[0].clientX;
+      const touch = e.touches[0];
+      startX = touch.clientX;
+      startY = touch.clientY;
+      startTime = Date.now();
       isSwiping = true;
+      isHorizontalSwipe = null; // Reset direction detection
     };
 
     const handleTouchMove = (e: TouchEvent) => {
       if (!isSwiping) return;
-      const deltaX = e.touches[0].clientX - startX;
-      const maxSwipe = window.innerWidth * 0.3;
-      const progress = Math.min(Math.abs(deltaX) / maxSwipe, 1);
       
-      // Only show progress if we can navigate in that direction
-      if (deltaX > 0 && canGoPrev) {
-        setSwipeProgress(progress);
-        setSwipeDirection('right');
-      } else if (deltaX < 0 && canGoNext) {
-        setSwipeProgress(progress);
-        setSwipeDirection('left');
+      const touch = e.touches[0];
+      const deltaX = touch.clientX - startX;
+      const deltaY = touch.clientY - startY;
+      
+      // Determine if this is a horizontal or vertical swipe (only once)
+      if (isHorizontalSwipe === null && (Math.abs(deltaX) > 10 || Math.abs(deltaY) > 10)) {
+        isHorizontalSwipe = Math.abs(deltaX) > Math.abs(deltaY);
+      }
+      
+      // Only process horizontal swipes
+      if (isHorizontalSwipe) {
+        const maxSwipe = window.innerWidth * 0.25;
+        const progress = Math.min(Math.abs(deltaX) / maxSwipe, 1);
+        const { canGoPrev, canGoNext } = stateRef.current;
+        
+        if (deltaX > 0 && canGoPrev) {
+          setSwipeProgress(progress);
+          setSwipeDirection('right');
+        } else if (deltaX < 0 && canGoNext) {
+          setSwipeProgress(progress);
+          setSwipeDirection('left');
+        }
       }
     };
 
-    const handleTouchEnd = () => {
-      isSwiping = false;
+    const handleTouchEnd = (e: TouchEvent) => {
+      if (!isSwiping) return;
+      
+      const touch = e.changedTouches[0];
+      const deltaX = touch.clientX - startX;
+      const deltaY = touch.clientY - startY;
+      const duration = Date.now() - startTime;
+      
+      // Reset visual state
       setSwipeProgress(0);
       setSwipeDirection(null);
+      isSwiping = false;
+      
+      // Only trigger page turn for horizontal swipes
+      if (isHorizontalSwipe) {
+        const velocity = Math.abs(deltaX) / duration;
+        const threshold = 40; // Reduced threshold for easier swiping
+        const velocityThreshold = 0.15; // Reduced velocity threshold
+        
+        if (Math.abs(deltaX) >= threshold && velocity >= velocityThreshold) {
+          if (deltaX > 0) {
+            handlePageTurn('prev');
+          } else {
+            handlePageTurn('next');
+          }
+        }
+      }
+      
+      isHorizontalSwipe = null;
     };
 
+    // Use capture phase for better event handling
     element.addEventListener('touchstart', handleTouchStart, { passive: true });
     element.addEventListener('touchmove', handleTouchMove, { passive: true });
     element.addEventListener('touchend', handleTouchEnd, { passive: true });
@@ -114,7 +172,7 @@ export function PageTurnWrapper({
       element.removeEventListener('touchmove', handleTouchMove);
       element.removeEventListener('touchend', handleTouchEnd);
     };
-  }, [canGoNext, canGoPrev]);
+  }, [handlePageTurn]);
 
   // Keyboard navigation
   useEffect(() => {
@@ -134,12 +192,13 @@ export function PageTurnWrapper({
     <div 
       ref={containerRef}
       className={cn(
-        "page-turn-container relative overflow-hidden touch-pan-y",
+        "page-turn-container relative overflow-hidden",
         className
       )}
+      style={{ touchAction: 'pan-y pinch-zoom' }}
     >
       {/* Swipe indicators */}
-      {swipeProgress > 0 && (
+      {swipeProgress > 0.1 && (
         <>
           {/* Left indicator (next page) */}
           {swipeDirection === 'left' && canGoNext && (
@@ -227,27 +286,52 @@ function SwipeHint() {
   const [showHint, setShowHint] = useState(false);
 
   useEffect(() => {
+    // Only run on client side
+    if (typeof window === 'undefined') return;
+    
+    // Check if this is a touch device
+    const isTouchDevice = 'ontouchstart' in window || navigator.maxTouchPoints > 0;
     const hasSeenHint = localStorage.getItem('sikhi-swipe-hint-seen');
-    if (!hasSeenHint && 'ontouchstart' in window) {
-      setShowHint(true);
-      const timer = setTimeout(() => {
+    
+    if (isTouchDevice && !hasSeenHint) {
+      // Show hint after a short delay
+      const showTimer = setTimeout(() => setShowHint(true), 1500);
+      
+      // Auto-hide after 4 seconds
+      const hideTimer = setTimeout(() => {
         setShowHint(false);
         localStorage.setItem('sikhi-swipe-hint-seen', 'true');
-      }, 4000);
-      return () => clearTimeout(timer);
+      }, 5500);
+      
+      return () => {
+        clearTimeout(showTimer);
+        clearTimeout(hideTimer);
+      };
     }
   }, []);
 
   if (!showHint) return null;
 
   return (
-    <div className="swipe-hint">
+    <div 
+      className="swipe-hint"
+      onClick={() => {
+        setShowHint(false);
+        localStorage.setItem('sikhi-swipe-hint-seen', 'true');
+      }}
+    >
       <div className="swipe-hint-content">
-        <svg className="w-8 h-8 animate-swipe-hint" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
-        </svg>
-        <span className="font-gurmukhi">ਅੰਗ ਬਦਲਣ ਲਈ ਸਵਾਈਪ ਕਰੋ</span>
-        <span className="text-xs text-amber-700">Swipe to turn pages</span>
+        <div className="flex items-center gap-3">
+          <svg className="w-6 h-6 animate-bounce-x" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+          </svg>
+          <span className="w-px h-6 bg-white/30" />
+          <svg className="w-6 h-6 animate-bounce-x-reverse" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14 5l7 7m0 0l-7 7m7-7H3" />
+          </svg>
+        </div>
+        <span className="font-gurmukhi text-sm mt-2">ਅੰਗ ਬਦਲਣ ਲਈ ਸਵਾਈਪ ਕਰੋ</span>
+        <span className="text-xs opacity-80">Swipe left or right to turn pages</span>
       </div>
     </div>
   );
