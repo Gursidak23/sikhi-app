@@ -8,12 +8,13 @@
 // https://github.com/KhalisFoundation/banidb-api
 // ============================================================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn, toGurmukhiNumeral, fromGurmukhiNumeral, hasGurmukhiNumerals } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { GurbaniDisclaimer } from '@/components/common/Disclaimer';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { ReadingProgress } from '@/components/common/ReadingProgress';
+import { PageTurnWrapper } from '@/components/common/PageTurnWrapper';
 import { AngNavigator, RaagNavigator, QuickJump, AngSearch } from '@/modules/gurbani/components/AngNavigator';
 import { GurbaniSearch } from '@/modules/gurbani/components/GurbaniSearch';
 import type { Language } from '@/types';
@@ -239,12 +240,12 @@ export default function GurbaniPage() {
       )}
 
       <main id="main-content" className="flex-1">
-        <div className="container-content py-6">
-          <div className="flex gap-6">
-            {/* Sidebar - Raag Navigation & Search */}
+        <div className="container-content py-4 sm:py-6 px-2 sm:px-4">
+          <div className="flex gap-4 lg:gap-6">
+            {/* Sidebar - Raag Navigation & Search (Desktop only) */}
             {sidebarOpen && (
-              <aside className="hidden lg:block w-72 flex-shrink-0">
-                <div className="sticky top-24 space-y-6">
+              <aside className="hidden lg:block w-64 xl:w-72 flex-shrink-0">
+                <div className="sticky top-24 space-y-4">
                   {/* Search Component */}
                   <div className="bg-white rounded-xl border border-amber-200 p-4 shadow-sm">
                     <h3 className="font-gurmukhi text-amber-900 font-medium mb-3">
@@ -272,20 +273,22 @@ export default function GurbaniPage() {
 
             {/* Main Content */}
             <div className="flex-1 min-w-0">
-              {/* Traditional Ang Navigator with Search */}
-              <div className="flex flex-col sm:flex-row items-center gap-4 mb-6">
-                {/* Ang Search - Jump directly to any Ang */}
-                <AngSearch
-                  onAngSelect={handleAngChange}
-                  language={language}
-                />
+              {/* Mobile-friendly Ang Navigator */}
+              <div className="flex flex-col gap-3 mb-4 sm:mb-6">
+                {/* Ang Search - Full width on mobile */}
+                <div className="w-full sm:max-w-xs">
+                  <AngSearch
+                    onAngSelect={handleAngChange}
+                    language={language}
+                  />
+                </div>
 
-                {/* Traditional Ang Navigator */}
-                <nav className="saroop-nav flex-1" aria-label="Ang navigation">
+                {/* Traditional Ang Navigator - Responsive */}
+                <nav className="saroop-nav flex-wrap justify-center" aria-label="Ang navigation">
                   <button
                     onClick={() => handleAngChange(currentAng - 1)}
                     disabled={currentAng <= 1}
-                    className="saroop-nav-btn"
+                    className="saroop-nav-btn min-h-[44px] min-w-[44px]"
                     aria-label="Previous Ang"
                   >
                     <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -294,20 +297,19 @@ export default function GurbaniPage() {
                     <span className="hidden sm:inline font-gurmukhi">ਪਿਛਲਾ</span>
                   </button>
 
-                  <div className="saroop-ang-display">
+                  <div className="saroop-ang-display text-sm sm:text-base">
                     <span className="text-amber-800 font-gurmukhi">ਅੰਗ</span>
                     <input
                       type="text"
                       value={language === 'pa' ? toGurmukhiNumeral(currentAng) : currentAng}
                       onChange={(e) => {
-                        // Support both Gurmukhi and English numerals
                         const val = fromGurmukhiNumeral(e.target.value);
                         if (val !== null && val >= 1 && val <= 1430) {
                           handleAngChange(val);
                         }
                       }}
                       className={cn(
-                        "saroop-ang-input",
+                        "saroop-ang-input w-16 sm:w-20",
                         hasGurmukhiNumerals(String(currentAng)) && "font-gurmukhi"
                       )}
                       aria-label="Ang number"
@@ -318,7 +320,7 @@ export default function GurbaniPage() {
                   <button
                     onClick={() => handleAngChange(currentAng + 1)}
                     disabled={currentAng >= 1430}
-                    className="saroop-nav-btn"
+                    className="saroop-nav-btn min-h-[44px] min-w-[44px]"
                     aria-label="Next Ang"
                   >
                     <span className="hidden sm:inline font-gurmukhi">ਅਗਲਾ</span>
@@ -329,8 +331,8 @@ export default function GurbaniPage() {
                 </nav>
               </div>
 
-              {/* Source Attribution - Traditional Style */}
-              <div className="mb-6 p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-amber-200/50 text-sm">
+              {/* Source Attribution - Compact on mobile */}
+              <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-amber-200/50 text-xs sm:text-sm">
                 <p className={cn("text-amber-900", language === 'pa' && 'font-gurmukhi')}>
                   {language === 'pa'
                     ? 'ℹ️ ਅੰਗਰੇਜ਼ੀ ਅਰਥ ਟੀਕਾ-ਆਧਾਰਿਤ ਵਿਆਖਿਆ ਹੈ। ਮੂਲ ਗੁਰਮੁਖੀ ਪ੍ਰਮਾਣਿਕ ਹੈ।'
@@ -340,6 +342,22 @@ export default function GurbaniPage() {
                   ਡਾਟਾ ਸਰੋਤ: <a href="https://www.banidb.com" target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-900">BaniDB</a> (Khalis Foundation)
                 </p>
               </div>
+
+              {/* Swipe hint for mobile */}
+              <div className="lg:hidden text-center mb-3 text-xs text-amber-700">
+                <span className="font-gurmukhi">← ਸਵਾਈਪ ਕਰੋ →</span>
+                <span className="mx-2">|</span>
+                <span>Swipe or use arrows</span>
+              </div>
+
+              {/* Page Turn Wrapper for swipe gestures */}
+              <PageTurnWrapper
+                onNextPage={() => handleAngChange(currentAng + 1)}
+                onPrevPage={() => handleAngChange(currentAng - 1)}
+                canGoNext={currentAng < 1430}
+                canGoPrev={currentAng > 1}
+                currentPage={currentAng}
+              >
 
               {/* Loading State */}
               {loading && (
@@ -491,13 +509,14 @@ export default function GurbaniPage() {
                   </div>
                 </div>
               )}
+              </PageTurnWrapper>
 
               {/* Page Footer Note - Traditional Style */}
-              <div className="mt-8 pt-6 border-t border-amber-200 text-center">
-                <p className="text-lg text-amber-800 font-gurmukhi">
+              <div className="mt-6 sm:mt-8 pt-4 sm:pt-6 border-t border-amber-200 text-center">
+                <p className="text-base sm:text-lg text-amber-800 font-gurmukhi">
                   ਭੁੱਲ ਚੁੱਕ ਮਾਫ਼ ਕਰਨਾ
                 </p>
-                <p className="text-sm text-amber-700 mt-1">
+                <p className="text-xs sm:text-sm text-amber-700 mt-1">
                   Please forgive any errors or omissions
                 </p>
               </div>
