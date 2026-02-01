@@ -1,0 +1,582 @@
+// ============================================================================
+// SIKHI VIDHYA PLATFORM - DATABASE SCHEMA
+// ============================================================================
+// 
+// FOUNDATIONAL PRINCIPLES:
+// 1. Source-first architecture - every claim must have attribution
+// 2. Multilingual by design - Punjabi (Gurmukhi) is authoritative
+// 3. Clear separation between Gurbani (sacred) and Itihaas (historical)
+// 4. No user-generated content for Gurbani interpretations
+// 5. Conflicting interpretations are preserved, not merged
+//
+// ============================================================================
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================================
+// CORE ENUMS
+// ============================================================================
+
+enum Language {
+  PA_GURU  // Punjabi (Gurmukhi) - PRIMARY & AUTHORITATIVE
+  PA_ROMAN // Punjabi (Roman transliteration) - phonetic aid
+  EN       // English - interpretive
+  HI       // Hindi - secondary access
+}
+
+enum SourceType {
+  PRIMARY           // Direct historical documents, Gurbani
+  SECONDARY         // Academic works, historical analyses
+  TEEKA             // Gurbani interpretations/commentaries
+  ORAL_TRADITION    // Recorded oral histories (clearly marked)
+  CONTEMPORARY      // Modern documentation (clearly marked as evolving)
+}
+
+enum ContentStatus {
+  DRAFT                    // Being prepared
+  SCHOLARLY_REVIEW         // Awaiting expert verification
+  PUBLISHED                // Verified and live
+  REQUIRES_UPDATE          // Flagged for revision
+  DISPUTED                 // Multiple conflicting sources
+}
+
+enum HistoricalEra {
+  GURU_PERIOD              // 1469-1708
+  KHALSA_ESTABLISHMENT     // 1699-1716
+  MISL_PERIOD              // 1716-1799
+  SIKH_EMPIRE              // 1799-1849
+  COLONIAL_PERIOD          // 1849-1947
+  POST_INDEPENDENCE        // 1947-1984
+  MODERN_PERIOD            // 1984-present
+  CONTEMPORARY             // Ongoing events (clearly marked)
+}
+
+// ============================================================================
+// SOURCE & ATTRIBUTION SYSTEM (FOUNDATIONAL)
+// ============================================================================
+
+/// Primary sources that all content must reference
+model Source {
+  id                String       @id @default(cuid())
+  
+  // Source identification
+  titleGurmukhi     String       // ਸ੍ਰੋਤ ਦਾ ਨਾਮ
+  titleEnglish      String
+  titleHindi        String?
+  
+  // Author/Origin
+  authorGurmukhi    String?
+  authorEnglish     String?
+  authorHindi       String?
+  
+  // Classification
+  sourceType        SourceType
+  
+  // Publication details
+  yearComposed      Int?         // When originally composed/written
+  yearPublished     Int?         // When published (if different)
+  publisher         String?
+  
+  // Reliability assessment (by scholars)
+  reliabilityNotes  String?      // Scholarly notes on reliability
+  caveats           String?      // Known biases or limitations
+  
+  // Metadata
+  createdAt         DateTime     @default(now())
+  updatedAt         DateTime     @updatedAt
+  
+  // Relations
+  citations         Citation[]
+  teekaInterpretations TeekaInterpretation[]
+  
+  @@index([sourceType])
+}
+
+/// Citation linking content to sources
+model Citation {
+  id              String    @id @default(cuid())
+  
+  sourceId        String
+  source          Source    @relation(fields: [sourceId], references: [id])
+  
+  // Specific location in source
+  volume          String?
+  chapter         String?
+  page            String?
+  verse           String?
+  
+  // Direct quote if applicable
+  originalQuote   String?   // In original language
+  
+  // Citation notes
+  accessNotes     String?   // How to access this source
+  
+  // What this citation supports
+  historicalEventId String?
+  historicalEvent   HistoricalEvent? @relation(fields: [historicalEventId], references: [id])
+  
+  createdAt       DateTime  @default(now())
+  
+  @@index([sourceId])
+  @@index([historicalEventId])
+}
+
+// ============================================================================
+// GURBANI MODULE (SACRED - HIGHEST SENSITIVITY)
+// ============================================================================
+
+/// The 31 Raags in Guru Granth Sahib Ji
+model Raag {
+  id              String    @id @default(cuid())
+  
+  // Raag identification
+  nameGurmukhi    String    @unique  // ਰਾਗ ਦਾ ਨਾਮ
+  nameEnglish     String
+  nameHindi       String?
+  
+  // Raag information
+  orderInGranth   Int       @unique  // Sequential order in Guru Granth Sahib Ji
+  angStart        Int                // Starting Ang (page)
+  angEnd          Int                // Ending Ang
+  
+  // Musical information
+  timeOfDay       String?            // Traditional time for this Raag
+  season          String?            // Associated season
+  mood            String?            // Emotional quality
+  
+  // Scholarly notes
+  descriptionPunjabi String?
+  descriptionEnglish String?
+  
+  // Relations
+  shabads         Shabad[]
+  
+  @@index([orderInGranth])
+}
+
+/// Authors of Bani - Guru Sahibaan and Bhagats
+model BaniAuthor {
+  id              String    @id @default(cuid())
+  
+  // Author identification
+  nameGurmukhi    String    @unique  // ਲਿਖਾਰੀ ਦਾ ਨਾਮ
+  nameEnglish     String
+  nameHindi       String?
+  
+  // Classification
+  isGuru          Boolean   @default(false)
+  guruNumber      Int?      // 1-10 for Guru Sahibaan
+  isBhagat        Boolean   @default(false)
+  
+  // Historical information
+  birthYear       Int?
+  deathYear       Int?
+  region          String?
+  
+  // Brief bio (source-attributed)
+  biographyPunjabi String?
+  biographyEnglish String?
+  
+  // Relations
+  shabads         Shabad[]
+  
+  @@index([isGuru, guruNumber])
+}
+
+/// Individual Shabad - a complete composition
+model Shabad {
+  id              String    @id @default(cuid())
+  
+  // Location in Guru Granth Sahib Ji
+  angNumber       Int       // Page number
+  raagId          String
+  raag            Raag      @relation(fields: [raagId], references: [id])
+  
+  // Author
+  authorId        String
+  author          BaniAuthor @relation(fields: [authorId], references: [id])
+  
+  // Shabad structure
+  shabadNumber    Int       // Unique shabad identifier
+  
+  // Relations
+  panktis         Pankti[]
+  
+  @@unique([angNumber, shabadNumber])
+  @@index([raagId])
+  @@index([authorId])
+  @@index([angNumber])
+}
+
+// ============================================================================
+// GURBANI CACHE - For fast page loads (synced from BaniDB)
+// ============================================================================
+
+/// Cached Ang data from BaniDB for instant loading
+model GurbaniAngCache {
+  id              String    @id @default(cuid())
+  
+  angNumber       Int       @unique  // 1-1430
+  sourceId        String    @default("G")  // G = Guru Granth Sahib
+  
+  // Cached API response (JSON)
+  versesJson      String    // Full verses array as JSON
+  verseCount      Int       // Number of verses on this Ang
+  
+  // Metadata
+  raagName        String?   // Current Raag name
+  raagNameEn      String?   // English Raag name
+  
+  // Cache management
+  fetchedAt       DateTime  @default(now())
+  expiresAt       DateTime? // Optional expiry for refresh
+  
+  @@index([angNumber])
+  @@index([fetchedAt])
+}
+
+/// Individual line (Pankti) of Gurbani
+model Pankti {
+  id                  String    @id @default(cuid())
+  
+  shabadId            String
+  shabad              Shabad    @relation(fields: [shabadId], references: [id])
+  
+  // Line identification
+  lineNumber          Int       // Order within Shabad
+  
+  // THE SACRED TEXT - Gurmukhi is authoritative
+  gurmukhiUnicode     String    // ਗੁਰਬਾਣੀ - Unicode Gurmukhi
+  gurmukhiAscii       String?   // ASCII encoding for legacy systems
+  
+  // Transliteration (phonetic aid only)
+  transliteration     String?   // Roman script phonetic
+  
+  // Vishraams (pauses) - critical for meaning
+  vishraamPositions   String?   // JSON array of pause positions
+  
+  // Relations
+  interpretations     TeekaInterpretation[]
+  
+  @@unique([shabadId, lineNumber])
+  @@index([shabadId])
+}
+
+/// Interpretations from authorized Teekas
+/// CRITICAL: Multiple interpretations preserved, never merged
+model TeekaInterpretation {
+  id              String    @id @default(cuid())
+  
+  panktiId        String
+  pankti          Pankti    @relation(fields: [panktiId], references: [id])
+  
+  // Source Teeka (MANDATORY)
+  sourceId        String
+  source          Source    @relation(fields: [sourceId], references: [id])
+  
+  // Interpretation content
+  // NEVER called "translation" - always "meaning/interpretation"
+  arthPunjabi     String?   // ਅਰਥ - Punjabi meaning
+  arthHindi       String?   // Hindi meaning
+  meaningEnglish  String?   // English interpretation
+  
+  // Extended explanation
+  viakhyaPunjabi  String?   // Detailed explanation in Punjabi
+  viakhyaEnglish  String?   // Detailed explanation in English
+  
+  // Word-by-word breakdown
+  padArth         String?   // JSON: word-by-word meanings
+  
+  // Scholarly notes
+  notes           String?   // Additional context
+  
+  // Status
+  status          ContentStatus @default(SCHOLARLY_REVIEW)
+  verifiedBy      String?       // Scholar who verified
+  verifiedAt      DateTime?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([panktiId])
+  @@index([sourceId])
+  @@index([status])
+}
+
+// ============================================================================
+// SIKH HISTORY (ITIHAAS) MODULE
+// ============================================================================
+
+/// Historical eras for timeline organization
+model Era {
+  id              String        @id @default(cuid())
+  
+  // Era identification
+  nameGurmukhi    String        // ਯੁੱਗ ਦਾ ਨਾਮ
+  nameEnglish     String
+  nameHindi       String?
+  
+  // Timeline
+  eraType         HistoricalEra
+  yearStart       Int
+  yearEnd         Int?          // Null for ongoing eras
+  
+  // Description
+  descriptionPunjabi String?
+  descriptionEnglish String?
+  
+  // Is this contemporary/ongoing?
+  isOngoing       Boolean       @default(false)
+  
+  // Relations
+  periods         Period[]
+  
+  @@index([eraType])
+  @@index([yearStart])
+}
+
+/// Periods within eras
+model Period {
+  id              String    @id @default(cuid())
+  
+  eraId           String
+  era             Era       @relation(fields: [eraId], references: [id])
+  
+  // Period identification
+  nameGurmukhi    String
+  nameEnglish     String
+  nameHindi       String?
+  
+  // Timeline
+  yearStart       Int
+  yearEnd         Int?
+  
+  // Description
+  descriptionPunjabi String?
+  descriptionEnglish String?
+  
+  // Relations
+  events          HistoricalEvent[]
+  
+  @@index([eraId])
+  @@index([yearStart])
+}
+
+/// Historical events - source-attributed
+model HistoricalEvent {
+  id              String        @id @default(cuid())
+  
+  periodId        String
+  period          Period        @relation(fields: [periodId], references: [id])
+  
+  // Event identification
+  titleGurmukhi   String
+  titleEnglish    String
+  titleHindi      String?
+  
+  // Timeline (as precise as sources allow)
+  dateType        String        // 'exact', 'year', 'approximate', 'disputed'
+  yearStart       Int
+  monthStart      Int?
+  dayStart        Int?
+  yearEnd         Int?          // For events spanning time
+  dateNotes       String?       // Explanation of date uncertainty
+  
+  // Event content (neutral tone required)
+  descriptionPunjabi String
+  descriptionEnglish String
+  descriptionHindi   String?
+  
+  // Location
+  location        String?
+  locationDetails String?
+  
+  // Status
+  status          ContentStatus @default(SCHOLARLY_REVIEW)
+  
+  // Is this contemporary/ongoing?
+  isContemporary  Boolean       @default(false)
+  contemporaryNote String?      // "This event is part of ongoing history..."
+  
+  // Metadata
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  lastReviewedAt  DateTime?
+  lastReviewedBy  String?
+  
+  // Relations
+  citations       Citation[]
+  figures         HistoricalEventFigure[]
+  interpretations EventInterpretation[]
+  
+  @@index([periodId])
+  @@index([yearStart])
+  @@index([status])
+  @@index([isContemporary])
+}
+
+/// Key figures in Sikh history
+model HistoricalFigure {
+  id              String    @id @default(cuid())
+  
+  // Identification
+  nameGurmukhi    String
+  nameEnglish     String
+  nameHindi       String?
+  
+  // Life dates
+  birthYear       Int?
+  birthYearApprox Boolean   @default(false)
+  deathYear       Int?
+  deathYearApprox Boolean   @default(false)
+  
+  // Biography (source-attributed)
+  biographyPunjabi String?
+  biographyEnglish String?
+  
+  // Classification
+  isGuru          Boolean   @default(false)
+  guruNumber      Int?
+  
+  // Status
+  status          ContentStatus @default(SCHOLARLY_REVIEW)
+  
+  // Relations
+  events          HistoricalEventFigure[]
+  
+  @@index([isGuru])
+}
+
+/// Junction table for events and figures
+model HistoricalEventFigure {
+  id              String          @id @default(cuid())
+  
+  eventId         String
+  event           HistoricalEvent @relation(fields: [eventId], references: [id])
+  
+  figureId        String
+  figure          HistoricalFigure @relation(fields: [figureId], references: [id])
+  
+  // Role in event
+  role            String?         // Their role in this event
+  
+  @@unique([eventId, figureId])
+  @@index([eventId])
+  @@index([figureId])
+}
+
+/// Different historical interpretations (never merged)
+model EventInterpretation {
+  id                  String          @id @default(cuid())
+  
+  eventId             String
+  event               HistoricalEvent @relation(fields: [eventId], references: [id])
+  
+  // Source of this interpretation
+  scholarName         String
+  workTitle           String
+  publicationYear     Int?
+  
+  // The interpretation
+  interpretationPunjabi String?
+  interpretationEnglish String?
+  
+  // Classification
+  isPrimarySource     Boolean         @default(false)
+  isSecondary         Boolean         @default(false)
+  
+  // Notes on perspective/bias
+  perspectiveNotes    String?
+  
+  @@index([eventId])
+}
+
+// ============================================================================
+// MARYADA & DISCLAIMERS
+// ============================================================================
+
+/// Platform disclaimers (always visible)
+model Disclaimer {
+  id              String    @id @default(cuid())
+  
+  // Identifier
+  key             String    @unique  // e.g., 'gurbani_learning', 'contemporary_history'
+  
+  // Content in all languages
+  textGurmukhi    String
+  textEnglish     String
+  textHindi       String?
+  
+  // Where to display
+  displayLocation String    // 'gurbani_header', 'history_contemporary', etc.
+  
+  // Is this mandatory to acknowledge?
+  requiresAck     Boolean   @default(false)
+  
+  isActive        Boolean   @default(true)
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// ============================================================================
+// AUDIT & GOVERNANCE
+// ============================================================================
+
+/// Content change audit log
+model ContentAudit {
+  id              String    @id @default(cuid())
+  
+  // What changed
+  entityType      String    // 'HistoricalEvent', 'TeekaInterpretation', etc.
+  entityId        String
+  
+  // Change details
+  action          String    // 'create', 'update', 'delete', 'review'
+  changeDetails   String?   // JSON of what changed
+  
+  // Who made the change
+  authorId        String
+  authorName      String
+  
+  // Why
+  reason          String?
+  
+  // When
+  createdAt       DateTime  @default(now())
+  
+  @@index([entityType, entityId])
+  @@index([authorId])
+  @@index([createdAt])
+}
+
+/// Scholarly review requests
+model ScholarlyReviewRequest {
+  id              String    @id @default(cuid())
+  
+  // What needs review
+  entityType      String
+  entityId        String
+  
+  // Request details
+  requestReason   String
+  requestedBy     String
+  
+  // Review details
+  status          String    @default("pending") // 'pending', 'in_review', 'completed', 'rejected'
+  reviewerName    String?
+  reviewNotes     String?
+  reviewedAt      DateTime?
+  
+  createdAt       DateTime  @default(now())
+  
+  @@index([status])
+  @@index([entityType, entityId])
+}

@@ -1,0 +1,1549 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ============================================================================
+   SIKHI VIDHYA PLATFORM - GLOBAL STYLES
+   ============================================================================
+   Design Principles:
+   - Traditional Sikh aesthetics with Kesri (Saffron) and Neela (Royal Blue)
+   - High-quality Gurmukhi typography with sacred reverence
+   - Ornate patterns inspired by Gurdwara architecture
+   - Clear visual hierarchy honoring sacred content
+   ============================================================================ */
+
+/* Import Gurmukhi fonts */
+@import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+/* ============================================================================
+   SIKH-THEMED CSS VARIABLES
+   ============================================================================ */
+:root {
+  /* Sacred Colors - Traditional Sikh Palette */
+  --sikhi-kesri: #FF6B00;          /* Khalsa Saffron */
+  --sikhi-kesri-deep: #E55A00;     /* Deep Saffron */
+  --sikhi-kesri-light: #FFF4EC;    /* Light Saffron background */
+  --sikhi-neela: #1E3A8A;          /* Royal Blue (Nihang) */
+  --sikhi-neela-light: #EFF6FF;    /* Light Blue background */
+  --sikhi-gold: #DAA520;           /* Gurdwara Gold */
+  --sikhi-gold-light: #F5E6B8;     /* Light Gold */
+  --sikhi-cream: #FDF8F0;          /* Sacred Cream/Paper */
+  --sikhi-white: #FFFFFF;          /* Pure White */
+  
+  /* Gradient combinations */
+  --gradient-kesri: linear-gradient(135deg, #FF8533 0%, #FF6B00 50%, #E55A00 100%);
+  --gradient-neela: linear-gradient(135deg, #3B82F6 0%, #1E3A8A 50%, #1E3A6E 100%);
+  --gradient-sacred: linear-gradient(135deg, #FDF8F0 0%, #F5E6B8 50%, #DAA520 100%);
+  --gradient-hero: linear-gradient(180deg, #1E3A8A 0%, #1E3A6E 50%, #0F172A 100%);
+  
+  /* Ornate border pattern */
+  --border-ornate: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M30 0L60 30L30 60L0 30z' fill='none' stroke='%23DAA520' stroke-width='1'/%3E%3C/svg%3E");
+}
+
+/* ============================================================================
+   BASE STYLES
+   ============================================================================ */
+
+@layer base {
+  :root {
+    /* Sacred, neutral color system */
+    --color-background: 253 248 240;
+    --color-foreground: 23 23 23;
+    --color-muted: 115 115 115;
+    --color-border: 218 165 32;
+    
+    /* Kesri (Saffron) - Khalsa colors */
+    --color-kesri: 255 107 0;
+    --color-kesri-light: 255 244 236;
+    
+    /* Neela (Blue) - Nihang/Royal colors */
+    --color-neela: 30 58 138;
+    --color-neela-light: 239 246 255;
+    
+    /* Typography scales for Gurmukhi */
+    --font-size-gurbani-sm: 1.125rem;
+    --font-size-gurbani-base: 1.375rem;
+    --font-size-gurbani-lg: 1.625rem;
+    --font-size-gurbani-xl: 2rem;
+    
+    /* Spacing for readability */
+    --line-height-gurbani: 2.25;
+  }
+
+  html {
+    @apply antialiased;
+    font-feature-settings: "kern" 1, "liga" 1;
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background: linear-gradient(180deg, var(--sikhi-cream) 0%, #FFFFFF 100%);
+    @apply text-neutral-900 font-sans;
+    font-size: 16px;
+    line-height: 1.6;
+  }
+
+  /* Selection color - Kesri themed */
+  ::selection {
+    background: rgba(255, 107, 0, 0.2);
+    color: #1E3A8A;
+  }
+
+  /* Gurmukhi text defaults */
+  [lang="pa"],
+  .gurmukhi {
+    font-family: 'Noto Sans Gurmukhi', 'Raavi', sans-serif;
+    line-height: var(--line-height-gurbani);
+  }
+
+  /* Sacred Gurbani text - special treatment */
+  .gurbani-text {
+    font-family: 'Noto Sans Gurmukhi', sans-serif;
+    font-size: var(--font-size-gurbani-lg);
+    line-height: var(--line-height-gurbani);
+    letter-spacing: 0.025em;
+    @apply text-neela-900;
+  }
+
+  /* Hindi text */
+  [lang="hi"] {
+    font-family: 'Noto Sans Devanagari', sans-serif;
+  }
+}
+
+/* ============================================================================
+   COMPONENT STYLES
+   ============================================================================ */
+
+@layer components {
+  /* Main container - respects sacred content boundaries */
+  .container-sacred {
+    @apply max-w-4xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  .container-content {
+    @apply max-w-6xl mx-auto px-4 sm:px-6 lg:px-8;
+  }
+
+  /* Gurbani Section Styling */
+  .gurbani-section {
+    @apply bg-white border-l-4 border-neela-700 shadow-sm;
+    @apply p-6 my-4 rounded-r-lg;
+  }
+
+  .gurbani-pankti {
+    @apply py-4 border-b border-neutral-100 last:border-b-0;
+  }
+
+  .gurbani-pankti:hover {
+    @apply bg-neela-50/30;
+  }
+
+  /* Interpretation/Meaning styling */
+  .interpretation-block {
+    @apply mt-3 pl-4 border-l-2 border-neutral-200;
+    @apply text-neutral-700 text-sm;
+  }
+
+  .interpretation-source {
+    @apply text-xs text-neutral-500 italic mt-1;
+  }
+
+  /* History Timeline styling */
+  .timeline-container {
+    @apply relative;
+  }
+
+  .timeline-line {
+    @apply absolute left-4 top-0 bottom-0 w-0.5 bg-kesri-200;
+  }
+
+  .timeline-node {
+    @apply relative pl-10 pb-8;
+  }
+
+  .timeline-node::before {
+    content: '';
+    @apply absolute left-2.5 w-3 h-3 rounded-full bg-kesri-500;
+    @apply border-2 border-white shadow-sm;
+  }
+
+  .timeline-era {
+    @apply text-xl font-semibold text-neutral-900;
+  }
+
+  .timeline-period {
+    @apply text-lg font-medium text-neutral-800;
+  }
+
+  .timeline-event {
+    @apply bg-white rounded-lg shadow-sm border border-neutral-100;
+    @apply p-4 hover:shadow-md transition-shadow;
+  }
+
+  /* Contemporary/Ongoing marker */
+  .contemporary-marker {
+    @apply inline-flex items-center px-2 py-0.5 rounded text-xs font-medium;
+    @apply bg-amber-100 text-amber-800 border border-amber-200;
+  }
+
+  /* Source citation styling */
+  .citation-block {
+    @apply bg-neutral-50 rounded-lg p-3 mt-4;
+    @apply border border-neutral-200 text-sm;
+  }
+
+  .citation-source {
+    @apply font-medium text-neutral-800;
+  }
+
+  .citation-details {
+    @apply text-neutral-600 text-xs mt-1;
+  }
+
+  /* Disclaimer styling */
+  .disclaimer {
+    @apply bg-amber-50 border-l-4 border-amber-400;
+    @apply p-4 my-4 text-sm text-amber-800;
+  }
+
+  .disclaimer-gurbani {
+    @apply bg-neela-50 border-l-4 border-neela-400;
+    @apply p-4 my-4 text-sm text-neela-800;
+  }
+
+  /* Language switcher */
+  .language-switcher {
+    @apply flex gap-1 bg-neutral-100 rounded-lg p-1;
+  }
+
+  .language-option {
+    @apply px-3 py-1.5 rounded-md text-sm font-medium transition-colors;
+    @apply text-neutral-600 hover:text-neutral-900;
+  }
+
+  .language-option.active {
+    @apply bg-white shadow-sm text-neutral-900;
+  }
+
+  .language-option.primary {
+    @apply text-neela-700;
+  }
+
+  /* Card components */
+  .card {
+    @apply bg-white rounded-lg shadow-sm border border-neutral-100;
+    @apply overflow-hidden;
+  }
+
+  .card-header {
+    @apply px-4 py-3 border-b border-neutral-100 bg-neutral-50;
+  }
+
+  .card-body {
+    @apply p-4;
+  }
+
+  /* Navigation */
+  .nav-primary {
+    @apply bg-white border-b border-neutral-200 sticky top-0 z-50;
+  }
+
+  .nav-link {
+    @apply px-4 py-2 text-sm font-medium text-neutral-600;
+    @apply hover:text-neutral-900 transition-colors;
+  }
+
+  .nav-link.active {
+    @apply text-kesri-600 border-b-2 border-kesri-500;
+  }
+
+  /* Buttons */
+  .btn {
+    @apply inline-flex items-center justify-center px-4 py-2;
+    @apply text-sm font-medium rounded-lg transition-colors;
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
+  }
+
+  .btn-primary {
+    @apply bg-kesri-500 text-white hover:bg-kesri-600;
+    @apply focus:ring-kesri-500;
+  }
+
+  .btn-secondary {
+    @apply bg-neutral-100 text-neutral-700 hover:bg-neutral-200;
+    @apply focus:ring-neutral-500;
+  }
+
+  .btn-sacred {
+    @apply bg-neela-700 text-white hover:bg-neela-800;
+    @apply focus:ring-neela-500;
+  }
+}
+
+/* ============================================================================
+   UTILITY STYLES
+   ============================================================================ */
+
+@layer utilities {
+  /* Hide scrollbar but keep functionality */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* Text balance for headings */
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  /* Vishraam (pause) markers in Gurbani */
+  .vishraam-primary {
+    @apply text-kesri-600;
+  }
+
+  .vishraam-secondary {
+    @apply text-neutral-400;
+  }
+}
+
+/* ============================================================================
+   PRINT STYLES
+   ============================================================================ */
+
+/* ============================================================================
+   TRADITIONAL GURU GRANTH SAHIB JI STYLING
+   ============================================================================ */
+
+/* Traditional Saroop-inspired page container */
+.saroop-page {
+  background: linear-gradient(135deg, #fef9e7 0%, #fdf6e3 50%, #fef3c7 100%);
+  border: 3px solid #b8860b;
+  border-radius: 4px;
+  position: relative;
+  box-shadow: 
+    0 0 0 1px #daa520,
+    0 0 0 4px #f5f0dc,
+    0 0 0 5px #b8860b,
+    0 4px 20px rgba(0,0,0,0.15),
+    inset 0 0 60px rgba(184, 134, 11, 0.08);
+}
+
+/* ============================================================================
+   AUTHENTIC GURU GRANTH SAHIB JI - OPEN BOOK STYLE
+   ============================================================================ */
+
+/* Main book container */
+.granth-book {
+  perspective: 2000px;
+  display: flex;
+  justify-content: center;
+  padding: 1rem;
+}
+
+/* Open book wrapper */
+.granth-open-book {
+  display: flex;
+  max-width: 1200px;
+  width: 100%;
+  box-shadow: 
+    0 0 40px rgba(0,0,0,0.3),
+    0 0 100px rgba(0,0,0,0.1);
+  border-radius: 4px;
+  position: relative;
+}
+
+/* Book spine shadow */
+.granth-open-book::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 30px;
+  height: 100%;
+  background: linear-gradient(90deg, 
+    rgba(0,0,0,0.15) 0%, 
+    rgba(0,0,0,0.05) 30%,
+    rgba(255,255,255,0.1) 50%,
+    rgba(0,0,0,0.05) 70%,
+    rgba(0,0,0,0.15) 100%
+  );
+  z-index: 10;
+  pointer-events: none;
+}
+
+/* Individual page */
+.granth-page {
+  flex: 1;
+  background: linear-gradient(to right, #f5f0e1 0%, #faf6eb 15%, #fdfbf5 50%, #faf6eb 85%, #f5f0e1 100%);
+  padding: 2rem 2.5rem;
+  min-height: 600px;
+  position: relative;
+  overflow: hidden;
+}
+
+/* Left page styling */
+.granth-page-left {
+  border-radius: 4px 0 0 4px;
+  background: linear-gradient(to left, #f0ebe0 0%, #faf6eb 10%, #fdfbf5 50%, #f8f4e8 100%);
+  box-shadow: inset -10px 0 20px -10px rgba(0,0,0,0.1);
+}
+
+/* Right page styling */
+.granth-page-right {
+  border-radius: 0 4px 4px 0;
+  background: linear-gradient(to right, #f0ebe0 0%, #faf6eb 10%, #fdfbf5 50%, #f8f4e8 100%);
+  box-shadow: inset 10px 0 20px -10px rgba(0,0,0,0.1);
+}
+
+/* Page texture overlay */
+.granth-page::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+}
+
+/* Page header */
+.granth-page-header {
+  text-align: center;
+  padding-bottom: 0.75rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid rgba(0,0,0,0.1);
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  color: #333;
+  font-size: 0.9rem;
+}
+
+/* Ang number on page */
+.granth-ang-number {
+  position: absolute;
+  bottom: 1rem;
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  font-size: 0.85rem;
+  color: #666;
+}
+
+.granth-page-left .granth-ang-number {
+  left: 2rem;
+}
+
+.granth-page-right .granth-ang-number {
+  right: 2rem;
+}
+
+/* Continuous Gurbani text - flowing paragraph style */
+.granth-bani-text {
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  font-size: 1.15rem;
+  line-height: 2.2;
+  color: #1a1a1a;
+  text-align: justify;
+  text-justify: inter-word;
+  hyphens: none;
+  column-count: 1;
+}
+
+@media (min-width: 768px) {
+  .granth-bani-text {
+    font-size: 1.25rem;
+    line-height: 2.4;
+  }
+}
+
+/* Verse separator (॥) styling */
+.granth-verse-end {
+  color: #333;
+  margin: 0 0.25rem;
+}
+
+/* Pause markers */
+.granth-vishraam {
+  color: #8b0000;
+}
+
+/* Single page mode for mobile */
+.granth-single-page {
+  background: linear-gradient(135deg, #fdfbf5 0%, #faf6eb 50%, #f8f4e8 100%);
+  border-radius: 4px;
+  padding: 1.5rem;
+  min-height: 500px;
+  box-shadow: 
+    0 2px 20px rgba(0,0,0,0.15),
+    inset 0 0 50px rgba(0,0,0,0.02);
+  position: relative;
+}
+
+/* Mobile responsive */
+@media (max-width: 900px) {
+  .granth-open-book {
+    flex-direction: column;
+  }
+  
+  .granth-open-book::before {
+    display: none;
+  }
+  
+  .granth-page {
+    border-radius: 4px;
+    margin-bottom: 1rem;
+    min-height: auto;
+  }
+  
+  .granth-page-left,
+  .granth-page-right {
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+  }
+}
+
+/* Navigation for book style */
+.granth-nav {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 2rem;
+  padding: 1rem;
+  background: #f5f0e6;
+  border-radius: 8px;
+  margin-bottom: 1rem;
+}
+
+.granth-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  color: #5c4a32;
+  background: #fff;
+  border: 1px solid #d4c5a9;
+  border-radius: 6px;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.granth-nav-btn:hover:not(:disabled) {
+  background: #faf6eb;
+  border-color: #b8a88a;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.granth-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.granth-nav-center {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  color: #5c4a32;
+}
+
+.granth-ang-input {
+  width: 4.5rem;
+  text-align: center;
+  font-size: 1.25rem;
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  padding: 0.5rem;
+  border: 1px solid #d4c5a9;
+  border-radius: 4px;
+  background: #fff;
+  color: #5c4a32;
+}
+
+.granth-ang-input:focus {
+  outline: none;
+  border-color: #b8a88a;
+  box-shadow: 0 0 0 3px rgba(184, 168, 138, 0.2);
+}
+
+/* Info banner */
+.granth-info-banner {
+  background: #faf6eb;
+  border: 1px solid #e8dcc8;
+  border-radius: 6px;
+  padding: 0.75rem 1rem;
+  margin-bottom: 1rem;
+  font-size: 0.875rem;
+  color: #6b5a42;
+}
+
+/* Toggle for meanings */
+.meaning-toggle-bar {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  padding: 0.75rem;
+  background: #f8f4e8;
+  border-bottom: 1px solid #e8dcc8;
+}
+
+.meaning-toggle-btn {
+  padding: 0.5rem 1rem;
+  font-size: 0.875rem;
+  color: #6b5a42;
+  background: transparent;
+  border: 1px solid transparent;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.meaning-toggle-btn:hover {
+  background: #fff;
+  border-color: #d4c5a9;
+}
+
+.meaning-toggle-btn.active {
+  background: #fff;
+  border-color: #b8a88a;
+  color: #4a3d2a;
+}
+
+/* Decorative corner ornaments */
+.saroop-page::before,
+.saroop-page::after {
+  content: '❋';
+  position: absolute;
+  font-size: 1.5rem;
+  color: #b8860b;
+  opacity: 0.6;
+}
+
+.saroop-page::before {
+  top: 12px;
+  left: 16px;
+}
+
+.saroop-page::after {
+  top: 12px;
+  right: 16px;
+}
+
+/* Inner decorative frame */
+.saroop-inner-frame {
+  border: 1px solid rgba(184, 134, 11, 0.3);
+  border-radius: 2px;
+  margin: 8px;
+  padding: 1rem;
+  position: relative;
+  min-height: 400px;
+}
+
+.saroop-inner-frame::before,
+.saroop-inner-frame::after {
+  content: '❋';
+  position: absolute;
+  font-size: 1.5rem;
+  color: #b8860b;
+  opacity: 0.6;
+  bottom: 12px;
+}
+
+.saroop-inner-frame::before {
+  left: 8px;
+}
+
+.saroop-inner-frame::after {
+  right: 8px;
+}
+
+/* Traditional header with Ik Onkar */
+.saroop-header {
+  text-align: center;
+  padding: 1.5rem 1rem;
+  border-bottom: 2px solid rgba(184, 134, 11, 0.3);
+  background: linear-gradient(180deg, rgba(184, 134, 11, 0.08) 0%, transparent 100%);
+  position: relative;
+}
+
+.saroop-header::after {
+  content: '';
+  position: absolute;
+  bottom: -1px;
+  left: 20%;
+  right: 20%;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, #b8860b, transparent);
+}
+
+/* Ik Onkar symbol styling */
+.ik-onkar {
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  font-size: 3.5rem;
+  color: #8b4513;
+  text-shadow: 1px 1px 2px rgba(139, 69, 19, 0.2);
+  line-height: 1;
+}
+
+/* Raag title styling */
+.raag-title {
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  font-size: 1.5rem;
+  color: #654321;
+  margin-top: 0.5rem;
+  letter-spacing: 0.05em;
+}
+
+/* Ang number display */
+.ang-number {
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  font-size: 1.125rem;
+  color: #8b4513;
+  background: rgba(184, 134, 11, 0.1);
+  padding: 0.25rem 1rem;
+  border-radius: 9999px;
+  border: 1px solid rgba(184, 134, 11, 0.3);
+}
+
+/* Gurbani content area */
+.saroop-content {
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+/* Traditional Pankti (line) styling */
+.pankti-traditional {
+  padding: 1rem 0;
+  border-bottom: 1px dashed rgba(184, 134, 11, 0.2);
+  transition: background-color 0.2s ease;
+}
+
+.pankti-traditional:last-child {
+  border-bottom: none;
+}
+
+.pankti-traditional:hover {
+  background: rgba(184, 134, 11, 0.05);
+}
+
+/* Main Gurbani text - traditional styling */
+.gurbani-traditional {
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  font-size: 1.75rem;
+  line-height: 2.5;
+  color: #1a1a1a;
+  letter-spacing: 0.02em;
+  text-align: center;
+}
+
+@media (min-width: 768px) {
+  .gurbani-traditional {
+    font-size: 2rem;
+    line-height: 2.75;
+  }
+}
+
+/* Transliteration styling */
+.transliteration-traditional {
+  font-style: italic;
+  color: #666;
+  font-size: 0.95rem;
+  margin-top: 0.25rem;
+  text-align: center;
+}
+
+/* Meaning/Arth section */
+.arth-section {
+  margin-top: 1rem;
+  padding: 1rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 8px;
+  border: 1px solid rgba(184, 134, 11, 0.2);
+  text-align: left;
+}
+
+.arth-label {
+  font-size: 0.875rem;
+  color: #8b4513;
+  font-weight: 500;
+  margin-bottom: 0.5rem;
+}
+
+.arth-text-punjabi {
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  color: #333;
+  line-height: 1.8;
+}
+
+.arth-text-english {
+  color: #444;
+  line-height: 1.7;
+}
+
+/* Writer attribution */
+.writer-attribution {
+  font-size: 0.75rem;
+  color: #8b4513;
+  margin-top: 0.5rem;
+  text-align: right;
+  font-style: italic;
+}
+
+/* Saroop footer */
+.saroop-footer {
+  text-align: center;
+  padding: 1rem;
+  border-top: 1px solid rgba(184, 134, 11, 0.2);
+  background: linear-gradient(0deg, rgba(184, 134, 11, 0.05) 0%, transparent 100%);
+}
+
+/* Navigation in traditional style */
+.saroop-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.75rem 1rem;
+  background: linear-gradient(180deg, #fef3c7 0%, #fef9e7 100%);
+  border: 2px solid #b8860b;
+  border-radius: 8px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+.saroop-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  color: #8b4513;
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid rgba(184, 134, 11, 0.3);
+  border-radius: 6px;
+  transition: all 0.2s ease;
+}
+
+.saroop-nav-btn:hover:not(:disabled) {
+  background: rgba(184, 134, 11, 0.15);
+  border-color: #b8860b;
+}
+
+.saroop-nav-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.saroop-ang-display {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+}
+
+.saroop-ang-input {
+  width: 5rem;
+  text-align: center;
+  font-size: 1.25rem;
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  padding: 0.5rem;
+  border: 2px solid #b8860b;
+  border-radius: 6px;
+  background: #fefefe;
+  color: #8b4513;
+}
+
+.saroop-ang-input:focus {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(184, 134, 11, 0.2);
+}
+
+/* Expand/collapse button */
+.arth-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  font-size: 0.875rem;
+  color: #8b4513;
+  background: transparent;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+  transition: background 0.2s;
+}
+
+.arth-toggle:hover {
+  background: rgba(184, 134, 11, 0.1);
+}
+
+/* ============================================================================
+   SIKH-THEMED HERO & SECTION STYLING
+   ============================================================================ */
+
+/* Hero section with Sikh pattern background */
+.sikhi-hero {
+  background: var(--gradient-hero);
+  position: relative;
+  overflow: hidden;
+}
+
+.sikhi-hero::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 20% 80%, rgba(255, 107, 0, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(218, 165, 32, 0.1) 0%, transparent 50%);
+  pointer-events: none;
+}
+
+/* Decorative Khanda-inspired pattern */
+.sikhi-pattern {
+  background-image: url("data:image/svg+xml,%3Csvg width='80' height='80' viewBox='0 0 80 80' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M40 10 L40 70 M20 40 L60 40 M25 25 Q40 10 55 25 M25 55 Q40 70 55 55' stroke='%23DAA520' stroke-width='0.5' fill='none' opacity='0.1'/%3E%3C/svg%3E");
+  background-repeat: repeat;
+}
+
+/* Ik Onkar hero symbol */
+.ik-onkar-hero {
+  font-family: 'Noto Sans Gurmukhi', sans-serif;
+  font-size: 5rem;
+  color: #DAA520;
+  text-shadow: 
+    0 0 30px rgba(218, 165, 32, 0.5),
+    0 0 60px rgba(218, 165, 32, 0.3);
+  animation: glow 3s ease-in-out infinite alternate;
+}
+
+@keyframes glow {
+  from {
+    text-shadow: 
+      0 0 20px rgba(218, 165, 32, 0.4),
+      0 0 40px rgba(218, 165, 32, 0.2);
+  }
+  to {
+    text-shadow: 
+      0 0 30px rgba(218, 165, 32, 0.6),
+      0 0 60px rgba(218, 165, 32, 0.4),
+      0 0 80px rgba(218, 165, 32, 0.2);
+  }
+}
+
+/* Sacred card with ornate border */
+.sikhi-card {
+  background: linear-gradient(135deg, #FFFFFF 0%, #FDF8F0 100%);
+  border: 2px solid transparent;
+  border-radius: 12px;
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
+}
+
+.sikhi-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: var(--gradient-kesri);
+}
+
+.sikhi-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 
+    0 12px 40px rgba(255, 107, 0, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Neela (Blue) variant for Gurbani */
+.sikhi-card-neela::before {
+  background: var(--gradient-neela);
+}
+
+.sikhi-card-neela:hover {
+  box-shadow: 
+    0 12px 40px rgba(30, 58, 138, 0.15),
+    0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Ornate section divider */
+.sikhi-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 2rem 0;
+}
+
+.sikhi-divider::before,
+.sikhi-divider::after {
+  content: '';
+  flex: 1;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #DAA520, transparent);
+}
+
+.sikhi-divider-symbol {
+  color: #DAA520;
+  font-size: 1.5rem;
+}
+
+/* Kesri (Saffron) themed button */
+.btn-kesri {
+  background: var(--gradient-kesri);
+  color: white;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(255, 107, 0, 0.3);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-kesri:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(255, 107, 0, 0.4);
+}
+
+/* Neela (Blue) themed button */
+.btn-neela {
+  background: var(--gradient-neela);
+  color: white;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(30, 58, 138, 0.3);
+  border: none;
+  cursor: pointer;
+}
+
+.btn-neela:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(30, 58, 138, 0.4);
+}
+
+/* Golden outline button */
+.btn-gold-outline {
+  background: transparent;
+  color: #DAA520;
+  padding: 0.875rem 2rem;
+  border-radius: 8px;
+  font-weight: 600;
+  transition: all 0.3s ease;
+  border: 2px solid #DAA520;
+  cursor: pointer;
+}
+
+.btn-gold-outline:hover {
+  background: rgba(218, 165, 32, 0.1);
+  transform: translateY(-2px);
+}
+
+/* Feature icon container */
+.sikhi-icon {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  position: relative;
+}
+
+.sikhi-icon-kesri {
+  background: linear-gradient(135deg, #FFF4EC 0%, #FFE5D0 100%);
+  color: #FF6B00;
+  border: 2px solid rgba(255, 107, 0, 0.2);
+}
+
+.sikhi-icon-neela {
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+  color: #1E3A8A;
+  border: 2px solid rgba(30, 58, 138, 0.2);
+}
+
+.sikhi-icon-gold {
+  background: linear-gradient(135deg, #FDF8F0 0%, #F5E6B8 100%);
+  color: #B8860B;
+  border: 2px solid rgba(218, 165, 32, 0.3);
+}
+
+/* Ornate corners for frames */
+.sikhi-frame {
+  position: relative;
+  padding: 2rem;
+  border: 2px solid #DAA520;
+  background: linear-gradient(135deg, #FEFDFB 0%, #FDF8F0 100%);
+}
+
+.sikhi-frame::before,
+.sikhi-frame::after {
+  content: '❧';
+  position: absolute;
+  color: #DAA520;
+  font-size: 1.5rem;
+}
+
+.sikhi-frame::before {
+  top: 0.5rem;
+  left: 0.5rem;
+}
+
+.sikhi-frame::after {
+  bottom: 0.5rem;
+  right: 0.5rem;
+  transform: rotate(180deg);
+}
+
+/* Sacred quote/verse container */
+.sikhi-verse-box {
+  background: linear-gradient(135deg, #FDF8F0 0%, #F5E6B8 20%, #FDF8F0 80%, #F5E6B8 100%);
+  border: 3px double #DAA520;
+  border-radius: 8px;
+  padding: 2rem;
+  text-align: center;
+  position: relative;
+}
+
+.sikhi-verse-box::before {
+  content: '☬';
+  position: absolute;
+  top: -1rem;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #FDF8F0;
+  padding: 0 0.5rem;
+  color: #DAA520;
+  font-size: 1.5rem;
+}
+
+/* Navigation with Sikh styling */
+.sikhi-nav {
+  background: linear-gradient(180deg, #FFFFFF 0%, #FDF8F0 100%);
+  border-bottom: 2px solid rgba(218, 165, 32, 0.3);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+}
+
+.sikhi-nav-link {
+  position: relative;
+  padding: 0.5rem 1rem;
+  color: #404040;
+  font-weight: 500;
+  transition: color 0.3s ease;
+}
+
+.sikhi-nav-link:hover {
+  color: #FF6B00;
+}
+
+.sikhi-nav-link.active {
+  color: #FF6B00;
+}
+
+.sikhi-nav-link.active::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-kesri);
+  border-radius: 2px 2px 0 0;
+}
+
+/* Footer with Sikh theming */
+.sikhi-footer {
+  background: linear-gradient(180deg, #0F172A 0%, #1E293B 100%);
+  color: #E2E8F0;
+  position: relative;
+  overflow: hidden;
+}
+
+.sikhi-footer::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: var(--gradient-kesri);
+}
+
+/* Animated underline for links */
+.sikhi-link {
+  position: relative;
+  color: #FF6B00;
+  text-decoration: none;
+}
+
+.sikhi-link::after {
+  content: '';
+  position: absolute;
+  bottom: -2px;
+  left: 0;
+  width: 0;
+  height: 2px;
+  background: #FF6B00;
+  transition: width 0.3s ease;
+}
+
+.sikhi-link:hover::after {
+  width: 100%;
+}
+
+/* History/Itihaas section specific styling */
+.itihaas-section {
+  background: linear-gradient(135deg, #FFF4EC 0%, #FFEDD5 100%);
+}
+
+.itihaas-timeline-line {
+  background: linear-gradient(180deg, #FF6B00 0%, #E55A00 100%);
+  width: 4px;
+}
+
+.itihaas-node {
+  width: 1rem;
+  height: 1rem;
+  border-radius: 50%;
+  background: #FF6B00;
+  border: 3px solid #FFFFFF;
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.3);
+}
+
+/* Gurbani section specific styling */
+.gurbani-section-bg {
+  background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
+}
+
+/* ============================================================================
+   END TRADITIONAL STYLING
+   ============================================================================ */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  .gurbani-text {
+    font-size: 14pt;
+    line-height: 2;
+  }
+
+  .page-break-before {
+    page-break-before: always;
+  }
+
+  body {
+    background: white;
+  }
+}
+
+/* ============================================================================
+   ACCESSIBILITY
+   ============================================================================ */
+
+/* Touch Target Enhancement - Minimum 44px for mobile */
+@media (max-width: 768px) {
+  button,
+  a,
+  [role="button"],
+  input[type="submit"],
+  input[type="button"] {
+    min-height: 44px;
+    min-width: 44px;
+  }
+
+  /* Ensure proper spacing for touch */
+  .nav-link,
+  .sikhi-nav-link {
+    padding: 12px 16px;
+  }
+
+  /* Language switcher buttons */
+  .language-option {
+    min-height: 44px;
+    min-width: 44px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+}
+
+/* Skip Link Styles */
+.skip-link {
+  position: fixed;
+  top: -100px;
+  left: 16px;
+  z-index: 9999;
+  padding: 12px 24px;
+  background: #1E3A8A;
+  color: white;
+  border-radius: 8px;
+  font-weight: 500;
+  text-decoration: none;
+  transition: top 0.2s ease;
+}
+
+.skip-link:focus {
+  top: 16px;
+}
+
+/* Focus visible for keyboard navigation */
+*:focus-visible {
+  @apply outline-none ring-2 ring-offset-2;
+  --tw-ring-color: #FF6B00;
+}
+
+/* Reduced motion for those who prefer it */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  
+  .ik-onkar-hero {
+    animation: none;
+  }
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+  .gurbani-text {
+    @apply text-black;
+  }
+  
+  .timeline-line {
+    @apply bg-black;
+  }
+}
+
+/* ============================================================================
+   ANIMATION KEYFRAMES
+   ============================================================================ */
+
+@keyframes slide-in-right {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-out-right {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+@keyframes spin-slow {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes fade-out {
+  from {
+    opacity: 1;
+  }
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes scale-in {
+  from {
+    transform: scale(0.95);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+@keyframes slide-up {
+  from {
+    transform: translateY(10px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+@keyframes pulse-soft {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Animation utility classes */
+.animate-slide-in-right {
+  animation: slide-in-right 0.3s ease-out forwards;
+}
+
+.animate-slide-out-right {
+  animation: slide-out-right 0.3s ease-in forwards;
+}
+
+.animate-spin-slow {
+  animation: spin-slow 2s linear infinite;
+}
+
+.animate-fade-in {
+  animation: fade-in 0.2s ease-out forwards;
+}
+
+.animate-fade-out {
+  animation: fade-out 0.2s ease-in forwards;
+}
+
+.animate-scale-in {
+  animation: scale-in 0.2s ease-out forwards;
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+.animate-pulse-soft {
+  animation: pulse-soft 2s ease-in-out infinite;
+}
+
+.animate-shimmer {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.5) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* Staggered animation delays for lists */
+.stagger-1 { animation-delay: 0.05s; }
+.stagger-2 { animation-delay: 0.1s; }
+.stagger-3 { animation-delay: 0.15s; }
+.stagger-4 { animation-delay: 0.2s; }
+.stagger-5 { animation-delay: 0.25s; }
+.stagger-6 { animation-delay: 0.3s; }
+.stagger-7 { animation-delay: 0.35s; }
+.stagger-8 { animation-delay: 0.4s; }
+
+/* ============================================================================
+   TOAST NOTIFICATION STYLES
+   ============================================================================ */
+
+.toast-container {
+  @apply fixed bottom-4 right-4 z-50 flex flex-col gap-2;
+  max-width: 360px;
+}
+
+.toast {
+  @apply flex items-start gap-3 p-4 rounded-lg shadow-lg border;
+  animation: slide-in-right 0.3s ease-out;
+}
+
+.toast-success {
+  @apply bg-green-50 border-green-200 text-green-800;
+}
+
+.toast-error {
+  @apply bg-red-50 border-red-200 text-red-800;
+}
+
+.toast-info {
+  @apply bg-neela-50 border-neela-200 text-neela-800;
+}
+
+.toast-warning {
+  @apply bg-amber-50 border-amber-200 text-amber-800;
+}
+
+/* ============================================================================
+   READING PROGRESS BAR
+   ============================================================================ */
+
+.reading-progress {
+  @apply fixed top-0 left-0 h-1 z-50 transition-all;
+  width: var(--reading-progress, 0%);
+}
+
+.reading-progress-kesri {
+  background: linear-gradient(90deg, #FF8533 0%, #FF6B00 100%);
+}
+
+.reading-progress-neela {
+  background: linear-gradient(90deg, #3B82F6 0%, #1E3A8A 100%);
+}
+
+/* ============================================================================
+   SCROLL TO TOP BUTTON
+   ============================================================================ */
+
+.scroll-to-top {
+  @apply fixed bottom-6 right-6 z-40;
+  @apply w-12 h-12 rounded-full shadow-lg;
+  @apply flex items-center justify-center;
+  @apply bg-kesri-500 text-white hover:bg-kesri-600;
+  @apply transition-all duration-300;
+  @apply opacity-0 translate-y-4 pointer-events-none;
+}
+
+.scroll-to-top.visible {
+  @apply opacity-100 translate-y-0 pointer-events-auto;
+}
+
+/* ============================================================================
+   KEYBOARD SHORTCUTS MODAL
+   ============================================================================ */
+
+.kbd {
+  @apply inline-flex items-center justify-center;
+  @apply px-2 py-1 min-w-[1.5rem];
+  @apply bg-neutral-100 border border-neutral-300 rounded;
+  @apply text-xs font-mono text-neutral-700;
+  @apply shadow-sm;
+}
