@@ -52,3 +52,6 @@ export { LanguageSwitcher } from './LanguageSwitcher';
 
 // Source citation
 export { SourceCitation } from './SourceCitation';
+
+// Page turn wrapper for swipe gestures
+export { PageTurnWrapper } from './PageTurnWrapper';
