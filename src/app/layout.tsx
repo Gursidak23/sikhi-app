@@ -1,0 +1,104 @@
+import type { Metadata, Viewport } from 'next';
+import { Inter } from 'next/font/google';
+import '../styles/globals.css';
+import { SkipLink } from '@/components/common/SkipLink';
+
+const inter = Inter({ 
+  subsets: ['latin'],
+  variable: '--font-inter',
+  display: 'swap',
+});
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 5,
+  themeColor: [
+    { media: '(prefers-color-scheme: light)', color: '#1E3A8A' },
+    { media: '(prefers-color-scheme: dark)', color: '#1E3A6E' },
+  ],
+};
+
+export const metadata: Metadata = {
+  title: {
+    default: 'ਸਿੱਖੀ ਵਿੱਦਿਆ | Sikhi Vidhya',
+    template: '%s | ਸਿੱਖੀ ਵਿੱਦਿਆ',
+  },
+  description: 'A sacred platform for Sikh learning, history documentation, and Gurbani study. ਸਿੱਖ ਇਤਿਹਾਸ ਅਤੇ ਗੁਰਬਾਣੀ ਦੀ ਸਿੱਖਿਆ ਲਈ ਪਵਿੱਤਰ ਪਲੇਟਫਾਰਮ।',
+  keywords: [
+    'Sikh',
+    'Sikhi',
+    'Gurbani',
+    'Guru Granth Sahib',
+    'Sikh History',
+    'ਸਿੱਖ',
+    'ਗੁਰਬਾਣੀ',
+    'ਇਤਿਹਾਸ',
+  ],
+  authors: [{ name: 'Sikhi Vidhya' }],
+  manifest: '/manifest.json',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'default',
+    title: 'Sikhi Vidhya',
+  },
+  formatDetection: {
+    telephone: false,
+  },
+  openGraph: {
+    title: 'ਸਿੱਖੀ ਵਿੱਦਿਆ | Sikhi Vidhya',
+    description: 'A sacred platform for Sikh learning and Gurbani study',
+    type: 'website',
+    locale: 'pa_IN',
+    alternateLocale: ['en_US', 'hi_IN'],
+    siteName: 'Sikhi Vidhya',
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'ਸਿੱਖੀ ਵਿੱਦਿਆ | Sikhi Vidhya',
+    description: 'Learn Sikhi through primary sources - Sri Guru Granth Sahib Ji and documented history',
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      'max-video-preview': -1,
+      'max-image-preview': 'large',
+      'max-snippet': -1,
+    },
+  },
+};
+
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  return (
+    <html lang="pa" dir="ltr" className={inter.variable}>
+      <head>
+        {/* Gurmukhi fonts */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+        {/* Devanagari for Hindi */}
+        <link
+          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap"
+          rel="stylesheet"
+        />
+        {/* Apple Touch Icon */}
+        <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
+        {/* Favicon - Ik Onkar Symbol */}
+        <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+        <link rel="icon" href="/favicon.svg" sizes="any" />
+      </head>
+      <body className="min-h-screen bg-neutral-50 antialiased font-sans">
+        <SkipLink />
+        {children}
+      </body>
+    </html>
+  );
+}
