@@ -29,11 +29,15 @@ interface SearchResult {
   };
   pageNo: number;
   writer?: {
-    unicode?: string;
+    writerId?: number;
+    gurmukhi?: string;
+    unicode?: string | null;
     english?: string;
   };
   raag?: {
-    unicode?: string;
+    raagId?: number;
+    gurmukhi?: string;
+    unicode?: string | null;
     english?: string;
   };
 }
@@ -243,13 +247,19 @@ export function GurbaniSearch({
                       )}
                       
                       {/* Meta Info */}
-                      <div className="flex items-center gap-3 mt-2 text-xs text-amber-700">
-                        <span className="font-gurmukhi">ਅੰਗ {result.pageNo}</span>
+                      <div className="flex flex-wrap items-center gap-2 mt-2 text-xs">
+                        <span className="font-gurmukhi bg-amber-100 text-amber-800 px-2 py-0.5 rounded">
+                          ਅੰਗ {result.pageNo}
+                        </span>
                         {result.raag && (
-                          <span className="font-gurmukhi">{result.raag.unicode || result.raag.english}</span>
+                          <span className="bg-neela-100 text-neela-800 px-2 py-0.5 rounded">
+                            {result.raag.unicode || result.raag.english || result.raag.gurmukhi}
+                          </span>
                         )}
                         {result.writer && (
-                          <span className="font-gurmukhi">{result.writer.unicode || result.writer.english}</span>
+                          <span className="bg-kesri-100 text-kesri-800 px-2 py-0.5 rounded">
+                            ✍️ {result.writer.english || result.writer.unicode || result.writer.gurmukhi}
+                          </span>
                         )}
                       </div>
                     </button>
