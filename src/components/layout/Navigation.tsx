@@ -11,7 +11,7 @@ import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { LanguageSwitcher, LanguageSwitcherMobile } from '@/components/common/LanguageSwitcher';
 import { ThemeToggle } from '@/components/common/ThemeProvider';
 import { NanakshahiCalendarFull, gregorianToNanakshahi, NANAKSHAHI_MONTHS } from '@/components/common/NanakshahiCalendar';
 import { BookmarksPanel, useBookmarks } from '@/components/common/BookmarkSystem';
@@ -128,13 +128,20 @@ export function MainNavigation({
           </nav>
 
           {/* Date, Bookmarks, Language Switcher, Theme Toggle & Mobile Menu */}
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1 sm:gap-2">
             <ThemeToggle />
             
+            {/* Desktop Language Switcher */}
             <LanguageSwitcher
               currentLanguage={currentLanguage}
               onLanguageChange={onLanguageChange}
               size="sm"
+            />
+            
+            {/* Mobile Language Switcher (dropdown) */}
+            <LanguageSwitcherMobile
+              currentLanguage={currentLanguage}
+              onLanguageChange={onLanguageChange}
             />
             
             {/* Bookmarks Button */}
