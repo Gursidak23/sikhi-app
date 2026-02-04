@@ -127,9 +127,12 @@ export function MainNavigation({
             })}
           </nav>
 
-          {/* Date, Bookmarks, Language Switcher, Theme Toggle & Mobile Menu */}
+          {/* Desktop: All controls | Mobile: Only language + hamburger */}
           <div className="flex items-center gap-1 sm:gap-2">
-            <ThemeToggle />
+            {/* Desktop only - Theme Toggle */}
+            <div className="hidden md:block">
+              <ThemeToggle />
+            </div>
             
             {/* Desktop Language Switcher */}
             <LanguageSwitcher
@@ -144,10 +147,10 @@ export function MainNavigation({
               onLanguageChange={onLanguageChange}
             />
             
-            {/* Bookmarks Button */}
+            {/* Desktop only - Bookmarks Button */}
             <button
               onClick={() => setShowBookmarks(true)}
-              className="relative p-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+              className="hidden md:flex relative p-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
               aria-label="Open Bookmarks"
               title="My Bookmarks"
             >
@@ -161,10 +164,10 @@ export function MainNavigation({
               )}
             </button>
             
-            {/* Nanakshahi Date Badge - after language switcher */}
+            {/* Desktop only - Nanakshahi Date Badge */}
             <button
               onClick={() => setShowCalendar(true)}
-              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-sm rounded-lg transition-all shadow-sm hover:shadow-md"
+              className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-sm rounded-lg transition-all shadow-sm hover:shadow-md"
               aria-label="Open Nanakshahi Calendar"
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -173,17 +176,6 @@ export function MainNavigation({
               <span className="font-gurmukhi text-xs">
                 {nanakshahiDate.day} {NANAKSHAHI_MONTHS[nanakshahiDate.month].pa}
               </span>
-            </button>
-            
-            {/* Mobile date - just icon */}
-            <button
-              onClick={() => setShowCalendar(true)}
-              className="sm:hidden p-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg"
-              aria-label="Open Nanakshahi Calendar"
-            >
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
             </button>
 
             {/* Mobile Menu Button */}
@@ -230,6 +222,65 @@ export function MainNavigation({
                   </Link>
                 );
               })}
+            </div>
+            
+            {/* Mobile Quick Actions */}
+            <div className="mt-4 pt-4 border-t border-amber-200/50">
+              <div className="grid grid-cols-3 gap-2 px-2">
+                {/* Mobile Bookmarks */}
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setShowBookmarks(true);
+                  }}
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors"
+                >
+                  <div className="relative">
+                    <svg className="w-5 h-5" fill={bookmarks.length > 0 ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                    </svg>
+                    {bookmarks.length > 0 && (
+                      <span className="absolute -top-1.5 -right-1.5 w-4 h-4 text-[10px] flex items-center justify-center bg-amber-500 text-white rounded-full font-medium">
+                        {bookmarks.length > 9 ? '9+' : bookmarks.length}
+                      </span>
+                    )}
+                  </div>
+                  <span className="text-xs font-medium">
+                    {currentLanguage === 'pa' ? 'ਬੁੱਕਮਾਰਕ' : 'Bookmarks'}
+                  </span>
+                </button>
+                
+                {/* Mobile Calendar */}
+                <button
+                  onClick={() => {
+                    setMobileMenuOpen(false);
+                    setShowCalendar(true);
+                  }}
+                  className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-amber-50 hover:bg-amber-100 text-amber-700 transition-colors"
+                >
+                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <span className="text-xs font-medium">
+                    {currentLanguage === 'pa' ? 'ਕੈਲੰਡਰ' : 'Calendar'}
+                  </span>
+                </button>
+                
+                {/* Mobile Theme Toggle */}
+                <div className="flex flex-col items-center gap-1.5 p-3 rounded-lg bg-gray-50 hover:bg-gray-100 transition-colors">
+                  <ThemeToggle />
+                  <span className="text-xs font-medium text-gray-600">
+                    {currentLanguage === 'pa' ? 'ਥੀਮ' : 'Theme'}
+                  </span>
+                </div>
+              </div>
+              
+              {/* Nanakshahi Date Display */}
+              <div className="mt-3 mx-2 px-3 py-2 bg-gradient-to-r from-amber-500 to-amber-600 rounded-lg text-center">
+                <span className="font-gurmukhi text-white text-sm">
+                  📅 {nanakshahiDate.day} {NANAKSHAHI_MONTHS[nanakshahiDate.month].pa} {nanakshahiDate.year}
+                </span>
+              </div>
             </div>
           </nav>
         )}

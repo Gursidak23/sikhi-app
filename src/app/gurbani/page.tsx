@@ -273,10 +273,10 @@ export default function GurbaniPage() {
 
             {/* Main Content */}
             <div className="flex-1 min-w-0">
-              {/* Mobile-friendly Ang Navigator */}
-              <div className="flex flex-col gap-3 mb-4 sm:mb-6">
-                {/* Ang Search - Full width on mobile */}
-                <div className="w-full sm:max-w-xs">
+              {/* Ang Navigator - Compact and centered */}
+              <div className="flex flex-col items-center gap-3 mb-4 sm:mb-6">
+                {/* Ang Search - Hidden on mobile (use FAB instead) */}
+                <div className="hidden sm:block sm:max-w-xs">
                   <AngSearch
                     onAngSelect={handleAngChange}
                     language={language}
@@ -525,13 +525,13 @@ export default function GurbaniPage() {
         </div>
       </main>
 
-      {/* Mobile Navigation FAB */}
+      {/* Mobile Navigation FAB - positioned lower right */}
       <button
         onClick={() => setMobileNavOpen(true)}
-        className="lg:hidden fixed bottom-20 right-4 z-40 w-14 h-14 rounded-full bg-neela-700 text-white shadow-lg flex items-center justify-center hover:bg-neela-800 transition-colors"
+        className="lg:hidden fixed bottom-6 right-4 z-40 w-12 h-12 rounded-full bg-amber-600 text-white shadow-lg flex items-center justify-center hover:bg-amber-700 active:scale-95 transition-all"
         aria-label={language === 'pa' ? 'ਖੋਜੋ ਅਤੇ ਨੈਵੀਗੇਟ ਕਰੋ' : 'Search and Navigate'}
       >
-        <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+        <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
       </button>
