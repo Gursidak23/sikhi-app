@@ -12,6 +12,7 @@ import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
+import { HukamnamaSection } from '@/components/common/Hukamnama';
 import type { Language } from '@/types';
 
 // Khanda SVG Component
@@ -259,9 +260,51 @@ export default function HomePage() {
         </section>
 
         {/* Divider */}
-        <div className="sikhi-divider bg-white">
+        <div className="sikhi-divider bg-white dark:bg-neutral-900">
           <span className="sikhi-divider-symbol font-gurmukhi text-3xl">☬</span>
         </div>
+
+        {/* Daily Hukamnama Section - Beautiful saroop-style */}
+        <section className="py-12 md:py-20 bg-gradient-to-b from-[#fef9e7] via-[#fdf6e3] to-[#fef3c7] dark:from-[#1a1a1a] dark:via-[#1f1a14] dark:to-[#231a0f] relative">
+          {/* Diamond pattern background */}
+          <div 
+            className="absolute inset-0 opacity-10 dark:opacity-5" 
+            style={{ 
+              backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M30 0L60 30L30 60L0 30z\' fill=\'none\' stroke=\'%23daa520\' stroke-width=\'1\'/%3E%3C/svg%3E")' 
+            }}
+          />
+          
+          <div className="container-content relative z-10">
+            {/* Header */}
+            <div className="text-center mb-8">
+              <h2 className={cn(
+                'text-2xl lg:text-3xl font-bold text-amber-900 dark:text-[#daa520]',
+                isPunjabi && 'font-gurmukhi'
+              )}>
+                {isPunjabi ? 'ਅੱਜ ਦਾ ਹੁਕਮਨਾਮਾ' : "Today's Hukamnama"}
+              </h2>
+            </div>
+            
+            {/* Hukamnama Display */}
+            <HukamnamaSection language={language} />
+            
+            {/* Nitnem Link */}
+            <div className="text-center mt-10">
+              <Link
+                href="/nitnem"
+                className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-neela-600 to-neela-700 text-white rounded-xl hover:from-neela-700 hover:to-neela-800 transition-all shadow-lg hover:shadow-xl"
+              >
+                <span className="text-xl">🙏</span>
+                <span className={cn('font-medium', isPunjabi && 'font-gurmukhi')}>
+                  {isPunjabi ? 'ਨਿਤਨੇਮ ਬਾਣੀਆਂ ਪੜ੍ਹੋ' : 'Read Nitnem Banis'}
+                </span>
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </svg>
+              </Link>
+            </div>
+          </div>
+        </section>
 
         {/* Principles Section */}
         <section className="py-16 bg-white">

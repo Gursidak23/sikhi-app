@@ -2,6 +2,9 @@ import type { Metadata, Viewport } from 'next';
 import { Inter } from 'next/font/google';
 import '../styles/globals.css';
 import { SkipLink } from '@/components/common/SkipLink';
+import { ThemeProvider } from '@/components/common/ThemeProvider';
+import { BookmarkProvider } from '@/components/common/BookmarkSystem';
+import { FontSizeProvider } from '@/components/common/FontSizeControls';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -95,9 +98,15 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.svg" sizes="any" />
       </head>
-      <body className="min-h-screen bg-neutral-50 antialiased font-sans">
-        <SkipLink />
-        {children}
+      <body className="min-h-screen bg-neutral-50 dark:bg-neutral-950 antialiased font-sans transition-colors">
+        <ThemeProvider>
+          <BookmarkProvider>
+            <FontSizeProvider>
+              <SkipLink />
+              {children}
+            </FontSizeProvider>
+          </BookmarkProvider>
+        </ThemeProvider>
       </body>
     </html>
   );
