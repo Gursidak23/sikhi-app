@@ -1,0 +1,465 @@
+'use client';
+
+// ============================================================================
+// NITNEM BANIS PAGE
+// ============================================================================
+// Dedicated page for daily prayers
+// Japji Sahib, Rehras Sahib, Kirtan Sohila, etc.
+// ============================================================================
+
+import { useState, useEffect, useCallback } from 'react';
+import { cn } from '@/lib/utils';
+import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { ScrollToTop } from '@/components/common/ScrollToTop';
+import { ReadingProgress } from '@/components/common/ReadingProgress';
+import { BookmarkButton } from '@/components/common/BookmarkSystem';
+import { FontSizeControls } from '@/components/common/FontSizeControls';
+import type { Language } from '@/types';
+
+// Nitnem Banis configuration with BaniDB IDs (Sri Guru Granth Sahib Ji only)
+// BaniDB IDs verified from https://api.banidb.com/v2/banis
+const NITNEM_BANIS = [
+  {
+    id: 'japji',
+    baniId: 2, // BaniDB: jpujI swihb
+    name: { pa: 'ਜਪੁ ਜੀ ਸਾਹਿਬ', en: 'Japji Sahib' },
+    description: { 
+      pa: 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ - ਗੁਰੂ ਨਾਨਕ ਦੇਵ ਜੀ', 
+      en: 'Sri Guru Granth Sahib Ji - Guru Nanak Dev Ji' 
+    },
+    time: 'amritvela',
+    icon: '🌅',
+    color: 'from-amber-500 to-orange-600',
+  },
+  {
+    id: 'anand',
+    baniId: 10, // BaniDB: Anµdu swihb
+    name: { pa: 'ਅਨੰਦੁ ਸਾਹਿਬ', en: 'Anand Sahib' },
+    description: { 
+      pa: 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ - ਗੁਰੂ ਅਮਰ ਦਾਸ ਜੀ', 
+      en: 'Sri Guru Granth Sahib Ji - Guru Amar Das Ji' 
+    },
+    time: 'anytime',
+    icon: '🎉',
+    color: 'from-yellow-500 to-orange-500',
+  },
+  {
+    id: 'kirtan-sohila',
+    baniId: 23, // BaniDB: soihlw swihb
+    name: { pa: 'ਕੀਰਤਨ ਸੋਹਿਲਾ', en: 'Kirtan Sohila' },
+    description: { 
+      pa: 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ - ਰਾਤ ਦੀ ਬਾਣੀ', 
+      en: 'Sri Guru Granth Sahib Ji - Night Prayer' 
+    },
+    time: 'night',
+    icon: '🌙',
+    color: 'from-indigo-600 to-purple-700',
+  },
+  {
+    id: 'sukhmani',
+    baniId: 31, // BaniDB: suKmnI swihb
+    name: { pa: 'ਸੁਖਮਨੀ ਸਾਹਿਬ', en: 'Sukhmani Sahib' },
+    description: { 
+      pa: 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ - ਗੁਰੂ ਅਰਜਨ ਦੇਵ ਜੀ', 
+      en: 'Sri Guru Granth Sahib Ji - Guru Arjan Dev Ji' 
+    },
+    time: 'anytime',
+    icon: '☮️',
+    color: 'from-teal-500 to-cyan-600',
+  },
+];
+
+// BaniDB returns nested structure: { header, verse: { verseId, verse, translation, etc. } }
+interface BaniVerseData {
+  verseId: number;
+  verse: {
+    gurmukhi: string;
+    unicode: string;
+  };
+  larivaar?: {
+    gurmukhi: string;
+    unicode: string;
+  };
+  translation?: {
+    en?: {
+      bdb?: string;
+      ms?: string;
+    };
+    pu?: {
+      ss?: { unicode?: string };
+    };
+  };
+  transliteration?: {
+    english?: string;
+    en?: string;
+  };
+}
+
+interface BaniVerse {
+  header: number;
+  verse: BaniVerseData;
+}
+
+export default function NitnemPage() {
+  const [language, setLanguage] = useState<Language>('pa');
+  const [selectedBani, setSelectedBani] = useState<string | null>(null);
+  const [baniContent, setBaniContent] = useState<BaniVerse[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [showTranslation, setShowTranslation] = useState(true);
+  const [showTransliteration, setShowTransliteration] = useState(false);
+
+  const fetchBani = useCallback(async (baniId: number) => {
+    setLoading(true);
+    setError(null);
+    
+    try {
+      const response = await fetch(`https://api.banidb.com/v2/banis/${baniId}`);
+      
+      if (!response.ok) {
+        throw new Error('Failed to fetch Bani');
+      }
+      
+      const data = await response.json();
+      setBaniContent(data.verses || []);
+    } catch (err) {
+      console.error('Error fetching bani:', err);
+      setError(language === 'pa' 
+        ? 'ਬਾਣੀ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ' 
+        : 'Could not load Bani');
+    } finally {
+      setLoading(false);
+    }
+  }, [language]);
+
+  const handleBaniSelect = (baniId: string, baniDBId: number) => {
+    setSelectedBani(baniId);
+    fetchBani(baniDBId);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const handleBack = () => {
+    setSelectedBani(null);
+    setBaniContent([]);
+  };
+
+  const currentBani = NITNEM_BANIS.find(b => b.id === selectedBani);
+
+  const getTranslation = (verseData: BaniVerseData): string | null => {
+    if (verseData.translation?.en?.bdb) return verseData.translation.en.bdb;
+    if (verseData.translation?.en?.ms) return verseData.translation.en.ms;
+    return null;
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#fef9e7] via-[#fdf6e3] to-[#fef3c7] dark:from-[#1a1a1a] dark:via-[#1f1f1f] dark:to-[#262626]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M30 0L60 30L30 60L0 30z\' fill=\'none\' stroke=\'%23daa52015\' stroke-width=\'1\'/%3E%3C/svg%3E")' }}>
+      <MainNavigation
+        currentLanguage={language}
+        onLanguageChange={setLanguage}
+      />
+
+      <main id="main-content" className="flex-1">
+        <div className="container-content py-6 px-4">
+          {/* Back button when viewing a Bani */}
+          {selectedBani && (
+            <button
+              onClick={handleBack}
+              className="mb-4 flex items-center gap-2 text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 transition-colors"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              </svg>
+              <span className="font-gurmukhi">
+                {language === 'pa' ? 'ਵਾਪਸ' : 'Back to Nitnem'}
+              </span>
+            </button>
+          )}
+
+          {!selectedBani ? (
+            <>
+              {/* Header */}
+              <div className="text-center mb-8">
+                <h1 className="text-3xl sm:text-4xl font-gurmukhi text-amber-900 dark:text-[#daa520]">
+                  {language === 'pa' ? 'ਨਿਤਨੇਮ' : 'Nitnem'}
+                </h1>
+                <p className="text-amber-700 dark:text-amber-500 mt-2 font-gurmukhi">
+                  {language === 'pa' ? 'ਰੋਜ਼ਾਨਾ ਬਾਣੀਆਂ' : 'Daily Prayers'}
+                </p>
+              </div>
+
+              {/* Time-based sections */}
+              <div className="space-y-8">
+                {/* Amritvela (Early Morning) */}
+                <section>
+                  <h2 className="text-lg font-semibold text-amber-800 dark:text-amber-400 mb-4 flex items-center gap-2">
+                    <span>🌅</span>
+                    <span className="font-gurmukhi">
+                      {language === 'pa' ? 'ਅੰਮ੍ਰਿਤ ਵੇਲਾ (ਸਵੇਰ)' : 'Amritvela (Morning)'}
+                    </span>
+                  </h2>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {NITNEM_BANIS.filter(b => b.time === 'amritvela').map((bani) => (
+                      <BaniCard
+                        key={bani.id}
+                        bani={bani}
+                        language={language}
+                        onClick={() => handleBaniSelect(bani.id, bani.baniId)}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Evening */}
+                <section>
+                  <h2 className="text-lg font-semibold text-orange-800 dark:text-orange-400 mb-4 flex items-center gap-2">
+                    <span>🌆</span>
+                    <span className="font-gurmukhi">
+                      {language === 'pa' ? 'ਸ਼ਾਮ' : 'Evening'}
+                    </span>
+                  </h2>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {NITNEM_BANIS.filter(b => b.time === 'evening').map((bani) => (
+                      <BaniCard
+                        key={bani.id}
+                        bani={bani}
+                        language={language}
+                        onClick={() => handleBaniSelect(bani.id, bani.baniId)}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Night */}
+                <section>
+                  <h2 className="text-lg font-semibold text-indigo-800 dark:text-indigo-400 mb-4 flex items-center gap-2">
+                    <span>🌙</span>
+                    <span className="font-gurmukhi">
+                      {language === 'pa' ? 'ਰਾਤ' : 'Night'}
+                    </span>
+                  </h2>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {NITNEM_BANIS.filter(b => b.time === 'night').map((bani) => (
+                      <BaniCard
+                        key={bani.id}
+                        bani={bani}
+                        language={language}
+                        onClick={() => handleBaniSelect(bani.id, bani.baniId)}
+                      />
+                    ))}
+                  </div>
+                </section>
+
+                {/* Anytime */}
+                <section>
+                  <h2 className="text-lg font-semibold text-teal-800 dark:text-teal-400 mb-4 flex items-center gap-2">
+                    <span>✨</span>
+                    <span className="font-gurmukhi">
+                      {language === 'pa' ? 'ਹੋਰ ਬਾਣੀਆਂ' : 'Other Banis'}
+                    </span>
+                  </h2>
+                  <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    {NITNEM_BANIS.filter(b => b.time === 'anytime').map((bani) => (
+                      <BaniCard
+                        key={bani.id}
+                        bani={bani}
+                        language={language}
+                        onClick={() => handleBaniSelect(bani.id, bani.baniId)}
+                      />
+                    ))}
+                  </div>
+                </section>
+              </div>
+            </>
+          ) : (
+            <>
+              {/* Bani Reader */}
+              {currentBani && (
+                <div className="max-w-4xl mx-auto">
+                  {/* Bani Header */}
+                  <div className="text-center mb-6 pb-6 border-b border-amber-200 dark:border-amber-800">
+                    <span className="text-4xl">{currentBani.icon}</span>
+                    <h1 className="text-2xl sm:text-3xl font-gurmukhi text-amber-900 dark:text-amber-200 mt-2">
+                      {language === 'pa' ? currentBani.name.pa : currentBani.name.en}
+                    </h1>
+                    <p className="text-amber-700 dark:text-amber-400 mt-1">
+                      {language === 'pa' ? currentBani.description.pa : currentBani.description.en}
+                    </p>
+                  </div>
+
+                  {/* Controls */}
+                  <div className="flex flex-wrap items-center justify-center gap-4 mb-6 p-4 bg-amber-50 dark:bg-neutral-800 rounded-xl">
+                    <FontSizeControls />
+                    
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => setShowTranslation(!showTranslation)}
+                        className={cn(
+                          'px-3 py-1.5 rounded-lg text-sm transition-colors',
+                          showTranslation
+                            ? 'bg-neela-600 text-white'
+                            : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
+                        )}
+                      >
+                        {language === 'pa' ? 'ਅਰਥ' : 'Translation'}
+                      </button>
+                      <button
+                        onClick={() => setShowTransliteration(!showTransliteration)}
+                        className={cn(
+                          'px-3 py-1.5 rounded-lg text-sm transition-colors',
+                          showTransliteration
+                            ? 'bg-neela-600 text-white'
+                            : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
+                        )}
+                      >
+                        {language === 'pa' ? 'ਉਚਾਰਨ' : 'Pronunciation'}
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Loading State */}
+                  {loading && (
+                    <div className="text-center py-12">
+                      <div className="text-4xl animate-pulse">ੴ</div>
+                      <p className="text-amber-700 dark:text-amber-400 mt-4 font-gurmukhi">
+                        {language === 'pa' ? 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : 'Loading...'}
+                      </p>
+                    </div>
+                  )}
+
+                  {/* Error State */}
+                  {error && !loading && (
+                    <div className="text-center py-12 bg-red-50 dark:bg-red-900/20 rounded-xl">
+                      <p className="text-red-700 dark:text-red-300">{error}</p>
+                      <button
+                        onClick={() => fetchBani(currentBani.baniId)}
+                        className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
+                      >
+                        {language === 'pa' ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : 'Try Again'}
+                      </button>
+                    </div>
+                  )}
+
+                  {/* Bani Content */}
+                  {!loading && !error && baniContent.length > 0 && (
+                    <div className="saroop-page">
+                      <div className="saroop-inner-frame">
+                        <div className="saroop-header">
+                          <div className="ik-onkar">ੴ</div>
+                          <p className="raag-title font-gurmukhi">
+                            {language === 'pa' ? currentBani.name.pa : currentBani.name.en}
+                          </p>
+                        </div>
+
+                        <div className="saroop-content space-y-6">
+                          {baniContent.map((item, index) => {
+                            const verseData = item.verse;
+                            return (
+                            <div key={verseData.verseId} className="pankti-traditional">
+                              {/* Section header */}
+                              {item.header === 1 && index > 0 && (
+                                <div className="my-6 text-center">
+                                  <span className="text-amber-400 dark:text-amber-600">॥ ✦ ॥</span>
+                                </div>
+                              )}
+                              
+                              {/* Gurmukhi */}
+                              <p 
+                                className="gurbani-traditional text-center"
+                                style={{ fontSize: 'var(--gurbani-font-size, 1.375rem)' }}
+                                lang="pa"
+                              >
+                                {verseData.verse?.unicode || verseData.verse?.gurmukhi}
+                              </p>
+                              
+                              {/* Transliteration */}
+                              {showTransliteration && (verseData.transliteration?.en || verseData.transliteration?.english) && (
+                                <p className="transliteration-traditional text-center text-sm text-neutral-500 dark:text-neutral-400 italic mt-1">
+                                  {verseData.transliteration?.en || verseData.transliteration?.english}
+                                </p>
+                              )}
+                              
+                              {/* Translation */}
+                              {showTranslation && getTranslation(verseData) && (
+                                <p className="text-base text-neutral-600 dark:text-neutral-300 mt-2 max-w-3xl mx-auto text-center">
+                                  {getTranslation(verseData)}
+                                </p>
+                              )}
+                            </div>
+                          );
+                          })}
+                        </div>
+
+                        <div className="saroop-footer">
+                          <p className="text-sm text-amber-800 dark:text-amber-400 font-gurmukhi">
+                            {baniContent.length} ਪੰਕਤੀਆਂ
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Footer */}
+                  <div className="mt-8 text-center">
+                    <p className="text-lg text-amber-800 dark:text-amber-400 font-gurmukhi">
+                      ਭੁੱਲ ਚੁੱਕ ਮਾਫ਼ ਕਰਨਾ 🙏
+                    </p>
+                    <p className="text-sm text-amber-600 dark:text-amber-500 mt-1">
+                      Data: BaniDB (Khalis Foundation)
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
+        </div>
+      </main>
+
+      <ReadingProgress variant="kesri" />
+      <ScrollToTop />
+      <Footer language={language} />
+    </div>
+  );
+}
+
+// Bani Card Component
+function BaniCard({
+  bani,
+  language,
+  onClick,
+}: {
+  bani: typeof NITNEM_BANIS[0];
+  language: Language;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      onClick={onClick}
+      className={cn(
+        'relative overflow-hidden rounded-xl p-6 text-left transition-all',
+        'bg-gradient-to-br',
+        bani.color,
+        'text-white shadow-lg hover:shadow-xl hover:scale-[1.02]',
+        'focus:outline-none focus:ring-2 focus:ring-white/50'
+      )}
+    >
+      <div className="absolute top-2 right-2 text-3xl opacity-30">
+        {bani.icon}
+      </div>
+      
+      <span className="text-3xl">{bani.icon}</span>
+      
+      <h3 className="text-xl font-gurmukhi mt-3">
+        {language === 'pa' ? bani.name.pa : bani.name.en}
+      </h3>
+      
+      <p className="text-sm opacity-90 mt-1">
+        {language === 'pa' ? bani.description.pa : bani.description.en}
+      </p>
+      
+      <div className="mt-4 flex items-center gap-1 text-sm opacity-75">
+        <span>→</span>
+        <span>{language === 'pa' ? 'ਪੜ੍ਹੋ' : 'Read'}</span>
+      </div>
+    </button>
+  );
+}

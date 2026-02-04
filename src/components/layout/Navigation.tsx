@@ -7,11 +7,14 @@
 // Gurbani and History are visually and structurally separated
 // ============================================================================
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LanguageSwitcher } from '@/components/common/LanguageSwitcher';
+import { ThemeToggle } from '@/components/common/ThemeProvider';
+import { NanakshahiCalendarFull, gregorianToNanakshahi, NANAKSHAHI_MONTHS } from '@/components/common/NanakshahiCalendar';
+import { BookmarksPanel, useBookmarks } from '@/components/common/BookmarkSystem';
 import type { Language } from '@/types';
 
 interface MainNavigationProps {
@@ -25,9 +28,16 @@ export function MainNavigation({
 }: MainNavigationProps) {
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [showCalendar, setShowCalendar] = useState(false);
+  const [showBookmarks, setShowBookmarks] = useState(false);
+  const { bookmarks } = useBookmarks();
+  
+  // Calculate Nanakshahi date
+  const nanakshahiDate = useMemo(() => gregorianToNanakshahi(new Date()), []);
 
   const isGurbaniSection = pathname?.includes('/gurbani');
   const isItihaasSection = pathname?.includes('/itihaas');
+  const isNitnemSection = pathname?.includes('/nitnem');
 
   const navItems = [
     {
@@ -36,6 +46,15 @@ export function MainNavigation({
       labelEn: 'Gurbani',
       labelHi: 'गुरबाणी',
       isSacred: true,
+      icon: '📖',
+    },
+    {
+      href: '/nitnem',
+      labelPa: 'ਨਿਤਨੇਮ',
+      labelEn: 'Nitnem',
+      labelHi: 'नितनेम',
+      isSacred: true,
+      icon: '🙏',
     },
     {
       href: '/itihaas',
@@ -43,6 +62,7 @@ export function MainNavigation({
       labelEn: 'History',
       labelHi: 'इतिहास',
       isSacred: false,
+      icon: '📜',
     },
     {
       href: '/about',
@@ -50,6 +70,7 @@ export function MainNavigation({
       labelEn: 'About',
       labelHi: 'के बारे में',
       isSacred: false,
+      icon: 'ℹ️',
     },
   ];
 
@@ -98,7 +119,7 @@ export function MainNavigation({
                   )}
                 >
                   {item.isSacred && (
-                    <span className="mr-1.5 opacity-70">📖</span>
+                    <span className="mr-1.5 opacity-70">{item.icon}</span>
                   )}
                   {getLabel(item)}
                 </Link>
@@ -106,13 +127,57 @@ export function MainNavigation({
             })}
           </nav>
 
-          {/* Language Switcher & Mobile Menu */}
-          <div className="flex items-center gap-3">
+          {/* Date, Bookmarks, Language Switcher, Theme Toggle & Mobile Menu */}
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            
             <LanguageSwitcher
               currentLanguage={currentLanguage}
               onLanguageChange={onLanguageChange}
               size="sm"
             />
+            
+            {/* Bookmarks Button */}
+            <button
+              onClick={() => setShowBookmarks(true)}
+              className="relative p-2 text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-900/20 rounded-lg transition-colors"
+              aria-label="Open Bookmarks"
+              title="My Bookmarks"
+            >
+              <svg className="w-5 h-5" fill={bookmarks.length > 0 ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+              {bookmarks.length > 0 && (
+                <span className="absolute -top-0.5 -right-0.5 w-4 h-4 text-[10px] flex items-center justify-center bg-amber-500 text-white rounded-full font-medium">
+                  {bookmarks.length > 9 ? '9+' : bookmarks.length}
+                </span>
+              )}
+            </button>
+            
+            {/* Nanakshahi Date Badge - after language switcher */}
+            <button
+              onClick={() => setShowCalendar(true)}
+              className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-sm rounded-lg transition-all shadow-sm hover:shadow-md"
+              aria-label="Open Nanakshahi Calendar"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+              <span className="font-gurmukhi text-xs">
+                {nanakshahiDate.day} {NANAKSHAHI_MONTHS[nanakshahiDate.month].pa}
+              </span>
+            </button>
+            
+            {/* Mobile date - just icon */}
+            <button
+              onClick={() => setShowCalendar(true)}
+              className="sm:hidden p-2 bg-gradient-to-r from-amber-500 to-amber-600 text-white rounded-lg"
+              aria-label="Open Nanakshahi Calendar"
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
 
             {/* Mobile Menu Button */}
             <button
@@ -153,8 +218,7 @@ export function MainNavigation({
                         : 'text-gray-600 hover:text-gray-900 hover:bg-gray-100'
                     )}
                   >
-                    {item.isSacred && <span>📖</span>}
-                    {!item.isSacred && item.href.includes('itihaas') && <span>📜</span>}
+                    <span>{item.icon}</span>
                     {getLabel(item)}
                   </Link>
                 );
@@ -165,17 +229,39 @@ export function MainNavigation({
       </div>
 
       {/* Section Indicator Bar */}
-      {(isGurbaniSection || isItihaasSection) && (
+      {(isGurbaniSection || isItihaasSection || isNitnemSection) && (
         <div
           className={cn(
             'h-1',
-            isGurbaniSection 
+            (isGurbaniSection || isNitnemSection)
               ? 'bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700' 
               : 'bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600'
           )}
           aria-hidden="true"
         />
       )}
+      
+      {/* Nanakshahi Calendar Modal */}
+      {showCalendar && (
+        <div 
+          className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm"
+          onClick={() => setShowCalendar(false)}
+        >
+          <div 
+            className="w-full max-w-2xl max-h-[95vh] overflow-auto rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <NanakshahiCalendarFull language={currentLanguage} onClose={() => setShowCalendar(false)} />
+          </div>
+        </div>
+      )}
+      
+      {/* Bookmarks Panel */}
+      <BookmarksPanel 
+        isOpen={showBookmarks} 
+        onClose={() => setShowBookmarks(false)} 
+        language={currentLanguage} 
+      />
     </header>
   );
 }
