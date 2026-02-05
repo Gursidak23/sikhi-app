@@ -3,8 +3,8 @@
 // ============================================================================
 // HUKAMNAMA COMPONENT
 // ============================================================================
-// Displays daily random Shabad from Sri Guru Granth Sahib Ji
-// Uses BaniDB API for fetching random verses
+// Displays the real Daily Hukamnama from Sri Harmandir Sahib
+// Uses BaniDB API endpoint /v2/hukamnamas/today
 // ============================================================================
 
 import { useState, useEffect, useCallback } from 'react';
@@ -89,16 +89,8 @@ export function Hukamnama({
     setError(null);
     
     try {
-      // Get today's date to generate a consistent random Ang for the day
-      const today = new Date();
-      const dateString = `${today.getFullYear()}-${today.getMonth()}-${today.getDate()}`;
-      
-      // Use date to seed a pseudo-random Ang number (1-1430)
-      const seed = dateString.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-      const randomAng = (seed % 1430) + 1;
-      
-      // Fetch a random Shabad from that Ang
-      const response = await fetch(`https://api.banidb.com/v2/angs/${randomAng}`);
+      // Fetch the real Hukamnama from Sri Harmandir Sahib
+      const response = await fetch('https://api.banidb.com/v2/hukamnamas/today');
       
       if (!response.ok) {
         throw new Error('Failed to fetch Hukamnama');
@@ -106,20 +98,12 @@ export function Hukamnama({
       
       const data = await response.json();
       
-      if (data.page && data.page.length > 0) {
-        // Get the first Shabad from this Ang
-        const firstVerse = data.page[0];
-        const shabadId = firstVerse.shabadId;
-        
-        // Fetch the full Shabad
-        const shabadResponse = await fetch(`https://api.banidb.com/v2/shabads/${shabadId}`);
-        
-        if (!shabadResponse.ok) {
-          throw new Error('Failed to fetch Shabad');
-        }
-        
-        const shabadData = await shabadResponse.json();
-        setHukamnama(shabadData);
+      // The API returns shabads array - get the first shabad
+      if (data.shabads && data.shabads.length > 0) {
+        const shabad = data.shabads[0];
+        setHukamnama(shabad);
+      } else {
+        throw new Error('No Hukamnama available');
       }
     } catch (err) {
       console.error('Hukamnama error:', err);
@@ -357,26 +341,36 @@ export function HukamnamaMini({ language = 'pa' }: { language?: Language }) {
 }
 
 // Beautiful homepage section with saroop styling
+// Fetches the real Hukamnama from Sri Harmandir Sahib via BaniDB
 export function HukamnamaSection({ language = 'pa' }: { language?: Language }) {
   const [hukamnama, setHukamnama] = useState<HukamnamaData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [hukamDate, setHukamDate] = useState<{ gregorian: { date: number; month: number; year: number } } | null>(null);
 
   useEffect(() => {
     async function fetchHukamnama() {
       try {
-        const today = new Date();
-        const seed = today.getFullYear() * 366 + today.getMonth() * 31 + today.getDate();
-        const randomAng = (seed % 1430) + 1;
+        // Fetch the real Hukamnama from Sri Harmandir Sahib
+        const response = await fetch('https://api.banidb.com/v2/hukamnamas/today');
         
-        const response = await fetch(`https://api.banidb.com/v2/angs/${randomAng}`);
+        if (!response.ok) {
+          throw new Error('Failed to fetch Hukamnama');
+        }
+        
         const data = await response.json();
         
-        if (data.page && data.page.length > 0) {
-          const shabadId = data.page[0].shabadId;
-          const shabadResponse = await fetch(`https://api.banidb.com/v2/shabads/${shabadId}`);
-          const shabadData = await shabadResponse.json();
-          setHukamnama(shabadData);
+        // Store the date
+        if (data.date) {
+          setHukamDate(data.date);
+        }
+        
+        // The API returns shabads array - get the first shabad
+        if (data.shabads && data.shabads.length > 0) {
+          const shabad = data.shabads[0];
+          setHukamnama(shabad);
+        } else {
+          throw new Error('No Hukamnama available');
         }
       } catch (err) {
         console.error('Hukamnama error:', err);
@@ -436,6 +430,26 @@ export function HukamnamaSection({ language = 'pa' }: { language?: Language }) {
         {/* Header */}
         <div className="text-center pt-8 pb-6 border-b border-amber-200/50 dark:border-amber-800/30 bg-gradient-to-b from-amber-50/50 to-transparent dark:from-amber-900/10">
           <div className="text-5xl md:text-6xl text-amber-700 dark:text-[#daa520] font-gurmukhi mb-2">ੴ</div>
+          
+          {/* Sri Harmandir Sahib Badge */}
+          <div className="flex items-center justify-center gap-2 mb-3">
+            <span className="text-lg">🙏</span>
+            <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
+              {language === 'pa' ? 'ਸ੍ਰੀ ਹਰਿਮੰਦਰ ਸਾਹਿਬ ਤੋਂ' : 'From Sri Harmandir Sahib'}
+            </p>
+          </div>
+          
+          {/* Date display */}
+          {hukamDate && (
+            <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
+              {new Date(hukamDate.gregorian.year, hukamDate.gregorian.month - 1, hukamDate.gregorian.date).toLocaleDateString(language === 'pa' ? 'pa-IN' : 'en-US', {
+                weekday: 'long',
+                day: 'numeric',
+                month: 'long',
+                year: 'numeric'
+              })}
+            </p>
+          )}
           
           {/* Metadata */}
           <div className="flex flex-wrap items-center justify-center gap-2 md:gap-3 px-4">
@@ -515,7 +529,9 @@ export function HukamnamaSection({ language = 'pa' }: { language?: Language }) {
             ਭੁੱਲ ਚੁੱਕ ਮਾਫ਼ ਕਰਨਾ 🙏
           </p>
           <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
-            Data: BaniDB (Khalis Foundation)
+            {language === 'pa' 
+              ? 'ਸ੍ਰੀ ਹਰਿਮੰਦਰ ਸਾਹਿਬ ਤੋਂ ਅੱਜ ਦਾ ਹੁਕਮਨਾਮਾ • ਡਾਟਾ: BaniDB'
+              : 'Daily Hukamnama from Sri Harmandir Sahib • Data: BaniDB'}
           </p>
         </div>
       </div>
