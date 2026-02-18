@@ -1,10 +1,9 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/db/prisma';
 
 /**
  * Gurbani API Route Handlers
  * These functions can be used in Next.js API routes
+ * Uses the Prisma singleton to avoid connection exhaustion
  */
 
 // Get content for a specific Ang
@@ -215,5 +214,3 @@ export async function searchGurbani(query: string) {
     },
   }));
 }
-
-export default prisma;

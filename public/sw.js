@@ -1,18 +1,24 @@
 // ============================================================================
-// SERVICE WORKER
+// SERVICE WORKER — Sikhi Vidhya
 // ============================================================================
-// Provides offline support for cached Gurbani pages
+// Provides offline support for:
+// - Cached Gurbani pages (stale-while-revalidate)
+// - Nitnem Bani content (cache-first for static sacred texts)
+// - Daily Hukamnama (cache with daily refresh)
+// - Static assets (cache-first)
 // ============================================================================
 
-const CACHE_NAME = 'sikhi-vidhya-v1';
-const STATIC_CACHE = 'sikhi-static-v1';
-const GURBANI_CACHE = 'sikhi-gurbani-v1';
+const CACHE_NAME = 'sikhi-vidhya-v2';
+const STATIC_CACHE = 'sikhi-static-v2';
+const GURBANI_CACHE = 'sikhi-gurbani-v2';
+const BANI_CACHE = 'sikhi-bani-v1';
 
 // Static assets to cache on install
 const STATIC_ASSETS = [
   '/',
   '/gurbani',
   '/itihaas',
+  '/nitnem',
   '/about',
   '/manifest.json',
 ];
@@ -29,15 +35,12 @@ self.addEventListener('install', (event) => {
 
 // Activate event - clean up old caches
 self.addEventListener('activate', (event) => {
+  const currentCaches = [STATIC_CACHE, GURBANI_CACHE, BANI_CACHE, CACHE_NAME];
   event.waitUntil(
     caches.keys().then((cacheNames) => {
       return Promise.all(
         cacheNames
-          .filter((name) => {
-            return name !== STATIC_CACHE && 
-                   name !== GURBANI_CACHE && 
-                   name !== CACHE_NAME;
-          })
+          .filter((name) => !currentCaches.includes(name))
           .map((name) => caches.delete(name))
       );
     })
@@ -55,7 +58,13 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // Skip external requests
+  // Handle BaniDB API requests (before origin check)
+  if (url.hostname === 'api.banidb.com') {
+    event.respondWith(handleBaniDBRequest(request));
+    return;
+  }
+
+  // Skip other external requests
   if (url.origin !== self.location.origin) {
     return;
   }
@@ -109,6 +118,56 @@ async function handleApiRequest(request) {
 
   // For other API requests, network only
   return fetch(request);
+}
+
+// Handle BaniDB API requests - network first, cache fallback
+async function handleBaniDBRequest(request) {
+  const url = new URL(request.url);
+  
+  // For Bani content (Nitnem) and Hukamnama — these are high-value offline content
+  const isBaniRequest = url.pathname.match(/\/v2\/banis\/\d+/);
+  const isHukamnama = url.pathname.includes('/hukamnamas');
+  
+  if (isBaniRequest || isHukamnama) {
+    try {
+      const networkResponse = await fetch(request);
+      
+      if (networkResponse.ok) {
+        const cache = await caches.open(BANI_CACHE);
+        cache.put(request, networkResponse.clone());
+      }
+      
+      return networkResponse;
+    } catch {
+      // Network failed, try cache
+      const cachedResponse = await caches.match(request);
+      if (cachedResponse) {
+        return cachedResponse;
+      }
+      
+      return new Response(
+        JSON.stringify({
+          error: 'Offline',
+          message: 'ਆਫ਼ਲਾਈਨ — ਕਿਰਪਾ ਕਰਕੇ ਇੰਟਰਨੈੱਟ ਚੈੱਕ ਕਰੋ',
+        }),
+        {
+          status: 503,
+          headers: { 'Content-Type': 'application/json' },
+        }
+      );
+    }
+  }
+  
+  // For other BaniDB requests (search, etc.), try network then cache
+  try {
+    return await fetch(request);
+  } catch {
+    const cachedResponse = await caches.match(request);
+    return cachedResponse || new Response(
+      JSON.stringify({ error: 'Offline' }),
+      { status: 503, headers: { 'Content-Type': 'application/json' } }
+    );
+  }
 }
 
 // Handle static requests - stale-while-revalidate

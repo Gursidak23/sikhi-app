@@ -1,9 +1,8 @@
-import { PrismaClient } from '@prisma/client';
-
-const prisma = new PrismaClient();
+import prisma from '@/lib/db/prisma';
 
 /**
  * History/Itihaas API Route Handlers
+ * Uses the Prisma singleton to avoid connection exhaustion
  */
 
 // Get the full timeline structure
@@ -460,5 +459,3 @@ function formatEvent(event: EventData) {
 
   return result;
 }
-
-export default prisma;

@@ -144,41 +144,100 @@ export interface BaniDBSearchResponse {
 const angCache = new Map<number, { data: BaniDBAngResponse; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 30; // 30 minutes
 
+// Lazy imports for offline storage (avoid SSR issues)
+async function getOfflineStorage() {
+  if (typeof window === 'undefined') return null;
+  const { saveAng, getAng, saveBani, getBani, saveHukamnama, getHukamnama, saveSearchResults, getSearchResults } = await import('@/lib/offline/indexeddb');
+  return { saveAng, getAng, saveBani, getBani, saveHukamnama, getHukamnama, saveSearchResults, getSearchResults };
+}
+
+async function getResilientFetch() {
+  if (typeof window === 'undefined') return null;
+  const { resilientFetch } = await import('@/lib/offline/resilient-fetch');
+  return resilientFetch;
+}
+
 /**
  * Fetch content for a specific Ang (page) of Sri Guru Granth Sahib Ji
- * Uses local cached API route for instant loading
- * Falls back to direct BaniDB API if cache unavailable
+ * 
+ * 4-layer fallback strategy:
+ * 1. In-memory cache (instant)
+ * 2. IndexedDB persistent cache (offline-capable)
+ * 3. App API route with retry (resilient)
+ * 4. Direct BaniDB proxy (last resort)
  */
 export async function fetchAng(angNumber: number, sourceId: string = 'G'): Promise<BaniDBAngResponse | null> {
-  // Check in-memory cache first (instant!)
+  // Layer 1: In-memory cache (instant)
   const cached = angCache.get(angNumber);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.data;
   }
 
+  // Layer 2: IndexedDB persistent cache (works offline)
+  const storage = await getOfflineStorage();
+  if (storage) {
+    const idbCached = await storage.getAng(angNumber);
+    if (idbCached) {
+      const data = idbCached as BaniDBAngResponse;
+      angCache.set(angNumber, { data, timestamp: Date.now() });
+      
+      // Background refresh from network (stale-while-revalidate)
+      refreshAngInBackground(angNumber, sourceId).catch(() => {});
+      return data;
+    }
+  }
+
+  // Layer 3: Network fetch with resilience
   try {
-    // Use cached API route (reads from Aiven PostgreSQL)
-    const response = await fetch(`/api/gurbani/cached/${angNumber}?source=${sourceId}`);
+    const rfetch = await getResilientFetch();
+    const doFetch = rfetch || fetch;
+
+    // Try cached API route first
+    const response = await doFetch(`/api/gurbani/cached/${angNumber}?source=${sourceId}`);
     
-    if (!response.ok) {
-      // Fallback to direct BaniDB proxy
-      const fallbackResponse = await fetch(`/api/gurbani/banidb/${angNumber}?source=${sourceId}`);
-      if (!fallbackResponse.ok) {
-        console.error(`API error: ${fallbackResponse.status}`);
-        return null;
-      }
+    if (response.ok) {
+      const data = await response.json();
+      angCache.set(angNumber, { data, timestamp: Date.now() });
+      // Persist to IndexedDB for offline use
+      storage?.saveAng(angNumber, data).catch(() => {});
+      return data as BaniDBAngResponse;
+    }
+
+    // Layer 4: Fallback to direct BaniDB proxy
+    const fallbackResponse = await doFetch(`/api/gurbani/banidb/${angNumber}?source=${sourceId}`);
+    if (fallbackResponse.ok) {
       const data = await fallbackResponse.json();
       angCache.set(angNumber, { data, timestamp: Date.now() });
+      storage?.saveAng(angNumber, data).catch(() => {});
       return data as BaniDBAngResponse;
     }
     
-    const data = await response.json();
-    // Store in memory cache
-    angCache.set(angNumber, { data, timestamp: Date.now() });
-    return data as BaniDBAngResponse;
+    console.error(`API error: ${fallbackResponse.status}`);
+    return null;
   } catch (error) {
     console.error('Error fetching from API:', error);
+    
+    // Final fallback: try IndexedDB one more time (network may have just gone down)
+    if (storage) {
+      const offlineData = await storage.getAng(angNumber);
+      if (offlineData) return offlineData as BaniDBAngResponse;
+    }
     return null;
+  }
+}
+
+/** Background refresh — update IndexedDB without blocking the UI */
+async function refreshAngInBackground(angNumber: number, sourceId: string): Promise<void> {
+  try {
+    const response = await fetch(`/api/gurbani/cached/${angNumber}?source=${sourceId}`);
+    if (response.ok) {
+      const data = await response.json();
+      angCache.set(angNumber, { data, timestamp: Date.now() });
+      const storage = await getOfflineStorage();
+      storage?.saveAng(angNumber, data);
+    }
+  } catch {
+    // Silent — this is a background optimization
   }
 }
 
@@ -219,11 +278,13 @@ export function getCacheStats(): { size: number; keys: number[] } {
 }
 
 /**
- * Fetch a specific Shabad by ID
+ * Fetch a specific Shabad by ID (with resilient fetch)
  */
 export async function fetchShabad(shabadId: number): Promise<BaniDBShabadResponse | null> {
   try {
-    const response = await fetch(`${BANIDB_API_BASE}/shabads/${shabadId}`);
+    const rfetch = await getResilientFetch();
+    const doFetch = rfetch || fetch;
+    const response = await doFetch(`${BANIDB_API_BASE}/shabads/${shabadId}`);
     
     if (!response.ok) {
       console.error(`BaniDB API error: ${response.status}`);
@@ -239,7 +300,7 @@ export async function fetchShabad(shabadId: number): Promise<BaniDBShabadRespons
 }
 
 /**
- * Search Gurbani
+ * Search Gurbani with caching
  * @param query - Search query (first letters or full words)
  * @param searchType - 0: First letter start, 1: First letter anywhere, 2: Full word Gurmukhi
  */
@@ -248,8 +309,19 @@ export async function searchGurbani(
   searchType: number = 0,
   page: number = 1
 ): Promise<BaniDBSearchResponse | null> {
+  const cacheKey = `${query}:${searchType}:${page}`;
+  
   try {
-    const response = await fetch(
+    // Check IndexedDB search cache
+    const storage = await getOfflineStorage();
+    if (storage) {
+      const cached = await storage.getSearchResults(cacheKey);
+      if (cached) return cached as BaniDBSearchResponse;
+    }
+
+    const rfetch = await getResilientFetch();
+    const doFetch = rfetch || fetch;
+    const response = await doFetch(
       `${BANIDB_API_BASE}/search/${encodeURIComponent(query)}?searchtype=${searchType}&page=${page}`
     );
     
@@ -259,6 +331,10 @@ export async function searchGurbani(
     }
     
     const data = await response.json();
+    
+    // Cache search results
+    storage?.saveSearchResults(cacheKey, data).catch(() => {});
+    
     return data as BaniDBSearchResponse;
   } catch (error) {
     console.error('Error searching BaniDB:', error);
@@ -267,30 +343,126 @@ export async function searchGurbani(
 }
 
 /**
- * Get today's Hukamnama from Sri Darbar Sahib
+ * Get today's Hukamnama from Sri Darbar Sahib (with daily cache)
  */
-export async function fetchHukamnama(): Promise<any> {
+export async function fetchHukamnama(): Promise<HukamnamaResponse | null> {
+  const today = new Date().toISOString().split('T')[0];
+  
   try {
-    const response = await fetch(`${BANIDB_API_BASE}/hukamnamas`);
+    // Check IndexedDB for today's cached Hukamnama
+    const storage = await getOfflineStorage();
+    if (storage) {
+      const cached = await storage.getHukamnama(today);
+      if (cached) return cached as HukamnamaResponse;
+    }
+
+    const rfetch = await getResilientFetch();
+    const doFetch = rfetch || fetch;
+    const response = await doFetch(`${BANIDB_API_BASE}/hukamnamas`);
+    
+    if (!response.ok) {
+      console.error(`BaniDB API error: ${response.status}`);
+      // Fallback: try yesterday's cached Hukamnama
+      if (storage) {
+        const yesterday = new Date(Date.now() - 86400000).toISOString().split('T')[0];
+        const yesterdayCache = await storage.getHukamnama(yesterday);
+        if (yesterdayCache) return yesterdayCache as HukamnamaResponse;
+      }
+      return null;
+    }
+
+    const data = await response.json();
+    
+    // Cache today's Hukamnama in IndexedDB
+    storage?.saveHukamnama(today, data).catch(() => {});
+    
+    return data as HukamnamaResponse;
+  } catch (error) {
+    console.error('Error fetching Hukamnama from BaniDB:', error);
+    // Offline fallback
+    const storage = await getOfflineStorage();
+    if (storage) {
+      const cached = await storage.getHukamnama(today);
+      if (cached) return cached as HukamnamaResponse;
+    }
+    return null;
+  }
+}
+
+/** Typed Hukamnama response */
+export interface HukamnamaResponse {
+  date?: { gregorian?: { date?: string } };
+  hukamnamainfo?: { shabadid?: number; pageno?: number };
+  verses?: BaniDBVerse[];
+  [key: string]: unknown;
+}
+
+/**
+ * Fetch a specific Bani by ID (for Nitnem) with IndexedDB caching
+ * Critical for offline daily prayers
+ */
+export async function fetchBani(baniId: number): Promise<{ verses: unknown[] } | null> {
+  try {
+    // Check IndexedDB first (offline Nitnem!)
+    const storage = await getOfflineStorage();
+    if (storage) {
+      const cached = await storage.getBani(baniId);
+      if (cached) {
+        // Background refresh
+        refreshBaniInBackground(baniId).catch(() => {});
+        return cached as { verses: unknown[] };
+      }
+    }
+
+    const rfetch = await getResilientFetch();
+    const doFetch = rfetch || fetch;
+    const response = await doFetch(`${BANIDB_API_BASE}/banis/${baniId}`);
     
     if (!response.ok) {
       console.error(`BaniDB API error: ${response.status}`);
       return null;
     }
     
-    return await response.json();
+    const data = await response.json();
+    
+    // Cache Bani for offline use (these are static sacred texts)
+    storage?.saveBani(baniId, data).catch(() => {});
+    
+    return data;
   } catch (error) {
-    console.error('Error fetching Hukamnama from BaniDB:', error);
+    console.error('Error fetching bani from BaniDB:', error);
+    // Offline fallback
+    const storage = await getOfflineStorage();
+    if (storage) {
+      const cached = await storage.getBani(baniId);
+      if (cached) return cached as { verses: unknown[] };
+    }
     return null;
   }
 }
 
+/** Background refresh for Bani content */
+async function refreshBaniInBackground(baniId: number): Promise<void> {
+  try {
+    const response = await fetch(`${BANIDB_API_BASE}/banis/${baniId}`);
+    if (response.ok) {
+      const data = await response.json();
+      const storage = await getOfflineStorage();
+      storage?.saveBani(baniId, data);
+    }
+  } catch {
+    // Silent background refresh
+  }
+}
+
 /**
- * Get random Shabad
+ * Get random Shabad (with resilient fetch)
  */
 export async function fetchRandomShabad(sourceId: string = 'G'): Promise<BaniDBShabadResponse | null> {
   try {
-    const response = await fetch(`${BANIDB_API_BASE}/random/${sourceId}`);
+    const rfetch = await getResilientFetch();
+    const doFetch = rfetch || fetch;
+    const response = await doFetch(`${BANIDB_API_BASE}/random/${sourceId}`);
     
     if (!response.ok) {
       console.error(`BaniDB API error: ${response.status}`);
@@ -306,11 +478,13 @@ export async function fetchRandomShabad(sourceId: string = 'G'): Promise<BaniDBS
 }
 
 /**
- * Get all Raags
+ * Get all Raags (with resilient fetch)
  */
-export async function fetchRaags(): Promise<any[]> {
+export async function fetchRaags(): Promise<Array<{ raagId: number; gurmukhi: string; unicode: string; english: string }>> {
   try {
-    const response = await fetch(`${BANIDB_API_BASE}/raags`);
+    const rfetch = await getResilientFetch();
+    const doFetch = rfetch || fetch;
+    const response = await doFetch(`${BANIDB_API_BASE}/raags`);
     
     if (!response.ok) {
       console.error(`BaniDB API error: ${response.status}`);
@@ -326,11 +500,13 @@ export async function fetchRaags(): Promise<any[]> {
 }
 
 /**
- * Get all Writers (Bani authors)
+ * Get all Writers (Bani authors) (with resilient fetch)
  */
-export async function fetchWriters(): Promise<any[]> {
+export async function fetchWriters(): Promise<Array<{ writerId: number; gurmukhi: string; unicode: string; english: string }>> {
   try {
-    const response = await fetch(`${BANIDB_API_BASE}/writers`);
+    const rfetch = await getResilientFetch();
+    const doFetch = rfetch || fetch;
+    const response = await doFetch(`${BANIDB_API_BASE}/writers`);
     
     if (!response.ok) {
       console.error(`BaniDB API error: ${response.status}`);

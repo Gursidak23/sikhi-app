@@ -14,60 +14,12 @@ import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { ReadingProgress } from '@/components/common/ReadingProgress';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
 import { FontSizeControls } from '@/components/common/FontSizeControls';
+import { fetchBani } from '@/lib/api/banidb-client';
+import { NITNEM_BANIS_CONFIG } from '@/lib/constants/raag-ranges';
 import type { Language } from '@/types';
 
-// Nitnem Banis configuration with BaniDB IDs (Sri Guru Granth Sahib Ji only)
-// BaniDB IDs verified from https://api.banidb.com/v2/banis
-const NITNEM_BANIS = [
-  {
-    id: 'japji',
-    baniId: 2, // BaniDB: jpujI swihb
-    name: { pa: 'ਜਪੁ ਜੀ ਸਾਹਿਬ', en: 'Japji Sahib' },
-    description: { 
-      pa: 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ - ਗੁਰੂ ਨਾਨਕ ਦੇਵ ਜੀ', 
-      en: 'Sri Guru Granth Sahib Ji - Guru Nanak Dev Ji' 
-    },
-    time: 'amritvela',
-    icon: '🌅',
-    color: 'from-amber-500 to-orange-600',
-  },
-  {
-    id: 'anand',
-    baniId: 10, // BaniDB: Anµdu swihb
-    name: { pa: 'ਅਨੰਦੁ ਸਾਹਿਬ', en: 'Anand Sahib' },
-    description: { 
-      pa: 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ - ਗੁਰੂ ਅਮਰ ਦਾਸ ਜੀ', 
-      en: 'Sri Guru Granth Sahib Ji - Guru Amar Das Ji' 
-    },
-    time: 'anytime',
-    icon: '🎉',
-    color: 'from-yellow-500 to-orange-500',
-  },
-  {
-    id: 'kirtan-sohila',
-    baniId: 23, // BaniDB: soihlw swihb
-    name: { pa: 'ਕੀਰਤਨ ਸੋਹਿਲਾ', en: 'Kirtan Sohila' },
-    description: { 
-      pa: 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ - ਰਾਤ ਦੀ ਬਾਣੀ', 
-      en: 'Sri Guru Granth Sahib Ji - Night Prayer' 
-    },
-    time: 'night',
-    icon: '🌙',
-    color: 'from-indigo-600 to-purple-700',
-  },
-  {
-    id: 'sukhmani',
-    baniId: 31, // BaniDB: suKmnI swihb
-    name: { pa: 'ਸੁਖਮਨੀ ਸਾਹਿਬ', en: 'Sukhmani Sahib' },
-    description: { 
-      pa: 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ - ਗੁਰੂ ਅਰਜਨ ਦੇਵ ਜੀ', 
-      en: 'Sri Guru Granth Sahib Ji - Guru Arjan Dev Ji' 
-    },
-    time: 'anytime',
-    icon: '☮️',
-    color: 'from-teal-500 to-cyan-600',
-  },
-];
+// Use the complete Nitnem Banis from shared constants
+const NITNEM_BANIS = NITNEM_BANIS_CONFIG;
 
 // BaniDB returns nested structure: { header, verse: { verseId, verse, translation, etc. } }
 interface BaniVerseData {
@@ -109,24 +61,24 @@ export default function NitnemPage() {
   const [showTranslation, setShowTranslation] = useState(true);
   const [showTransliteration, setShowTransliteration] = useState(false);
 
-  const fetchBani = useCallback(async (baniId: number) => {
+  const loadBani = useCallback(async (baniId: number) => {
     setLoading(true);
     setError(null);
     
     try {
-      const response = await fetch(`https://api.banidb.com/v2/banis/${baniId}`);
+      // Uses resilient fetch + IndexedDB caching from banidb-client
+      const data = await fetchBani(baniId);
       
-      if (!response.ok) {
+      if (!data || !data.verses) {
         throw new Error('Failed to fetch Bani');
       }
       
-      const data = await response.json();
-      setBaniContent(data.verses || []);
+      setBaniContent(data.verses as BaniVerse[]);
     } catch (err) {
       console.error('Error fetching bani:', err);
       setError(language === 'pa' 
-        ? 'ਬਾਣੀ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ' 
-        : 'Could not load Bani');
+        ? 'ਬਾਣੀ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ। ਕਿਰਪਾ ਕਰਕੇ ਇੰਟਰਨੈੱਟ ਚੈੱਕ ਕਰੋ।' 
+        : 'Could not load Bani. Please check your internet connection.');
     } finally {
       setLoading(false);
     }
@@ -134,7 +86,7 @@ export default function NitnemPage() {
 
   const handleBaniSelect = (baniId: string, baniDBId: number) => {
     setSelectedBani(baniId);
-    fetchBani(baniDBId);
+    loadBani(baniDBId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -331,7 +283,7 @@ export default function NitnemPage() {
                     <div className="text-center py-12 bg-red-50 dark:bg-red-900/20 rounded-xl">
                       <p className="text-red-700 dark:text-red-300">{error}</p>
                       <button
-                        onClick={() => fetchBani(currentBani.baniId)}
+                        onClick={() => loadBani(currentBani.baniId)}
                         className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                       >
                         {language === 'pa' ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : 'Try Again'}
@@ -427,7 +379,7 @@ function BaniCard({
   language,
   onClick,
 }: {
-  bani: typeof NITNEM_BANIS[0];
+  bani: (typeof NITNEM_BANIS)[number];
   language: Language;
   onClick: () => void;
 }) {
