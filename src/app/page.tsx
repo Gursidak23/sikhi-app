@@ -102,7 +102,7 @@ export default function HomePage() {
   const isPunjabi = language === 'pa';
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-950">
       <MainNavigation
         currentLanguage={language}
         onLanguageChange={setLanguage}
@@ -110,16 +110,19 @@ export default function HomePage() {
 
       <main id="main-content" className="flex-1">
         {/* Hero Section */}
-        <section className="sikhi-hero py-20 md:py-32 relative">
+        <section className="sikhi-hero py-20 md:py-32 relative overflow-hidden">
           <div className="absolute inset-0 sikhi-pattern opacity-30" />
+          {/* Floating decorative elements */}
+          <div className="absolute top-20 left-10 w-32 h-32 bg-amber-400/10 rounded-full blur-3xl" />
+          <div className="absolute bottom-20 right-10 w-40 h-40 bg-blue-400/10 rounded-full blur-3xl" />
           
           <div className="container-content relative z-10 text-center">
             {/* Ik Onkar Symbol */}
-            <div className="ik-onkar-hero mb-6">ੴ</div>
+            <div className="ik-onkar-hero mb-6 animate-in fade-in zoom-in-95 duration-500">ੴ</div>
             
             {/* Main Title */}
             <h1 className={cn(
-              'text-4xl md:text-6xl font-bold text-white mb-4',
+              'text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500',
               isPunjabi && 'font-gurmukhi'
             )}>
               {t.welcome}
@@ -127,22 +130,22 @@ export default function HomePage() {
             
             {/* Tagline */}
             <p className={cn(
-              'text-xl md:text-2xl text-blue-100 max-w-3xl mx-auto mb-8',
+              'text-xl md:text-2xl text-blue-100/90 max-w-3xl mx-auto mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100',
               isPunjabi && 'font-gurmukhi'
             )}>
               {t.tagline}
             </p>
             
             {/* Mool Mantar */}
-            <div className="max-w-4xl mx-auto bg-white/10 backdrop-blur rounded-lg border border-white/20 p-6">
+            <div className="max-w-4xl mx-auto bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 p-6 md:p-8 shadow-2xl shadow-black/10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-200">
               <p className="font-gurmukhi text-lg md:text-xl text-amber-100 leading-relaxed">
                 {t.moolMantar}
               </p>
             </div>
             
             {/* CTA Buttons */}
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10">
-              <Link href="/gurbani" className="btn-neela inline-flex items-center gap-2">
+            <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
+              <Link href="/gurbani" className="btn-neela inline-flex items-center gap-2 shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-900/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
                 <span className={isPunjabi ? 'font-gurmukhi' : ''}>
                   {t.gurbaniTitle}
                 </span>
@@ -150,13 +153,22 @@ export default function HomePage() {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
               </Link>
-              <Link href="/itihaas" className="btn-kesri inline-flex items-center gap-2">
+              <Link href="/itihaas" className="btn-kesri inline-flex items-center gap-2 shadow-lg shadow-orange-900/30 hover:shadow-xl hover:shadow-orange-900/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
                 <span className={isPunjabi ? 'font-gurmukhi' : ''}>
                   {t.itihaasTitle}
                 </span>
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                 </svg>
+              </Link>
+              <Link href="/community" className="inline-flex items-center gap-2 px-6 py-3 bg-white/15 hover:bg-white/25 backdrop-blur text-white rounded-xl border border-white/20 font-medium transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg">
+                <span className={isPunjabi ? 'font-gurmukhi' : ''}>
+                  {isPunjabi ? 'ਸੰਗਤ' : 'Community'}
+                </span>
+                <span className="relative flex h-2 w-2">
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                  <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+                </span>
               </Link>
             </div>
           </div>
@@ -170,33 +182,33 @@ export default function HomePage() {
         </section>
 
         {/* Main Sections */}
-        <section className="py-16 md:py-24 bg-[#FDF8F0]">
+        <section className="py-16 md:py-24 bg-[#FDF8F0] dark:bg-neutral-950">
           <div className="container-content">
-            <div className="grid md:grid-cols-2 gap-8 lg:gap-12">
+            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6 lg:gap-8">
               
               {/* Gurbani Card */}
-              <div className="sikhi-card sikhi-card-neela p-8 lg:p-10">
-                <div className="sikhi-icon sikhi-icon-neela mb-6">
+              <div className="sikhi-card sikhi-card-neela p-8 lg:p-10 group hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300">
+                <div className="sikhi-icon sikhi-icon-neela mb-6 group-hover:scale-110 transition-transform duration-300">
                   <span className="font-gurmukhi text-2xl">ੴ</span>
                 </div>
                 
                 <h2 className={cn(
-                  'text-2xl lg:text-3xl font-bold text-gray-900 mb-4',
+                  'text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-4',
                   isPunjabi && 'font-gurmukhi'
                 )}>
                   {t.gurbaniTitle}
                 </h2>
                 
                 <p className={cn(
-                  'text-gray-600 text-lg mb-4',
+                  'text-gray-600 dark:text-gray-400 text-lg mb-4',
                   isPunjabi && 'font-gurmukhi'
                 )}>
                   {t.gurbaniDesc}
                 </p>
                 
-                <div className="bg-blue-50 border border-blue-200 rounded-lg px-4 py-3 mb-6">
+                <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3 mb-6">
                   <p className={cn(
-                    'text-blue-800 text-sm flex items-center gap-2',
+                    'text-blue-800 dark:text-blue-300 text-sm flex items-center gap-2',
                     isPunjabi && 'font-gurmukhi'
                   )}>
                     <span>📖</span> {t.gurbaniNote}
@@ -205,40 +217,40 @@ export default function HomePage() {
                 
                 <Link
                   href="/gurbani"
-                  className="btn-neela inline-flex items-center gap-2 w-full justify-center sm:w-auto"
+                  className="btn-neela inline-flex items-center gap-2 w-full justify-center sm:w-auto group/btn"
                 >
                   <span className={isPunjabi ? 'font-gurmukhi' : ''}>
                     {t.explore} {t.gurbaniTitle}
                   </span>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </Link>
               </div>
 
               {/* History Card */}
-              <div className="sikhi-card p-8 lg:p-10">
-                <div className="sikhi-icon sikhi-icon-kesri mb-6">
+              <div className="sikhi-card p-8 lg:p-10 group hover:shadow-xl hover:shadow-orange-500/5 transition-all duration-300">
+                <div className="sikhi-icon sikhi-icon-kesri mb-6 group-hover:scale-110 transition-transform duration-300">
                   <KhandaIcon className="w-8 h-8" />
                 </div>
                 
                 <h2 className={cn(
-                  'text-2xl lg:text-3xl font-bold text-gray-900 mb-4',
+                  'text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-4',
                   isPunjabi && 'font-gurmukhi'
                 )}>
                   {t.itihaasTitle}
                 </h2>
                 
                 <p className={cn(
-                  'text-gray-600 text-lg mb-4',
+                  'text-gray-600 dark:text-gray-400 text-lg mb-4',
                   isPunjabi && 'font-gurmukhi'
                 )}>
                   {t.itihaasDesc}
                 </p>
                 
-                <div className="bg-orange-50 border border-orange-200 rounded-lg px-4 py-3 mb-6">
+                <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl px-4 py-3 mb-6">
                   <p className={cn(
-                    'text-orange-800 text-sm flex items-center gap-2',
+                    'text-orange-800 dark:text-orange-300 text-sm flex items-center gap-2',
                     isPunjabi && 'font-gurmukhi'
                   )}>
                     <span>📜</span> {t.itihaasNote}
@@ -247,15 +259,70 @@ export default function HomePage() {
                 
                 <Link
                   href="/itihaas"
-                  className="btn-kesri inline-flex items-center gap-2 w-full justify-center sm:w-auto"
+                  className="btn-kesri inline-flex items-center gap-2 w-full justify-center sm:w-auto group/btn"
                 >
                   <span className={isPunjabi ? 'font-gurmukhi' : ''}>
                     {t.explore} {t.itihaasTitle}
                   </span>
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <svg className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
                   </svg>
                 </Link>
+              </div>
+
+              {/* Community Card - NEW */}
+              <div className="sikhi-card p-8 lg:p-10 group hover:shadow-xl hover:shadow-emerald-500/5 transition-all duration-300 md:col-span-2 lg:col-span-1 relative overflow-hidden">
+                {/* Subtle gradient background for distinction */}
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-50/50 to-transparent dark:from-emerald-900/10 dark:to-transparent pointer-events-none" />
+                
+                <div className="relative">
+                  <div className="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-500 to-emerald-600 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300 shadow-lg shadow-emerald-500/20">
+                    <span className="text-2xl">🤝</span>
+                  </div>
+                  
+                  <div className="flex items-center gap-2 mb-4">
+                    <h2 className={cn(
+                      'text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white',
+                      isPunjabi && 'font-gurmukhi'
+                    )}>
+                      {isPunjabi ? 'ਸੰਗਤ' : 'Sangat'}
+                    </h2>
+                    <span className="relative flex h-2.5 w-2.5">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+                      <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-green-500" />
+                    </span>
+                  </div>
+                  
+                  <p className={cn(
+                    'text-gray-600 dark:text-gray-400 text-lg mb-4',
+                    isPunjabi && 'font-gurmukhi'
+                  )}>
+                    {isPunjabi
+                      ? 'ਸਿੱਖ ਸੰਗਤ ਨਾਲ ਜੁੜੋ, ਵਿਚਾਰ ਕਰੋ ਅਤੇ ਸਿੱਖੋ'
+                      : 'Connect with the Sikh community, discuss and learn together'}
+                  </p>
+                  
+                  <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3 mb-6">
+                    <p className={cn(
+                      'text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-2',
+                      isPunjabi && 'font-gurmukhi'
+                    )}>
+                      <span>💬</span> {isPunjabi ? 'ਲਾਈਵ ਚੈਟ ਕਮਰੇ' : 'Live chat rooms'}
+                    </p>
+                  </div>
+                  
+                  <Link
+                    href="/community"
+                    className="inline-flex items-center gap-2 w-full justify-center sm:w-auto px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl font-medium transition-all shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30 group/btn"
+                  >
+                    <span className={isPunjabi ? 'font-gurmukhi' : ''}>
+                      {isPunjabi ? 'ਸੰਗਤ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ' : 'Join Sangat'}
+                    </span>
+                    <svg className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                    </svg>
+                  </Link>
+                </div>
               </div>
             </div>
           </div>
@@ -309,14 +376,17 @@ export default function HomePage() {
         </section>
 
         {/* Principles Section */}
-        <section className="py-16 bg-white">
+        <section className="py-16 md:py-20 bg-white dark:bg-neutral-900">
           <div className="container-content">
-            <h2 className={cn(
-              'text-2xl lg:text-3xl font-bold text-center text-gray-900 mb-12',
-              isPunjabi && 'font-gurmukhi'
-            )}>
-              {t.principles}
-            </h2>
+            <div className="text-center mb-12">
+              <h2 className={cn(
+                'text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-3',
+                isPunjabi && 'font-gurmukhi'
+              )}>
+                {t.principles}
+              </h2>
+              <div className="w-16 h-1 bg-gradient-to-r from-amber-500 to-amber-600 mx-auto rounded-full" />
+            </div>
             
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {[
@@ -324,42 +394,49 @@ export default function HomePage() {
                   icon: '📚',
                   title: t.sourceFirst,
                   desc: t.sourceFirstDesc,
-                  color: 'sikhi-icon-gold',
+                  color: 'from-amber-500 to-amber-600',
+                  bgColor: 'bg-amber-50 dark:bg-amber-900/20',
                 },
                 {
                   icon: '🔄',
                   title: t.multiView,
                   desc: t.multiViewDesc,
-                  color: 'sikhi-icon-neela',
+                  color: 'from-blue-500 to-blue-600',
+                  bgColor: 'bg-blue-50 dark:bg-blue-900/20',
                 },
                 {
                   icon: '🙏',
                   title: t.respect,
                   desc: t.respectDesc,
-                  color: 'sikhi-icon-kesri',
+                  color: 'from-orange-500 to-orange-600',
+                  bgColor: 'bg-orange-50 dark:bg-orange-900/20',
                 },
                 {
                   icon: '✓',
                   title: t.verified,
                   desc: t.verifiedDesc,
-                  color: 'sikhi-icon-gold',
+                  color: 'from-emerald-500 to-emerald-600',
+                  bgColor: 'bg-emerald-50 dark:bg-emerald-900/20',
                 },
               ].map((item, index) => (
                 <div 
                   key={index} 
-                  className="text-center p-6 rounded-xl bg-gradient-to-b from-white to-gray-50 border border-gray-100 hover:shadow-lg transition-shadow"
+                  className="text-center p-6 rounded-2xl bg-gradient-to-b from-white to-gray-50 dark:from-neutral-800 dark:to-neutral-850 border border-gray-100 dark:border-neutral-700 hover:shadow-lg transition-all duration-300 group"
                 >
-                  <div className={cn('sikhi-icon mx-auto mb-4', item.color)}>
-                    <span className="text-2xl">{item.icon}</span>
+                  <div className={cn(
+                    'w-14 h-14 rounded-2xl mx-auto mb-4 flex items-center justify-center bg-gradient-to-br shadow-lg group-hover:scale-110 transition-transform duration-300',
+                    item.color
+                  )}>
+                    <span className="text-2xl text-white drop-shadow">{item.icon}</span>
                   </div>
                   <h3 className={cn(
-                    'font-semibold text-gray-900 mb-2 text-lg',
+                    'font-semibold text-gray-900 dark:text-white mb-2 text-lg',
                     isPunjabi && 'font-gurmukhi'
                   )}>
                     {item.title}
                   </h3>
                   <p className={cn(
-                    'text-gray-600 text-sm',
+                    'text-gray-600 dark:text-gray-400 text-sm',
                     isPunjabi && 'font-gurmukhi'
                   )}>
                     {item.desc}
@@ -371,16 +448,20 @@ export default function HomePage() {
         </section>
 
         {/* Quote Section */}
-        <section className="py-16 bg-gradient-to-b from-white to-[#FDF8F0]">
-          <div className="container-content max-w-3xl">
-            <div className="sikhi-frame rounded-lg text-center">
-              <p className="font-gurmukhi text-2xl md:text-3xl text-gray-800 leading-relaxed mb-4">
+        <section className="py-16 md:py-20 bg-gradient-to-b from-white to-[#FDF8F0] dark:from-neutral-900 dark:to-neutral-950 relative overflow-hidden">
+          {/* Decorative elements */}
+          <div className="absolute top-1/2 left-0 w-32 h-32 bg-amber-400/5 rounded-full blur-3xl -translate-y-1/2" />
+          <div className="absolute top-1/2 right-0 w-32 h-32 bg-amber-400/5 rounded-full blur-3xl -translate-y-1/2" />
+          
+          <div className="container-content max-w-3xl relative">
+            <div className="sikhi-frame rounded-2xl text-center shadow-lg">
+              <p className="font-gurmukhi text-2xl md:text-3xl text-gray-800 dark:text-gray-100 leading-relaxed mb-4">
                 ਕਿਰਤ ਕਰੋ, ਨਾਮ ਜਪੋ, ਵੰਡ ਛਕੋ
               </p>
-              <p className="text-gray-600 text-lg">
+              <p className="text-gray-600 dark:text-gray-400 text-lg">
                 Work honestly, Meditate on the Divine, Share with others
               </p>
-              <div className="mt-4 text-amber-600 font-medium">
+              <div className="mt-4 text-amber-600 dark:text-amber-400 font-medium">
                 — The Three Pillars of Sikhi
               </div>
             </div>
