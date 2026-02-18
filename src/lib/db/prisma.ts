@@ -18,8 +18,7 @@ export const prisma =
       : ['error'],
   });
 
-if (process.env.NODE_ENV !== 'production') {
-  globalForPrisma.prisma = prisma;
-}
+// Cache globally in all environments to prevent connection exhaustion
+globalForPrisma.prisma = prisma;
 
 export default prisma;

@@ -36,7 +36,7 @@ export async function GET(
     return NextResponse.json(
       {
         error: 'Failed to fetch Ang content',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: 'An internal error occurred. Please try again later.',
       },
       { status: 500 }
     );
