@@ -10,7 +10,7 @@
 
 'use client';
 
-import { useRef, useEffect, useState } from 'react';
+import { useRef, useEffect, useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 import { useChat } from '../hooks/useChat';
@@ -38,6 +38,7 @@ export function ChatView({ language }: ChatViewProps) {
     replyingTo,
     connectionStatus,
     unreadCounts,
+    onlineCount,
     registerUser,
     selectRoom,
     sendMessage,
@@ -48,23 +49,48 @@ export function ChatView({ language }: ChatViewProps) {
     setError,
     reconnect,
     markActive,
+    sendTypingIndicator,
   } = useChat();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
+  const [showNewMsgButton, setShowNewMsgButton] = useState(false);
+  const prevMessageCountRef = useRef(0);
   const isPunjabi = language === 'pa';
 
-  // Auto-scroll to bottom on new messages
+  // Smart auto-scroll: scroll if near bottom, else show "New messages" button
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
-    if (isNearBottom) {
-      messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
+    if (messages.length > prevMessageCountRef.current) {
+      const latestMsg = messages[messages.length - 1];
+      const isOwnMessage = latestMsg?.userId === user?.id;
+      if (isNearBottom || isOwnMessage) {
+        requestAnimationFrame(() => {
+          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+        });
+        setShowNewMsgButton(false);
+      } else if (!isOwnMessage) {
+        setShowNewMsgButton(true);
+      }
     }
-  }, [messages]);
+    prevMessageCountRef.current = messages.length;
+  }, [messages, user?.id]);
+
+  const onScroll = useCallback(() => {
+    const container = messagesContainerRef.current;
+    if (!container) return;
+    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
+    if (isNearBottom && showNewMsgButton) setShowNewMsgButton(false);
+  }, [showNewMsgButton]);
+
+  const scrollToBottom = useCallback(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    setShowNewMsgButton(false);
+  }, []);
 
   // Group messages by date for dividers
   const getMessageDate = (dateStr: string) => new Date(dateStr).toDateString();
@@ -137,15 +163,18 @@ export function ChatView({ language }: ChatViewProps) {
                       : activeRoom.name}
                   </h2>
                   <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                    {onlineCount > 0 && (
+                      <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
+                        <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
+                        {onlineCount} {isPunjabi ? 'ਔਨਲਾਈਨ' : 'online'}
+                      </span>
+                    )}
+                    {onlineCount > 0 && <span>·</span>}
                     <span className="inline-flex items-center gap-1">
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
                       </svg>
                       {activeRoom._count.members}
-                    </span>
-                    <span>·</span>
-                    <span className={isPunjabi ? 'font-gurmukhi' : ''}>
-                      {isPunjabi ? `${activeRoom._count.messages} ਸੁਨੇਹੇ` : `${activeRoom._count.messages} messages`}
                     </span>
                   </p>
                 </div>
@@ -260,8 +289,9 @@ export function ChatView({ language }: ChatViewProps) {
         {/* Messages Area */}
         <div
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto scroll-smooth"
+          className="flex-1 overflow-y-auto scroll-smooth relative"
           onClick={markActive}
+          onScroll={onScroll}
         >
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
@@ -345,6 +375,19 @@ export function ChatView({ language }: ChatViewProps) {
               <div ref={messagesEndRef} />
             </div>
           )}
+
+          {/* "New messages" scroll button */}
+          {showNewMsgButton && (
+            <button
+              onClick={scrollToBottom}
+              className="sticky bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-medium rounded-full shadow-lg shadow-amber-500/30 transition-all"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
+              </svg>
+              {isPunjabi ? 'ਨਵੇਂ ਸੁਨੇਹੇ' : 'New messages'}
+            </button>
+          )}
         </div>
 
         {/* Chat Input */}
@@ -355,7 +398,7 @@ export function ChatView({ language }: ChatViewProps) {
           onCancelReply={() => setReplyingTo(null)}
           language={language}
           disabled={!activeRoom}
-          onActivity={markActive}
+          onActivity={() => { markActive(); sendTypingIndicator(); }}
         />
       </div>
 

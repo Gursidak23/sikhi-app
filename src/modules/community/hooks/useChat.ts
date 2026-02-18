@@ -70,9 +70,29 @@ const CHAT_USER_KEY = 'sikhi-chat-user';
 const UNREAD_KEY = 'sikhi-chat-unread';
 
 // Adaptive polling intervals (ms)
-const POLL_ACTIVE = 1500;    // User recently sent/received messages
-const POLL_IDLE = 5000;      // User is viewing but not active
-const POLL_BACKGROUND = 15000; // Tab is hidden/blurred
+const POLL_MULTI_USER = 1000; // Multiple users are online – fastest
+const POLL_ACTIVE = 1500;     // User recently sent/received messages
+const POLL_IDLE = 4000;       // User is viewing but not active
+const POLL_BACKGROUND = 12000; // Tab is hidden/blurred
+
+// ---- Notification Sound (Web Audio) ----
+let audioCtx: AudioContext | null = null;
+function playNotificationSound() {
+  try {
+    if (!audioCtx) audioCtx = new AudioContext();
+    const osc = audioCtx.createOscillator();
+    const gain = audioCtx.createGain();
+    osc.connect(gain);
+    gain.connect(audioCtx.destination);
+    osc.type = 'sine';
+    osc.frequency.setValueAtTime(800, audioCtx.currentTime);
+    osc.frequency.linearRampToValueAtTime(600, audioCtx.currentTime + 0.15);
+    gain.gain.setValueAtTime(0.08, audioCtx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.3);
+    osc.start(audioCtx.currentTime);
+    osc.stop(audioCtx.currentTime + 0.3);
+  } catch { /* audio not available */ }
+}
 
 // ============================================================================
 // Hook
@@ -93,11 +113,15 @@ export function useChat() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected');
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [typingUsers, setTypingUsers] = useState<string[]>([]);
+  const [onlineCount, setOnlineCount] = useState(0);
 
   // Refs for polling management
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastPollTimeRef = useRef<string>(new Date().toISOString());
   const lastActivityRef = useRef<number>(Date.now());
+  const onlineCountRef = useRef(0);
+  const messageIdsRef = useRef<Set<string>>(new Set());
+  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTabVisibleRef = useRef<boolean>(true);
   const failedPollsRef = useRef<number>(0);
   const mountedRef = useRef<boolean>(true);
@@ -106,8 +130,18 @@ export function useChat() {
   const getPollInterval = useCallback(() => {
     if (!isTabVisibleRef.current) return POLL_BACKGROUND;
     const idleTime = Date.now() - lastActivityRef.current;
-    if (idleTime < 10000) return POLL_ACTIVE; // Active within 10s
+    // Fastest polling when multiple users are online
+    if (onlineCountRef.current > 1 && idleTime < 10000) return POLL_MULTI_USER;
+    if (idleTime < 10000) return POLL_ACTIVE;
     return POLL_IDLE;
+  }, []);
+
+  // ---- Send typing indicator ----
+  const sendTypingIndicator = useCallback(() => {
+    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
+    typingTimeoutRef.current = setTimeout(() => {
+      typingTimeoutRef.current = null;
+    }, 3000);
   }, []);
 
   // ---- Track user activity ----
@@ -381,23 +415,50 @@ export function useChat() {
 
         if (data.messages && data.messages.length > 0) {
           setMessages((prev) => {
-            const existingIds = new Set(prev.map((m) => m.id));
-            const newMsgs = data.messages.filter(
-              (m: ChatMessage) => !existingIds.has(m.id)
-            );
-            if (newMsgs.length === 0) return prev;
-            return [...prev, ...newMsgs];
+            // Replace optimistic messages with real ones & add new
+            const newMsgs: ChatMessage[] = [];
+            for (const msg of data.messages) {
+              if (messageIdsRef.current.has(msg.id)) continue;
+              messageIdsRef.current.add(msg.id);
+              newMsgs.push(msg);
+            }
+            if (newMsgs.length === 0) {
+              // Still replace optimistic msgs
+              return prev.map((m) => {
+                if (!m._optimistic) return m;
+                const real = data.messages.find(
+                  (rm: ChatMessage) => rm.content === m.content && rm.userId === m.userId
+                );
+                return real || m;
+              });
+            }
+            // Remove optimistic duplicates
+            const cleaned = prev.filter((m) => {
+              if (!m._optimistic) return true;
+              return !newMsgs.some(
+                (nm) => nm.content === m.content && nm.userId === m.userId
+              );
+            });
+            return [...cleaned, ...newMsgs];
           });
 
-          // If message is from another user, count as unread if tab hidden
+          // Notification sound for messages from others
+          const otherMsgs = data.messages.filter(
+            (m: ChatMessage) => m.userId !== user?.id && !messageIdsRef.current.has(m.id)
+          );
+          if (otherMsgs.length > 0) {
+            playNotificationSound();
+          }
+
+          // Count as unread if tab hidden
           if (!isTabVisibleRef.current) {
-            const otherMsgs = data.messages.filter(
+            const otherNew = data.messages.filter(
               (m: ChatMessage) => m.userId !== user?.id
             );
-            if (otherMsgs.length > 0) {
+            if (otherNew.length > 0) {
               setUnreadCounts((prev) => ({
                 ...prev,
-                [activeRoom.id]: (prev[activeRoom.id] || 0) + otherMsgs.length,
+                [activeRoom.id]: (prev[activeRoom.id] || 0) + otherNew.length,
               }));
             }
           }
@@ -405,6 +466,9 @@ export function useChat() {
 
         if (data.members) {
           setMembers(data.members);
+          const count = data.members.filter((m: ChatUser) => m.isOnline).length;
+          onlineCountRef.current = count;
+          setOnlineCount(count);
         }
 
         if (data.serverTime) {
@@ -430,8 +494,8 @@ export function useChat() {
       }
     };
 
-    // Start first poll
-    pollTimeoutRef.current = setTimeout(poll, getPollInterval());
+    // Start first poll quickly (500ms)
+    pollTimeoutRef.current = setTimeout(poll, 500);
 
     return () => {
       if (pollTimeoutRef.current) {
@@ -488,8 +552,8 @@ export function useChat() {
 
     setOnline();
 
-    // Presence heartbeat every 60s (reduced from constant polling)
-    const presenceInterval = setInterval(setOnline, 60000);
+    // Presence heartbeat every 45s
+    const presenceInterval = setInterval(setOnline, 45000);
 
     window.addEventListener('beforeunload', setOffline);
 
@@ -557,6 +621,8 @@ export function useChat() {
     totalUnread,
     typingUsers,
 
+    onlineCount,
+
     // Actions
     registerUser,
     fetchRooms,
@@ -569,5 +635,6 @@ export function useChat() {
     setError,
     reconnect,
     markActive,
+    sendTypingIndicator,
   };
 }
