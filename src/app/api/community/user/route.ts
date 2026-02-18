@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     if (!process.env.DATABASE_URL) {
       console.error('DATABASE_URL environment variable is not set');
       return NextResponse.json(
-        { error: 'Database not configured. Please set DATABASE_URL in environment variables.' },
+        { error: 'Database not configured. The DATABASE_URL environment variable must be set in Vercel project settings.' },
         { status: 503 }
       );
     }
@@ -38,20 +38,40 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ user }, { status: 201 });
   } catch (error: any) {
-    console.error('Error creating user:', error);
+    console.error('Error creating user:', error?.message || error, 'Code:', error?.code);
 
     // Provide specific error messages for common Prisma/DB issues
-    const message = error?.code === 'P1001'
-      ? 'Cannot connect to database. Please check DATABASE_URL and ensure database is accessible.'
-      : error?.code === 'P2021' || error?.code === 'P2002'
-        ? 'Database schema not up to date. Run: npx prisma db push'
-        : error?.message?.includes('Can\'t reach database')
-          ? 'Database server unreachable. Check your connection string and network.'
-          : 'Failed to create user. Check server logs for details.';
+    let message: string;
+    let status = 500;
+
+    if (error?.code === 'P1001' || error?.message?.includes('Can\'t reach database')) {
+      message = 'Cannot connect to database. Please verify DATABASE_URL is correctly set in Vercel environment variables and the database is accessible.';
+      status = 503;
+    } else if (error?.code === 'P1002') {
+      message = 'Database connection timed out. The database server may be unreachable from this deployment.';
+      status = 503;
+    } else if (error?.code === 'P2021') {
+      message = 'Database table not found. Run: npx prisma db push';
+      status = 503;
+    } else if (error?.code === 'P2002') {
+      message = 'A user with this name already exists. Please choose a different name.';
+      status = 409;
+    } else if (error?.code === 'P2010' || error?.message?.includes('Raw query failed')) {
+      message = 'Database query failed. The database may need migration: npx prisma db push';
+      status = 503;
+    } else if (error?.message?.includes('ENOTFOUND') || error?.message?.includes('ECONNREFUSED')) {
+      message = 'Database host not found. Check that DATABASE_URL contains the correct hostname.';
+      status = 503;
+    } else if (error?.message?.includes('SSL') || error?.message?.includes('certificate')) {
+      message = 'Database SSL connection failed. Ensure your DATABASE_URL includes ?sslmode=require';
+      status = 503;
+    } else {
+      message = `Failed to create user: ${error?.message || 'Unknown error'}. Check Vercel function logs for details.`;
+    }
 
     return NextResponse.json(
       { error: message },
-      { status: 500 }
+      { status }
     );
   }
 }
