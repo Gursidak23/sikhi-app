@@ -4,6 +4,8 @@
  * DELETE /api/community/rooms/[roomId] - Leave room
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getRoomById, joinRoom, leaveRoom, getOnlineUsers } from '@/lib/api/chat-handlers';
 
