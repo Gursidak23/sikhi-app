@@ -1,5 +1,11 @@
 /**
- * Main Chat View - Full chat interface with rooms, messages, and members
+ * Main Chat View - Full chat interface with rooms, messages, members
+ * 
+ * Features:
+ * - Connection status indicator
+ * - Unread badges on rooms
+ * - Mobile-first responsive design
+ * - Glass-morphism design elements
  */
 
 'use client';
@@ -30,6 +36,8 @@ export function ChatView({ language }: ChatViewProps) {
     error,
     hasMore,
     replyingTo,
+    connectionStatus,
+    unreadCounts,
     registerUser,
     selectRoom,
     sendMessage,
@@ -38,6 +46,8 @@ export function ChatView({ language }: ChatViewProps) {
     setReplyingTo,
     logout,
     setError,
+    reconnect,
+    markActive,
   } = useChat();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -50,8 +60,6 @@ export function ChatView({ language }: ChatViewProps) {
   useEffect(() => {
     const container = messagesContainerRef.current;
     if (!container) return;
-
-    // Only auto-scroll if user is near the bottom
     const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 150;
     if (isNearBottom) {
       messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -67,41 +75,46 @@ export function ChatView({ language }: ChatViewProps) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] bg-white dark:bg-gray-900 rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 overflow-hidden">
+    <div className="flex h-[calc(100vh-10rem)] sm:h-[calc(100vh-9rem)] rounded-2xl shadow-2xl border border-amber-200/30 dark:border-gray-700/50 overflow-hidden bg-white dark:bg-gray-900">
       {/* Mobile Room Sidebar Overlay */}
       {showMobileSidebar && (
         <div className="fixed inset-0 z-50 md:hidden">
-          <div className="absolute inset-0 bg-black/50" onClick={() => setShowMobileSidebar(false)} />
-          <div className="absolute left-0 top-0 bottom-0 w-72 animate-in slide-in-from-left">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={() => setShowMobileSidebar(false)}
+          />
+          <div className="absolute left-0 top-0 bottom-0 w-80 animate-in slide-in-from-left shadow-2xl">
             <RoomSidebar
               rooms={rooms}
               activeRoom={activeRoom}
               onSelectRoom={selectRoom}
               language={language}
               onClose={() => setShowMobileSidebar(false)}
+              unreadCounts={unreadCounts}
             />
           </div>
         </div>
       )}
 
       {/* Desktop Room Sidebar */}
-      <div className="hidden md:block w-72 flex-shrink-0">
+      <div className="hidden md:block w-72 lg:w-80 flex-shrink-0">
         <RoomSidebar
           rooms={rooms}
           activeRoom={activeRoom}
           onSelectRoom={selectRoom}
           language={language}
+          unreadCounts={unreadCounts}
         />
       </div>
 
       {/* Main Chat Area */}
       <div className="flex-1 flex flex-col min-w-0">
         {/* Chat Header */}
-        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+        <div className="flex items-center justify-between px-4 py-3 border-b border-gray-100 dark:border-gray-800 bg-white/80 dark:bg-gray-900/80 backdrop-blur-sm">
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setShowMobileSidebar(true)}
-              className="md:hidden p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+              className="md:hidden p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
               aria-label="Open rooms"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -110,33 +123,70 @@ export function ChatView({ language }: ChatViewProps) {
             </button>
 
             {activeRoom && (
-              <>
-                <span className="text-xl">{activeRoom.icon}</span>
+              <div className="flex items-center gap-3 min-w-0">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/30 dark:to-amber-800/30 flex items-center justify-center flex-shrink-0">
+                  <span className="text-lg">{activeRoom.icon}</span>
+                </div>
                 <div className="min-w-0">
                   <h2 className={cn(
-                    'text-base font-bold text-gray-900 dark:text-white truncate',
-                    isPunjabi && 'font-gurmukhi text-lg'
+                    'text-sm font-bold text-gray-900 dark:text-white truncate',
+                    isPunjabi && 'font-gurmukhi text-base'
                   )}>
                     {isPunjabi && activeRoom.nameGurmukhi
                       ? activeRoom.nameGurmukhi
                       : activeRoom.name}
                   </h2>
-                  <p className="text-xs text-gray-400">
-                    {activeRoom._count.members} {isPunjabi ? 'ਮੈਂਬਰ' : 'members'}
+                  <p className="text-xs text-gray-400 flex items-center gap-1.5">
+                    <span className="inline-flex items-center gap-1">
+                      <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
+                      </svg>
+                      {activeRoom._count.members}
+                    </span>
+                    <span>·</span>
+                    <span className={isPunjabi ? 'font-gurmukhi' : ''}>
+                      {isPunjabi ? `${activeRoom._count.messages} ਸੁਨੇਹੇ` : `${activeRoom._count.messages} messages`}
+                    </span>
                   </p>
                 </div>
-              </>
+              </div>
             )}
           </div>
 
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-1.5">
+            {/* Connection Status */}
+            {connectionStatus !== 'connected' && (
+              <button
+                onClick={reconnect}
+                className={cn(
+                  'flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs font-medium transition-colors',
+                  connectionStatus === 'reconnecting'
+                    ? 'bg-yellow-50 text-yellow-700 dark:bg-yellow-900/20 dark:text-yellow-400'
+                    : 'bg-red-50 text-red-600 dark:bg-red-900/20 dark:text-red-400 hover:bg-red-100'
+                )}
+              >
+                {connectionStatus === 'reconnecting' ? (
+                  <>
+                    <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
+                    {isPunjabi ? 'ਜੋੜ ਰਿਹਾ...' : 'Reconnecting...'}
+                  </>
+                ) : (
+                  <>
+                    <div className="w-2 h-2 bg-red-500 rounded-full" />
+                    {isPunjabi ? 'ਮੁੜ ਜੋੜੋ' : 'Reconnect'}
+                  </>
+                )}
+              </button>
+            )}
+
+            {/* Members Toggle */}
             <button
               onClick={() => setShowMembers(!showMembers)}
               className={cn(
-                'p-2 rounded-lg transition-colors',
+                'p-2 rounded-xl transition-all',
                 showMembers
-                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400'
-                  : 'text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800'
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 shadow-sm'
+                  : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600'
               )}
               aria-label={isPunjabi ? 'ਮੈਂਬਰ ਦਿਖਾਓ' : 'Toggle members'}
             >
@@ -145,34 +195,42 @@ export function ChatView({ language }: ChatViewProps) {
               </svg>
             </button>
 
+            {/* User Menu */}
             <div className="relative group">
               <button
-                className="flex items-center gap-2 p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label="User menu"
               >
                 <div
-                  className="w-7 h-7 rounded-full flex items-center justify-center text-white text-xs font-bold"
+                  className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-sm"
                   style={{ backgroundColor: user.avatarColor }}
                 >
                   {user.displayName.slice(0, 2).toUpperCase()}
                 </div>
               </button>
-              <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-xl border border-gray-200 dark:border-gray-700 py-1 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
-                <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
+              <div className="absolute right-0 top-full mt-2 w-52 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-1.5 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+                <div className="px-4 py-3 border-b border-gray-100 dark:border-gray-700">
                   <p className={cn(
-                    'text-sm font-medium text-gray-900 dark:text-white',
+                    'text-sm font-semibold text-gray-900 dark:text-white',
                     isPunjabi && 'font-gurmukhi'
                   )}>
                     {isPunjabi && user.displayNameGurmukhi
                       ? user.displayNameGurmukhi
                       : user.displayName}
                   </p>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <div className="w-2 h-2 bg-green-500 rounded-full" />
+                    <span className="text-xs text-gray-400">{isPunjabi ? 'ਔਨਲਾਈਨ' : 'Online'}</span>
+                  </div>
                 </div>
                 <button
                   onClick={logout}
-                  className="w-full text-left px-3 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                  className="w-full text-left px-4 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
                 >
-                  {isPunjabi ? '🚪 ਬਾਹਰ ਜਾਓ' : '🚪 Sign Out'}
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
+                  </svg>
+                  {isPunjabi ? 'ਬਾਹਰ ਜਾਓ' : 'Sign Out'}
                 </button>
               </div>
             </div>
@@ -181,13 +239,18 @@ export function ChatView({ language }: ChatViewProps) {
 
         {/* Error Banner */}
         {error && (
-          <div className="px-4 py-2 bg-red-50 dark:bg-red-900/20 border-b border-red-200 dark:border-red-800 flex items-center justify-between">
-            <p className="text-sm text-red-600 dark:text-red-400">{error}</p>
+          <div className="px-4 py-2.5 bg-red-50 dark:bg-red-900/20 border-b border-red-100 dark:border-red-800/30 flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              <p className="text-sm text-red-600 dark:text-red-400 truncate">{error}</p>
+            </div>
             <button
               onClick={() => setError(null)}
-              className="text-red-400 hover:text-red-600 transition-colors"
+              className="p-1 rounded hover:bg-red-100 dark:hover:bg-red-800/30 transition-colors flex-shrink-0"
             >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className="w-4 h-4 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -197,12 +260,16 @@ export function ChatView({ language }: ChatViewProps) {
         {/* Messages Area */}
         <div
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto"
+          className="flex-1 overflow-y-auto scroll-smooth"
+          onClick={markActive}
         >
           {isLoading ? (
             <div className="flex items-center justify-center h-full">
               <div className="text-center">
-                <div className="w-8 h-8 border-2 border-amber-500 border-t-transparent rounded-full animate-spin mx-auto mb-3" />
+                <div className="relative w-12 h-12 mx-auto mb-4">
+                  <div className="absolute inset-0 border-2 border-amber-200 dark:border-amber-800 rounded-full" />
+                  <div className="absolute inset-0 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+                </div>
                 <p className={cn(
                   'text-sm text-gray-400',
                   isPunjabi && 'font-gurmukhi'
@@ -213,16 +280,18 @@ export function ChatView({ language }: ChatViewProps) {
             </div>
           ) : messages.length === 0 ? (
             <div className="flex items-center justify-center h-full">
-              <div className="text-center px-4">
-                <span className="text-5xl block mb-4">💭</span>
+              <div className="text-center px-6 max-w-sm">
+                <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/20 dark:to-amber-800/20 flex items-center justify-center">
+                  <span className="text-4xl">💬</span>
+                </div>
                 <h3 className={cn(
-                  'text-lg font-semibold text-gray-900 dark:text-white mb-2',
-                  isPunjabi && 'font-gurmukhi'
+                  'text-lg font-bold text-gray-900 dark:text-white mb-2',
+                  isPunjabi && 'font-gurmukhi text-xl'
                 )}>
                   {isPunjabi ? 'ਗੱਲਬਾਤ ਸ਼ੁਰੂ ਕਰੋ' : 'Start the conversation'}
                 </h3>
                 <p className={cn(
-                  'text-sm text-gray-400',
+                  'text-sm text-gray-400 leading-relaxed',
                   isPunjabi && 'font-gurmukhi'
                 )}>
                   {isPunjabi
@@ -239,11 +308,14 @@ export function ChatView({ language }: ChatViewProps) {
                   <button
                     onClick={loadMore}
                     className={cn(
-                      'px-4 py-1.5 text-sm text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:hover:bg-amber-900/20 rounded-lg transition-colors',
+                      'inline-flex items-center gap-2 px-5 py-2 text-sm text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:hover:bg-amber-900/30 rounded-xl transition-all font-medium',
                       isPunjabi && 'font-gurmukhi'
                     )}
                   >
-                    {isPunjabi ? '⬆️ ਹੋਰ ਲੋਡ ਕਰੋ' : '⬆️ Load earlier messages'}
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
+                    </svg>
+                    {isPunjabi ? 'ਹੋਰ ਲੋਡ ਕਰੋ' : 'Load earlier messages'}
                   </button>
                 </div>
               )}
@@ -283,12 +355,13 @@ export function ChatView({ language }: ChatViewProps) {
           onCancelReply={() => setReplyingTo(null)}
           language={language}
           disabled={!activeRoom}
+          onActivity={markActive}
         />
       </div>
 
       {/* Members Panel (Desktop) */}
       {showMembers && (
-        <div className="hidden md:block w-60 flex-shrink-0">
+        <div className="hidden md:block w-64 lg:w-72 flex-shrink-0">
           <MembersPanel
             members={members}
             language={language}

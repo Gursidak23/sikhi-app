@@ -1,11 +1,13 @@
 /**
  * Community Chat Page - Real-time Sangat discussion
+ * Full-page immersive chat experience with site navigation
  */
 
 'use client';
 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { ChatView } from '@/modules/community/components/ChatView';
 import type { Language } from '@/types';
 
@@ -31,58 +33,89 @@ export default function CommunityPage() {
   const isPunjabi = language === 'pa';
 
   return (
-    <main className="min-h-screen">
-      {/* Hero Header */}
-      <div className="bg-gradient-to-br from-amber-50 via-white to-amber-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 border-b border-amber-200/50 dark:border-gray-700">
-        <div className="container-content py-6 sm:py-8">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className={cn(
-                'text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white',
-                isPunjabi && 'font-gurmukhi'
-              )}>
-                {isPunjabi ? '🤝 ਸੰਗਤ' : '🤝 Sangat Community'}
-              </h1>
-              <p className={cn(
-                'text-sm text-gray-500 dark:text-gray-400 mt-1.5',
-                isPunjabi && 'font-gurmukhi'
-              )}>
-                {isPunjabi
-                  ? 'ਸਿੱਖ ਸੰਗਤ ਨਾਲ ਜੁੜੋ, ਸਿੱਖੋ, ਅਤੇ ਵਿਚਾਰ ਸਾਂਝੇ ਕਰੋ'
-                  : 'Connect with the Sikh community, learn, and share insights'}
-              </p>
-            </div>
+    <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#FDF8F0] via-white to-[#fef9e7] dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
+      <MainNavigation
+        currentLanguage={language}
+        onLanguageChange={setLanguage}
+      />
 
-            {/* Live indicator */}
-            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-50 dark:bg-green-900/20 rounded-full border border-green-200 dark:border-green-800">
-              <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-              <span className={cn(
-                'text-xs font-medium text-green-700 dark:text-green-400',
-                isPunjabi && 'font-gurmukhi'
-              )}>
-                {isPunjabi ? 'ਲਾਈਵ ਚੈਟ' : 'Live Chat'}
-              </span>
+      <main id="main-content" className="flex-1 flex flex-col">
+        {/* Compact Hero Header with Sikh ornamental style */}
+        <div className="relative overflow-hidden">
+          {/* Background gradient + pattern */}
+          <div className="absolute inset-0 bg-gradient-to-r from-amber-600 via-amber-500 to-orange-500 dark:from-amber-900 dark:via-amber-800 dark:to-orange-900" />
+          <div 
+            className="absolute inset-0 opacity-10"
+            style={{
+              backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M30 0L60 30L30 60L0 30z\' fill=\'none\' stroke=\'%23fff\' stroke-width=\'1\'/%3E%3C/svg%3E")',
+            }}
+          />
+
+          <div className="container-content py-5 sm:py-6 relative z-10">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 rounded-xl bg-white/20 backdrop-blur-sm flex items-center justify-center shadow-lg border border-white/30">
+                  <span className="text-2xl">🤝</span>
+                </div>
+                <div>
+                  <h1 className={cn(
+                    'text-xl sm:text-2xl font-bold text-white',
+                    isPunjabi && 'font-gurmukhi text-2xl sm:text-3xl'
+                  )}>
+                    {isPunjabi ? 'ਸੰਗਤ' : 'Sangat Community'}
+                  </h1>
+                  <p className={cn(
+                    'text-xs sm:text-sm text-amber-100/90 mt-0.5',
+                    isPunjabi && 'font-gurmukhi'
+                  )}>
+                    {isPunjabi
+                      ? 'ਸਿੱਖ ਸੰਗਤ ਨਾਲ ਜੁੜੋ, ਸਿੱਖੋ ਤੇ ਸਾਂਝ ਪਾਓ'
+                      : 'Connect, learn, and share with the Sikh community'}
+                  </p>
+                </div>
+              </div>
+
+              {/* Live indicator + Guidelines badge */}
+              <div className="flex items-center gap-3">
+                <div className="flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm rounded-full border border-white/20">
+                  <div className="relative">
+                    <div className="w-2 h-2 bg-green-400 rounded-full" />
+                    <div className="absolute inset-0 w-2 h-2 bg-green-400 rounded-full animate-ping" />
+                  </div>
+                  <span className={cn(
+                    'text-xs font-medium text-white/95',
+                    isPunjabi && 'font-gurmukhi'
+                  )}>
+                    {isPunjabi ? 'ਲਾਈਵ' : 'Live'}
+                  </span>
+                </div>
+
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full border border-white/15">
+                  <span className="text-xs">🙏</span>
+                  <span className={cn(
+                    'text-xs text-white/80',
+                    isPunjabi && 'font-gurmukhi'
+                  )}>
+                    {isPunjabi ? 'ਸਤਿਕਾਰ ਨਾਲ' : 'With respect'}
+                  </span>
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Community Guidelines */}
-          <div className="mt-4 p-3 bg-amber-50/80 dark:bg-amber-900/10 rounded-xl border border-amber-200/50 dark:border-amber-800/30">
-            <p className={cn(
-              'text-xs text-amber-800 dark:text-amber-300',
-              isPunjabi && 'font-gurmukhi text-sm'
-            )}>
-              {isPunjabi
-                ? '⚠️ ਕਿਰਪਾ ਕਰਕੇ ਸਤਿਕਾਰ ਨਾਲ ਗੱਲਬਾਤ ਕਰੋ। ਗੁਰਬਾਣੀ ਅਤੇ ਸਿੱਖ ਕਦਰਾਂ-ਕੀਮਤਾਂ ਦਾ ਸਨਮਾਨ ਕਰੋ। ਨਫ਼ਰਤ, ਸਪੈਮ, ਜਾਂ ਅਣਉਚਿਤ ਸਮੱਗਰੀ ਦੀ ਮਨਾਹੀ ਹੈ।'
-                : '⚠️ Please communicate with respect. Honor Gurbani and Sikh values. Hate speech, spam, or inappropriate content is prohibited.'}
-            </p>
+          {/* Bottom wave */}
+          <div className="absolute bottom-0 left-0 right-0">
+            <svg viewBox="0 0 1440 40" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full" preserveAspectRatio="none">
+              <path d="M0 40L720 20L1440 40V40H0Z" className="fill-[#FDF8F0] dark:fill-gray-950" />
+            </svg>
           </div>
         </div>
-      </div>
 
-      {/* Chat Interface */}
-      <div className="container-content py-4 sm:py-6">
-        <ChatView language={language} />
-      </div>
-    </main>
+        {/* Chat Interface - Fills remaining space */}
+        <div className="flex-1 container-content py-3 sm:py-4">
+          <ChatView language={language} />
+        </div>
+      </main>
+    </div>
   );
 }

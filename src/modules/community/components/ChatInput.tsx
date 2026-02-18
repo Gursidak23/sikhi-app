@@ -1,5 +1,5 @@
 /**
- * Chat Input Bar with reply preview and typing indicator
+ * Chat Input Bar with reply preview and enhanced UX
  */
 
 'use client';
@@ -16,6 +16,7 @@ interface ChatInputProps {
   onCancelReply: () => void;
   language: Language;
   disabled?: boolean;
+  onActivity?: () => void;
 }
 
 export function ChatInput({
@@ -25,6 +26,7 @@ export function ChatInput({
   onCancelReply,
   language,
   disabled,
+  onActivity,
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -50,6 +52,7 @@ export function ChatInput({
     if (!message.trim() || isSending || disabled) return;
     const content = message;
     setMessage('');
+    onActivity?.();
     await onSend(content);
   };
 
@@ -60,23 +63,31 @@ export function ChatInput({
     }
   };
 
+  const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    setMessage(e.target.value);
+    onActivity?.();
+  };
+
   return (
-    <div className="border-t border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900">
+    <div className="border-t border-gray-100 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
       {/* Reply Preview */}
       {replyingTo && (
-        <div className="flex items-center gap-2 px-4 py-2 bg-amber-50 dark:bg-amber-900/20 border-b border-amber-200 dark:border-amber-800/50">
-          <div className="w-1 h-8 rounded bg-amber-400 flex-shrink-0" />
+        <div className="flex items-center gap-3 px-4 py-2.5 bg-amber-50/80 dark:bg-amber-900/10 border-b border-amber-100 dark:border-amber-800/30">
+          <div className="w-1 h-10 rounded-full bg-gradient-to-b from-amber-400 to-amber-500 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-medium text-amber-700 dark:text-amber-400">
-              ↩ {isPunjabi ? 'ਜਵਾਬ ਦੇ ਰਹੇ ਹੋ' : 'Replying to'} {replyingTo.user.displayName}
+            <p className="text-xs font-semibold text-amber-700 dark:text-amber-400 flex items-center gap-1">
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+              </svg>
+              {isPunjabi ? 'ਜਵਾਬ ਦੇ ਰਹੇ ਹੋ' : 'Replying to'} {replyingTo.user.displayName}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
               {replyingTo.content}
             </p>
           </div>
           <button
             onClick={onCancelReply}
-            className="p-1 rounded hover:bg-amber-100 dark:hover:bg-amber-800/30 transition-colors"
+            className="p-1.5 rounded-lg hover:bg-amber-100 dark:hover:bg-amber-800/30 transition-colors"
           >
             <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -87,36 +98,39 @@ export function ChatInput({
 
       {/* Input Area */}
       <div className="flex items-end gap-2 p-3">
-        <textarea
-          ref={textareaRef}
-          value={message}
-          onChange={(e) => setMessage(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder={
-            disabled
-              ? (isPunjabi ? 'ਪਹਿਲਾਂ ਸ਼ਾਮਲ ਹੋਵੋ...' : 'Join to start chatting...')
-              : (isPunjabi ? 'ਸੁਨੇਹਾ ਲਿਖੋ...' : 'Type a message...')
-          }
-          disabled={disabled || isSending}
-          rows={1}
-          maxLength={2000}
-          className={cn(
-            'flex-1 px-4 py-2.5 bg-gray-100 dark:bg-gray-800 rounded-2xl',
-            'text-sm text-gray-900 dark:text-white placeholder-gray-400',
-            'resize-none border-0 focus:outline-none focus:ring-2 focus:ring-amber-500/50',
-            'disabled:opacity-50 disabled:cursor-not-allowed',
-            'transition-all',
-            isPunjabi && 'font-gurmukhi'
-          )}
-        />
+        <div className="flex-1 relative">
+          <textarea
+            ref={textareaRef}
+            value={message}
+            onChange={handleChange}
+            onKeyDown={handleKeyDown}
+            placeholder={
+              disabled
+                ? (isPunjabi ? 'ਪਹਿਲਾਂ ਸ਼ਾਮਲ ਹੋਵੋ...' : 'Join to start chatting...')
+                : (isPunjabi ? 'ਸੁਨੇਹਾ ਲਿਖੋ...' : 'Type a message...')
+            }
+            disabled={disabled || isSending}
+            rows={1}
+            maxLength={2000}
+            className={cn(
+              'w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 rounded-2xl',
+              'text-sm text-gray-900 dark:text-white placeholder-gray-400',
+              'resize-none border border-gray-200 dark:border-gray-700',
+              'focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-400',
+              'disabled:opacity-50 disabled:cursor-not-allowed',
+              'transition-all',
+              isPunjabi && 'font-gurmukhi'
+            )}
+          />
+        </div>
         <button
           onClick={handleSend}
           disabled={!message.trim() || isSending || disabled}
           className={cn(
-            'p-2.5 rounded-full transition-all flex-shrink-0',
+            'p-3 rounded-xl transition-all flex-shrink-0',
             message.trim() && !isSending && !disabled
-              ? 'bg-amber-500 hover:bg-amber-600 text-white shadow-md hover:shadow-lg'
-              : 'bg-gray-200 dark:bg-gray-700 text-gray-400 cursor-not-allowed'
+              ? 'bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 active:scale-95'
+              : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
           )}
           aria-label={isPunjabi ? 'ਭੇਜੋ' : 'Send'}
         >
@@ -136,12 +150,23 @@ export function ChatInput({
       {/* Character count for long messages */}
       {message.length > 1500 && (
         <div className="px-4 pb-2">
-          <span className={cn(
-            'text-xs',
-            message.length > 1900 ? 'text-red-500' : 'text-gray-400'
-          )}>
-            {message.length}/2000
-          </span>
+          <div className="flex items-center gap-2">
+            <div className="flex-1 h-1 bg-gray-100 dark:bg-gray-800 rounded-full overflow-hidden">
+              <div
+                className={cn(
+                  'h-full transition-all rounded-full',
+                  message.length > 1900 ? 'bg-red-500' : message.length > 1800 ? 'bg-yellow-500' : 'bg-amber-400'
+                )}
+                style={{ width: `${(message.length / 2000) * 100}%` }}
+              />
+            </div>
+            <span className={cn(
+              'text-xs tabular-nums',
+              message.length > 1900 ? 'text-red-500 font-semibold' : 'text-gray-400'
+            )}>
+              {message.length}/2000
+            </span>
+          </div>
         </div>
       )}
     </div>

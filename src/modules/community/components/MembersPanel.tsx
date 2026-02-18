@@ -1,5 +1,5 @@
 /**
- * Members Panel - Shows online/offline members in the room
+ * Members Panel - Enhanced online/offline members display
  */
 
 'use client';
@@ -42,11 +42,16 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
     return (
       <div
         key={member.id}
-        className="flex items-center gap-2.5 px-3 py-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+        className={cn(
+          'flex items-center gap-2.5 px-3 py-2.5 rounded-xl transition-colors',
+          isYou
+            ? 'bg-amber-50/50 dark:bg-amber-900/10'
+            : 'hover:bg-gray-50 dark:hover:bg-gray-800/50'
+        )}
       >
         <div className="relative flex-shrink-0">
           <div
-            className="w-8 h-8 rounded-full flex items-center justify-center text-white text-xs font-bold"
+            className="w-8 h-8 rounded-xl flex items-center justify-center text-white text-xs font-bold shadow-sm"
             style={{ backgroundColor: member.avatarColor }}
           >
             {getInitials(member.displayName)}
@@ -65,13 +70,13 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
           )}>
             {displayName}
             {isYou && (
-              <span className="ml-1.5 text-xs text-amber-500 font-normal">
+              <span className="ml-1.5 text-[11px] text-amber-500 font-normal">
                 ({isPunjabi ? 'ਤੁਸੀਂ' : 'you'})
               </span>
             )}
           </div>
           {!member.isOnline && member.lastSeenAt && (
-            <p className="text-xs text-gray-400">
+            <p className="text-[11px] text-gray-400 mt-0.5">
               {formatLastSeen(member.lastSeenAt)}
             </p>
           )}
@@ -81,13 +86,19 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
   };
 
   return (
-    <div className="flex flex-col h-full bg-gray-50 dark:bg-gray-900 border-l border-gray-200 dark:border-gray-700">
-      <div className="p-4 border-b border-gray-200 dark:border-gray-700">
+    <div className="flex flex-col h-full bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 border-l border-gray-100 dark:border-gray-800">
+      <div className="p-4 border-b border-gray-100 dark:border-gray-800">
         <h3 className={cn(
-          'text-sm font-bold text-gray-900 dark:text-white',
+          'text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2',
           isPunjabi && 'font-gurmukhi text-base'
         )}>
-          {isPunjabi ? 'ਮੈਂਬਰ' : 'Members'} ({members.length})
+          <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
+          </svg>
+          {isPunjabi ? 'ਮੈਂਬਰ' : 'Members'}
+          <span className="text-xs font-normal text-gray-400 ml-auto">
+            {members.length}
+          </span>
         </h3>
       </div>
 
@@ -95,8 +106,9 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
         {/* Online */}
         {onlineMembers.length > 0 && (
           <div className="mb-3">
-            <div className="px-3 py-1">
-              <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wide">
+            <div className="px-4 py-1.5 flex items-center gap-2">
+              <div className="w-2 h-2 bg-green-500 rounded-full" />
+              <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">
                 {isPunjabi ? 'ਔਨਲਾਈਨ' : 'Online'} — {onlineMembers.length}
               </span>
             </div>
@@ -107,8 +119,9 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
         {/* Offline */}
         {offlineMembers.length > 0 && (
           <div>
-            <div className="px-3 py-1">
-              <span className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+            <div className="px-4 py-1.5 flex items-center gap-2">
+              <div className="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full" />
+              <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
                 {isPunjabi ? 'ਔਫ਼ਲਾਈਨ' : 'Offline'} — {offlineMembers.length}
               </span>
             </div>
@@ -118,6 +131,11 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
 
         {members.length === 0 && (
           <div className="px-4 py-8 text-center">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center">
+              <svg className="w-6 h-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
+              </svg>
+            </div>
             <p className={cn(
               'text-sm text-gray-400',
               isPunjabi && 'font-gurmukhi'
