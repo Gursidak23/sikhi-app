@@ -9,11 +9,14 @@ import type { NextRequest } from 'next/server';
 /** Allowed origins for API requests */
 function getAllowedOrigins(): string[] {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
-  return [
+  const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '';
+  const origins = [
     appUrl,
     'http://localhost:3000',
     'http://localhost:3001',
-  ].map((u) => u.replace(/\/$/, ''));
+  ];
+  if (vercelUrl) origins.push(vercelUrl);
+  return origins.map((u) => u.replace(/\/$/, '')).filter(Boolean);
 }
 
 function isOriginAllowed(origin: string | null): boolean {

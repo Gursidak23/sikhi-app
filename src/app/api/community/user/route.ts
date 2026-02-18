@@ -9,6 +9,15 @@ import { createChatUserSchema, updatePresenceSchema } from '@/lib/validation/cha
 
 export async function POST(request: NextRequest) {
   try {
+    // Check DATABASE_URL is configured
+    if (!process.env.DATABASE_URL) {
+      console.error('DATABASE_URL environment variable is not set');
+      return NextResponse.json(
+        { error: 'Database not configured. Please set DATABASE_URL in environment variables.' },
+        { status: 503 }
+      );
+    }
+
     const body = await request.json();
     const parsed = createChatUserSchema.safeParse(body);
 
@@ -26,10 +35,20 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json({ user }, { status: 201 });
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error creating user:', error);
+
+    // Provide specific error messages for common Prisma/DB issues
+    const message = error?.code === 'P1001'
+      ? 'Cannot connect to database. Please check DATABASE_URL and ensure database is accessible.'
+      : error?.code === 'P2021' || error?.code === 'P2002'
+        ? 'Database schema not up to date. Run: npx prisma db push'
+        : error?.message?.includes('Can\'t reach database')
+          ? 'Database server unreachable. Check your connection string and network.'
+          : 'Failed to create user. Check server logs for details.';
+
     return NextResponse.json(
-      { error: 'Failed to create user' },
+      { error: message },
       { status: 500 }
     );
   }
