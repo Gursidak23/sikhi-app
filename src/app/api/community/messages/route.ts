@@ -4,6 +4,8 @@
  * DELETE /api/community/messages - Delete a message
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { sendMessage, getMessages, deleteMessage } from '@/lib/api/chat-handlers';
 import { sendMessageSchema, editMessageSchema } from '@/lib/validation/chat-schemas';

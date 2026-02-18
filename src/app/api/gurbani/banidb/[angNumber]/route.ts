@@ -3,6 +3,8 @@
  * Fetches Gurbani data from BaniDB API server-side to avoid CORS issues
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 
 const BANIDB_API_BASE = 'https://api.banidb.com/v2';

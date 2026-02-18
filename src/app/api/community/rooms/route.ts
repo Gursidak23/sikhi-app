@@ -3,6 +3,8 @@
  * POST /api/community/rooms - Create a new chat room
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { getRooms, createRoom, ensureDefaultRooms } from '@/lib/api/chat-handlers';
 import { createRoomSchema } from '@/lib/validation/chat-schemas';

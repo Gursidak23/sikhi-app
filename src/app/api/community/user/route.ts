@@ -3,6 +3,8 @@
  * PUT /api/community/user - Update user presence (online/offline)
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { createOrGetUser, updateUserPresence } from '@/lib/api/chat-handlers';
 import { createChatUserSchema, updatePresenceSchema } from '@/lib/validation/chat-schemas';

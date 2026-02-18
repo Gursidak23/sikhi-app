@@ -2,6 +2,8 @@
  * GET /api/community/messages/poll - Poll for new messages since a given timestamp
  */
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { pollNewMessages, getOnlineUsers } from '@/lib/api/chat-handlers';
 

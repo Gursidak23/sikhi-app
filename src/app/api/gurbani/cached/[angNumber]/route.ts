@@ -5,6 +5,8 @@
 // Falls back to BaniDB API if cache miss or database unavailable
 // ============================================================================
 
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 
 // Dynamic import to handle cases where DB isn't configured
