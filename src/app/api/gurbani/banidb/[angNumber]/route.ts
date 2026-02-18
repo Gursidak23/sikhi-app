@@ -24,7 +24,9 @@ export async function GET(
 
     // Get source ID from query params (default: G for Guru Granth Sahib)
     const searchParams = request.nextUrl.searchParams;
-    const sourceId = searchParams.get('source') || 'G';
+    const ALLOWED_SOURCES = ['G', 'D', 'B', 'N', 'A', 'S', 'R'];
+    const rawSourceId = searchParams.get('source') || 'G';
+    const sourceId = ALLOWED_SOURCES.includes(rawSourceId) ? rawSourceId : 'G';
 
     // Fetch from BaniDB API
     const response = await fetch(`${BANIDB_API_BASE}/angs/${angNumber}/${sourceId}`, {

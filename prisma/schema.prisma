@@ -580,3 +580,79 @@ model ScholarlyReviewRequest {
   @@index([status])
   @@index([entityType, entityId])
 }
+
+// ============================================================================
+// COMMUNITY CHAT MODULE
+// ============================================================================
+
+/// Chat users - lightweight identity for community participation
+model ChatUser {
+  id              String        @id @default(cuid())
+  displayName     String
+  displayNameGurmukhi String?
+  avatarColor     String        @default("#F59E0B") // Amber default
+  isOnline        Boolean       @default(false)
+  lastSeenAt      DateTime      @default(now())
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  messages        ChatMessage[]
+  roomMemberships ChatRoomMember[]
+  
+  @@index([isOnline])
+  @@index([lastSeenAt])
+}
+
+/// Chat rooms / channels for community discussions
+model ChatRoom {
+  id              String        @id @default(cuid())
+  name            String        @unique
+  nameGurmukhi    String?
+  description     String?
+  descriptionGurmukhi String?
+  icon            String        @default("💬")
+  isDefault       Boolean       @default(false)
+  isActive        Boolean       @default(true)
+  maxMembers      Int           @default(500)
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+  messages        ChatMessage[]
+  members         ChatRoomMember[]
+  
+  @@index([isActive])
+  @@index([isDefault])
+}
+
+/// Junction table for room membership with roles
+model ChatRoomMember {
+  id              String    @id @default(cuid())
+  userId          String
+  user            ChatUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomId          String
+  room            ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  joinedAt        DateTime  @default(now())
+  
+  @@unique([userId, roomId])
+  @@index([userId])
+  @@index([roomId])
+}
+
+/// Individual chat messages
+model ChatMessage {
+  id              String    @id @default(cuid())
+  content         String
+  userId          String
+  user            ChatUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  roomId          String
+  room            ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  replyToId       String?
+  replyTo         ChatMessage?  @relation("MessageReplies", fields: [replyToId], references: [id])
+  replies         ChatMessage[] @relation("MessageReplies")
+  isEdited        Boolean   @default(false)
+  isDeleted       Boolean   @default(false)
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+  
+  @@index([roomId, createdAt])
+  @@index([userId])
+  @@index([replyToId])
+}

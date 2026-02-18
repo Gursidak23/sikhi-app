@@ -37,7 +37,7 @@ export function MainNavigation({
 
   const isGurbaniSection = pathname?.includes('/gurbani');
   const isItihaasSection = pathname?.includes('/itihaas');
-  const isNitnemSection = pathname?.includes('/nitnem');
+  const isCommunitySection = pathname?.includes('/community');
 
   const navItems = [
     {
@@ -63,6 +63,14 @@ export function MainNavigation({
       labelHi: 'इतिहास',
       isSacred: false,
       icon: '📜',
+    },
+    {
+      href: '/community',
+      labelPa: 'ਸੰਗਤ',
+      labelEn: 'Community',
+      labelHi: 'संगत',
+      isSacred: false,
+      icon: '🤝',
     },
     {
       href: '/about',
@@ -287,13 +295,15 @@ export function MainNavigation({
       </div>
 
       {/* Section Indicator Bar */}
-      {(isGurbaniSection || isItihaasSection || isNitnemSection) && (
+      {(isGurbaniSection || isItihaasSection || isCommunitySection) && (
         <div
           className={cn(
             'h-1',
-            (isGurbaniSection || isNitnemSection)
-              ? 'bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700' 
-              : 'bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600'
+            (isGurbaniSection)
+              ? 'bg-gradient-to-r from-blue-500 via-blue-600 to-blue-700'
+              : isCommunitySection
+                ? 'bg-gradient-to-r from-green-400 via-green-500 to-green-600'
+                : 'bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600'
           )}
           aria-hidden="true"
         />
@@ -381,6 +391,14 @@ export function Footer({ language = 'pa' }: FooterProps) {
                   <span>📜</span>
                   <span className={isPunjabi ? 'font-gurmukhi' : ''}>
                     {isPunjabi ? 'ਇਤਿਹਾਸ' : 'History'}
+                  </span>
+                </Link>
+              </li>
+              <li>
+                <Link href="/community" className="text-gray-400 hover:text-amber-400 transition-colors text-sm flex items-center gap-2">
+                  <span>🤝</span>
+                  <span className={isPunjabi ? 'font-gurmukhi' : ''}>
+                    {isPunjabi ? 'ਸੰਗਤ' : 'Community'}
                   </span>
                 </Link>
               </li>
