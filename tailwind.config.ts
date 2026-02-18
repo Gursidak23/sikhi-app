@@ -7,6 +7,9 @@ const config: Config = {
     './src/components/**/*.{js,ts,jsx,tsx,mdx}',
     './src/modules/**/*.{js,ts,jsx,tsx,mdx}',
     './src/app/**/*.{js,ts,jsx,tsx,mdx}',
+    './src/lib/**/*.{js,ts,jsx,tsx}',
+    './src/hooks/**/*.{js,ts,jsx,tsx}',
+    './src/types/**/*.{js,ts}',
   ],
   theme: {
     extend: {

@@ -130,25 +130,33 @@ export default function NitnemPage() {
           {!selectedBani ? (
             <>
               {/* Header */}
-              <div className="text-center mb-8">
-                <h1 className="text-3xl sm:text-4xl font-gurmukhi text-amber-900 dark:text-[#daa520]">
+              <div className="text-center mb-10">
+                <div className="text-5xl mb-3">📿</div>
+                <h1 className="text-3xl sm:text-4xl font-gurmukhi font-bold text-amber-900 dark:text-[#daa520]">
                   {language === 'pa' ? 'ਨਿਤਨੇਮ' : 'Nitnem'}
                 </h1>
-                <p className="text-amber-700 dark:text-amber-500 mt-2 font-gurmukhi">
+                <p className="text-amber-700 dark:text-amber-400 mt-2 font-gurmukhi text-lg">
                   {language === 'pa' ? 'ਰੋਜ਼ਾਨਾ ਬਾਣੀਆਂ' : 'Daily Prayers'}
                 </p>
+                <div className="mt-4 w-24 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto" />
               </div>
 
               {/* Time-based sections */}
-              <div className="space-y-8">
+              <div className="space-y-10">
                 {/* Amritvela (Early Morning) */}
                 <section>
-                  <h2 className="text-lg font-semibold text-amber-800 dark:text-amber-400 mb-4 flex items-center gap-2">
-                    <span>🌅</span>
-                    <span className="font-gurmukhi">
-                      {language === 'pa' ? 'ਅੰਮ੍ਰਿਤ ਵੇਲਾ (ਸਵੇਰ)' : 'Amritvela (Morning)'}
-                    </span>
-                  </h2>
+                  <div className="flex items-center gap-3 mb-5">
+                    <span className="text-2xl">🌅</span>
+                    <div>
+                      <h2 className="text-lg font-semibold text-amber-800 dark:text-amber-300 font-gurmukhi">
+                        {language === 'pa' ? 'ਅੰਮ੍ਰਿਤ ਵੇਲਾ (ਸਵੇਰ)' : 'Amritvela (Morning)'}
+                      </h2>
+                      <p className="text-sm text-amber-600 dark:text-amber-500">
+                        {language === 'pa' ? '੫ ਬਾਣੀਆਂ' : '5 Banis'}
+                      </p>
+                    </div>
+                    <div className="flex-1 h-px bg-gradient-to-r from-amber-300 to-transparent dark:from-amber-700" />
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {NITNEM_BANIS.filter(b => b.time === 'amritvela').map((bani) => (
                       <BaniCard
@@ -163,12 +171,18 @@ export default function NitnemPage() {
 
                 {/* Evening */}
                 <section>
-                  <h2 className="text-lg font-semibold text-orange-800 dark:text-orange-400 mb-4 flex items-center gap-2">
-                    <span>🌆</span>
-                    <span className="font-gurmukhi">
-                      {language === 'pa' ? 'ਸ਼ਾਮ' : 'Evening'}
-                    </span>
-                  </h2>
+                  <div className="flex items-center gap-3 mb-5">
+                    <span className="text-2xl">🌆</span>
+                    <div>
+                      <h2 className="text-lg font-semibold text-orange-800 dark:text-orange-300 font-gurmukhi">
+                        {language === 'pa' ? 'ਸ਼ਾਮ' : 'Evening'}
+                      </h2>
+                      <p className="text-sm text-orange-600 dark:text-orange-500">
+                        {language === 'pa' ? '੧ ਬਾਣੀ' : '1 Bani'}
+                      </p>
+                    </div>
+                    <div className="flex-1 h-px bg-gradient-to-r from-orange-300 to-transparent dark:from-orange-700" />
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {NITNEM_BANIS.filter(b => b.time === 'evening').map((bani) => (
                       <BaniCard
@@ -183,12 +197,18 @@ export default function NitnemPage() {
 
                 {/* Night */}
                 <section>
-                  <h2 className="text-lg font-semibold text-indigo-800 dark:text-indigo-400 mb-4 flex items-center gap-2">
-                    <span>🌙</span>
-                    <span className="font-gurmukhi">
-                      {language === 'pa' ? 'ਰਾਤ' : 'Night'}
-                    </span>
-                  </h2>
+                  <div className="flex items-center gap-3 mb-5">
+                    <span className="text-2xl">🌙</span>
+                    <div>
+                      <h2 className="text-lg font-semibold text-indigo-800 dark:text-indigo-300 font-gurmukhi">
+                        {language === 'pa' ? 'ਰਾਤ' : 'Night'}
+                      </h2>
+                      <p className="text-sm text-indigo-600 dark:text-indigo-500">
+                        {language === 'pa' ? '੧ ਬਾਣੀ' : '1 Bani'}
+                      </p>
+                    </div>
+                    <div className="flex-1 h-px bg-gradient-to-r from-indigo-300 to-transparent dark:from-indigo-700" />
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {NITNEM_BANIS.filter(b => b.time === 'night').map((bani) => (
                       <BaniCard
@@ -203,12 +223,18 @@ export default function NitnemPage() {
 
                 {/* Anytime */}
                 <section>
-                  <h2 className="text-lg font-semibold text-teal-800 dark:text-teal-400 mb-4 flex items-center gap-2">
-                    <span>✨</span>
-                    <span className="font-gurmukhi">
-                      {language === 'pa' ? 'ਹੋਰ ਬਾਣੀਆਂ' : 'Other Banis'}
-                    </span>
-                  </h2>
+                  <div className="flex items-center gap-3 mb-5">
+                    <span className="text-2xl">✨</span>
+                    <div>
+                      <h2 className="text-lg font-semibold text-teal-800 dark:text-teal-300 font-gurmukhi">
+                        {language === 'pa' ? 'ਹੋਰ ਬਾਣੀਆਂ' : 'Other Banis'}
+                      </h2>
+                      <p className="text-sm text-teal-600 dark:text-teal-500">
+                        {language === 'pa' ? '੨ ਬਾਣੀਆਂ' : '2 Banis'}
+                      </p>
+                    </div>
+                    <div className="flex-1 h-px bg-gradient-to-r from-teal-300 to-transparent dark:from-teal-700" />
+                  </div>
                   <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
                     {NITNEM_BANIS.filter(b => b.time === 'anytime').map((bani) => (
                       <BaniCard
@@ -373,6 +399,19 @@ export default function NitnemPage() {
   );
 }
 
+// Color mapping for gradient classes (ensures Tailwind JIT picks them up)
+const GRADIENT_MAP: Record<string, { from: string; to: string; shadow: string }> = {
+  'from-amber-500 to-orange-600': { from: 'from-amber-500', to: 'to-orange-600', shadow: 'shadow-amber-500/25' },
+  'from-blue-600 to-blue-800': { from: 'from-blue-600', to: 'to-blue-800', shadow: 'shadow-blue-600/25' },
+  'from-amber-600 to-yellow-700': { from: 'from-amber-600', to: 'to-yellow-700', shadow: 'shadow-amber-600/25' },
+  'from-purple-600 to-indigo-700': { from: 'from-purple-600', to: 'to-indigo-700', shadow: 'shadow-purple-600/25' },
+  'from-yellow-500 to-orange-500': { from: 'from-yellow-500', to: 'to-orange-500', shadow: 'shadow-yellow-500/25' },
+  'from-orange-600 to-red-600': { from: 'from-orange-600', to: 'to-red-600', shadow: 'shadow-orange-600/25' },
+  'from-indigo-600 to-purple-700': { from: 'from-indigo-600', to: 'to-purple-700', shadow: 'shadow-indigo-600/25' },
+  'from-teal-500 to-cyan-600': { from: 'from-teal-500', to: 'to-cyan-600', shadow: 'shadow-teal-500/25' },
+  'from-emerald-500 to-green-600': { from: 'from-emerald-500', to: 'to-green-600', shadow: 'shadow-emerald-500/25' },
+};
+
 // Bani Card Component
 function BaniCard({
   bani,
@@ -383,34 +422,43 @@ function BaniCard({
   language: Language;
   onClick: () => void;
 }) {
+  const gradient = GRADIENT_MAP[bani.color] || { from: 'from-amber-500', to: 'to-orange-600', shadow: 'shadow-amber-500/25' };
+
   return (
     <button
       onClick={onClick}
       className={cn(
-        'relative overflow-hidden rounded-xl p-6 text-left transition-all',
+        'group relative overflow-hidden rounded-2xl p-6 text-left transition-all duration-300',
         'bg-gradient-to-br',
-        bani.color,
-        'text-white shadow-lg hover:shadow-xl hover:scale-[1.02]',
-        'focus:outline-none focus:ring-2 focus:ring-white/50'
+        gradient.from,
+        gradient.to,
+        'text-white shadow-lg hover:shadow-2xl',
+        gradient.shadow,
+        'hover:scale-[1.03] active:scale-[0.98]',
+        'focus:outline-none focus:ring-2 focus:ring-white/60 focus:ring-offset-2 focus:ring-offset-transparent'
       )}
     >
-      <div className="absolute top-2 right-2 text-3xl opacity-30">
+      {/* Decorative background pattern */}
+      <div className="absolute inset-0 opacity-10" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'40\' height=\'40\' viewBox=\'0 0 40 40\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M20 0L40 20L20 40L0 20z\' fill=\'none\' stroke=\'white\' stroke-width=\'1\'/%3E%3C/svg%3E")' }} />
+      
+      {/* Background icon */}
+      <div className="absolute -top-2 -right-2 text-5xl opacity-15 group-hover:opacity-25 transition-opacity duration-300 transform group-hover:rotate-12 group-hover:scale-110">
         {bani.icon}
       </div>
       
-      <span className="text-3xl">{bani.icon}</span>
+      <span className="text-3xl drop-shadow-sm">{bani.icon}</span>
       
-      <h3 className="text-xl font-gurmukhi mt-3">
+      <h3 className="text-xl font-gurmukhi mt-3 font-semibold drop-shadow-sm">
         {language === 'pa' ? bani.name.pa : bani.name.en}
       </h3>
       
-      <p className="text-sm opacity-90 mt-1">
+      <p className="text-sm text-white/85 mt-1.5 leading-relaxed">
         {language === 'pa' ? bani.description.pa : bani.description.en}
       </p>
       
-      <div className="mt-4 flex items-center gap-1 text-sm opacity-75">
-        <span>→</span>
-        <span>{language === 'pa' ? 'ਪੜ੍ਹੋ' : 'Read'}</span>
+      <div className="mt-4 flex items-center gap-1.5 text-sm text-white/75 group-hover:text-white transition-colors">
+        <span className="transform group-hover:translate-x-1 transition-transform">→</span>
+        <span className="font-medium">{language === 'pa' ? 'ਪੜ੍ਹੋ' : 'Read'}</span>
       </div>
     </button>
   );
