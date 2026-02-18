@@ -1366,6 +1366,11 @@
   transition: all 0.3s ease;
 }
 
+.dark .sikhi-card {
+  background: linear-gradient(135deg, #1e1e1e 0%, #262626 100%);
+  border-color: rgba(255, 255, 255, 0.08);
+}
+
 .sikhi-card::before {
   content: '';
   position: absolute;
@@ -1383,6 +1388,12 @@
     0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
+.dark .sikhi-card:hover {
+  box-shadow: 
+    0 12px 40px rgba(255, 107, 0, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.3);
+}
+
 /* Neela (Blue) variant for Gurbani */
 .sikhi-card-neela::before {
   background: var(--gradient-neela);
@@ -1392,6 +1403,12 @@
   box-shadow: 
     0 12px 40px rgba(30, 58, 138, 0.15),
     0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.dark .sikhi-card-neela:hover {
+  box-shadow: 
+    0 12px 40px rgba(30, 58, 138, 0.1),
+    0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
 /* Ornate section divider */
@@ -1487,10 +1504,22 @@
   border: 2px solid rgba(255, 107, 0, 0.2);
 }
 
+.dark .sikhi-icon-kesri {
+  background: linear-gradient(135deg, #3d2200 0%, #4a2d00 100%);
+  color: #fb923c;
+  border-color: rgba(255, 107, 0, 0.3);
+}
+
 .sikhi-icon-neela {
   background: linear-gradient(135deg, #EFF6FF 0%, #DBEAFE 100%);
   color: #1E3A8A;
   border: 2px solid rgba(30, 58, 138, 0.2);
+}
+
+.dark .sikhi-icon-neela {
+  background: linear-gradient(135deg, #1a2744 0%, #1e3050 100%);
+  color: #93c5fd;
+  border-color: rgba(59, 130, 246, 0.3);
 }
 
 .sikhi-icon-gold {
@@ -1499,12 +1528,23 @@
   border: 2px solid rgba(218, 165, 32, 0.3);
 }
 
+.dark .sikhi-icon-gold {
+  background: linear-gradient(135deg, #2a2200 0%, #332a00 100%);
+  color: #fbbf24;
+  border-color: rgba(218, 165, 32, 0.3);
+}
+
 /* Ornate corners for frames */
 .sikhi-frame {
   position: relative;
   padding: 2rem;
   border: 2px solid #DAA520;
   background: linear-gradient(135deg, #FEFDFB 0%, #FDF8F0 100%);
+}
+
+.dark .sikhi-frame {
+  background: linear-gradient(135deg, #1e1e1e 0%, #262626 100%);
+  border-color: rgba(218, 165, 32, 0.4);
 }
 
 .sikhi-frame::before,
@@ -1555,6 +1595,12 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
 }
 
+.dark .sikhi-nav {
+  background: linear-gradient(180deg, #171717 0%, #1a1a1a 100%);
+  border-bottom-color: rgba(218, 165, 32, 0.2);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
 .sikhi-nav-link {
   position: relative;
   padding: 0.5rem 1rem;
@@ -1563,12 +1609,24 @@
   transition: color 0.3s ease;
 }
 
+.dark .sikhi-nav-link {
+  color: #a3a3a3;
+}
+
 .sikhi-nav-link:hover {
   color: #FF6B00;
 }
 
+.dark .sikhi-nav-link:hover {
+  color: #fb923c;
+}
+
 .sikhi-nav-link.active {
   color: #FF6B00;
+}
+
+.dark .sikhi-nav-link.active {
+  color: #fb923c;
 }
 
 .sikhi-nav-link.active::after {
