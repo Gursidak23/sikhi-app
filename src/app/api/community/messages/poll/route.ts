@@ -38,11 +38,12 @@ export async function GET(request: NextRequest) {
       members,
       serverTime: new Date().toISOString(),
     });
-  } catch (error) {
-    console.error('Error polling messages:', error);
+  } catch (error: any) {
+    console.error('Error polling messages:', error?.message || error);
+    const isDbError = error?.message?.includes('DATABASE_URL') || error?.message?.includes('datasource');
     return NextResponse.json(
-      { error: 'Failed to poll messages' },
-      { status: 500 }
+      { error: isDbError ? error.message : 'Failed to poll messages' },
+      { status: isDbError ? 503 : 500 }
     );
   }
 }

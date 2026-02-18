@@ -21,11 +21,12 @@ export async function GET(
 
     const members = await getOnlineUsers(params.roomId);
     return NextResponse.json({ room, members });
-  } catch (error) {
-    console.error('Error fetching room:', error);
+  } catch (error: any) {
+    console.error('Error fetching room:', error?.message || error);
+    const isDbError = error?.message?.includes('DATABASE_URL') || error?.message?.includes('datasource');
     return NextResponse.json(
-      { error: 'Failed to fetch room details' },
-      { status: 500 }
+      { error: isDbError ? error.message : 'Failed to fetch room details' },
+      { status: isDbError ? 503 : 500 }
     );
   }
 }
