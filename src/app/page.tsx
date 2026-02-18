@@ -13,6 +13,8 @@ import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { HukamnamaSection } from '@/components/common/Hukamnama';
+import { WaheguruSimran } from '@/components/common/WaheguruSimran';
+import { OfflineManager } from '@/components/common/OfflineManager';
 import type { Language } from '@/types';
 
 // Khanda SVG Component
@@ -382,6 +384,34 @@ export default function HomePage() {
                 — The Three Pillars of Sikhi
               </div>
             </div>
+          </div>
+        </section>
+
+        {/* Waheguru Simran Counter */}
+        <section className="py-12 md:py-20 bg-gradient-to-b from-[#FDF8F0] via-white to-[#fef9e7]">
+          <div className="container-content max-w-2xl">
+            <div className="text-center mb-8">
+              <h2 className={cn(
+                'text-2xl lg:text-3xl font-bold text-neela-800 dark:text-blue-300',
+                isPunjabi && 'font-gurmukhi'
+              )}>
+                {isPunjabi ? 'ਵਾਹਿਗੁਰੂ ਸਿਮਰਨ' : 'Waheguru Simran'}
+              </h2>
+              <p className={cn(
+                'text-neutral-600 dark:text-neutral-400 mt-2',
+                isPunjabi && 'font-gurmukhi'
+              )}>
+                {isPunjabi ? 'ਨਾਮ ਜਪੋ — ਡਿਜੀਟਲ ਮਾਲਾ' : 'Naam Japo — Digital Mala Counter'}
+              </p>
+            </div>
+            <WaheguruSimran language={language} />
+          </div>
+        </section>
+
+        {/* Offline Content Manager */}
+        <section className="py-12 bg-gradient-to-b from-[#fef9e7] to-white">
+          <div className="container-content max-w-2xl">
+            <OfflineManager language={language} />
           </div>
         </section>
       </main>

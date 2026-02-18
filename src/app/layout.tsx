@@ -5,6 +5,7 @@ import { SkipLink } from '@/components/common/SkipLink';
 import { ThemeProvider } from '@/components/common/ThemeProvider';
 import { BookmarkProvider } from '@/components/common/BookmarkSystem';
 import { FontSizeProvider } from '@/components/common/FontSizeControls';
+import { ServiceWorkerRegistrar } from '@/components/common/ServiceWorkerRegistrar';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -103,6 +104,7 @@ export default function RootLayout({
           <BookmarkProvider>
             <FontSizeProvider>
               <SkipLink />
+              <ServiceWorkerRegistrar />
               {children}
             </FontSizeProvider>
           </BookmarkProvider>

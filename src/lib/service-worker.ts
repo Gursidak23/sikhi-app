@@ -6,11 +6,13 @@
 // Register service worker for offline support
 // ============================================================================
 
+import { useState, useEffect } from 'react';
+
 export function registerServiceWorker(): void {
   if (typeof window === 'undefined') return;
   if (!('serviceWorker' in navigator)) return;
 
-  // Only register in production or when explicitly enabled
+  // Register in production or when explicitly enabled
   const enableOffline = process.env.NEXT_PUBLIC_ENABLE_OFFLINE === 'true';
   if (process.env.NODE_ENV !== 'production' && !enableOffline) return;
 
@@ -26,7 +28,8 @@ export function registerServiceWorker(): void {
         if (newWorker) {
           newWorker.addEventListener('statechange', () => {
             if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
-              // New content available, notify user
+              // New content available — dispatch custom event for UI notification
+              window.dispatchEvent(new CustomEvent('sw-update-available'));
               console.log('New content available; please refresh.');
             }
           });
@@ -102,5 +105,19 @@ export function useOfflineStatus(): boolean {
   return offline;
 }
 
-// Missing imports for hook
-import { useState, useEffect } from 'react';
+// Pre-cache all Nitnem Banis for offline use
+export function precacheNitnemBanis(): void {
+  if (typeof window === 'undefined') return;
+  if (!('serviceWorker' in navigator)) return;
+
+  const baniIds = [2, 3, 4, 5, 10, 21, 23, 31, 15]; // All Nitnem Bani IDs
+  
+  navigator.serviceWorker.ready.then((registration) => {
+    baniIds.forEach(id => {
+      registration.active?.postMessage({
+        type: 'CACHE_BANI',
+        baniId: id,
+      });
+    });
+  });
+}

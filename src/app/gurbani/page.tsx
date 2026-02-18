@@ -19,71 +19,19 @@ import { AngNavigator, RaagNavigator, QuickJump, AngSearch } from '@/modules/gur
 import { GurbaniSearch } from '@/modules/gurbani/components/GurbaniSearch';
 import type { Language } from '@/types';
 import { fetchAng, prefetchAdjacentAngs, type BaniDBVerse, type BaniDBAngResponse } from '@/lib/api/banidb-client';
+import { SGGS_RAAG_RANGES, getRaagForAng } from '@/lib/constants/raag-ranges';
 
-// Raag data for sidebar navigation
-const RAAGS = [
-  { id: 'jap', name: { pa: 'ਜਪੁ ਜੀ ਸਾਹਿਬ', en: 'Japji Sahib' }, angStart: 1, angEnd: 8 },
-  { id: 'sri-raag', name: { pa: 'ਸ੍ਰੀ ਰਾਗੁ', en: 'Sri Raag' }, angStart: 14, angEnd: 93 },
-  { id: 'raag-maajh', name: { pa: 'ਰਾਗੁ ਮਾਝ', en: 'Raag Maajh' }, angStart: 94, angEnd: 150 },
-  { id: 'raag-gauri', name: { pa: 'ਰਾਗੁ ਗਉੜੀ', en: 'Raag Gauri' }, angStart: 151, angEnd: 346 },
-  { id: 'raag-aasaa', name: { pa: 'ਰਾਗੁ ਆਸਾ', en: 'Raag Aasaa' }, angStart: 347, angEnd: 488 },
-  { id: 'raag-gujri', name: { pa: 'ਰਾਗੁ ਗੂਜਰੀ', en: 'Raag Gujri' }, angStart: 489, angEnd: 526 },
-  { id: 'raag-devgandhari', name: { pa: 'ਰਾਗੁ ਦੇਵਗੰਧਾਰੀ', en: 'Raag Devgandhari' }, angStart: 527, angEnd: 536 },
-  { id: 'raag-bihagra', name: { pa: 'ਰਾਗੁ ਬਿਹਾਗੜਾ', en: 'Raag Bihagra' }, angStart: 537, angEnd: 556 },
-  { id: 'raag-vadhans', name: { pa: 'ਰਾਗੁ ਵਡਹੰਸੁ', en: 'Raag Vadhans' }, angStart: 557, angEnd: 594 },
-  { id: 'raag-sorath', name: { pa: 'ਰਾਗੁ ਸੋਰਠਿ', en: 'Raag Sorath' }, angStart: 595, angEnd: 659 },
-];
+// Use the complete Raag list from shared constants
+const RAAGS = SGGS_RAAG_RANGES.map(r => ({
+  id: r.id,
+  name: r.name,
+  angStart: r.angStart,
+  angEnd: r.angEnd,
+}));
 
-// Get current Raag based on Ang number
+// Get current Raag based on Ang number (uses shared constant)
 function getCurrentRaag(angNumber: number): string {
-  const raagRanges = [
-    { name: 'ਜਪੁ ਜੀ ਸਾਹਿਬ', start: 1, end: 8 },
-    { name: 'ਸੋ ਦਰੁ - ਸੋ ਪੁਰਖੁ', start: 8, end: 12 },
-    { name: 'ਸੋਹਿਲਾ', start: 12, end: 13 },
-    { name: 'ਸ੍ਰੀ ਰਾਗੁ', start: 14, end: 93 },
-    { name: 'ਰਾਗੁ ਮਾਝ', start: 94, end: 150 },
-    { name: 'ਰਾਗੁ ਗਉੜੀ', start: 151, end: 346 },
-    { name: 'ਰਾਗੁ ਆਸਾ', start: 347, end: 488 },
-    { name: 'ਰਾਗੁ ਗੂਜਰੀ', start: 489, end: 526 },
-    { name: 'ਰਾਗੁ ਦੇਵਗੰਧਾਰੀ', start: 527, end: 536 },
-    { name: 'ਰਾਗੁ ਬਿਹਾਗੜਾ', start: 537, end: 556 },
-    { name: 'ਰਾਗੁ ਵਡਹੰਸੁ', start: 557, end: 594 },
-    { name: 'ਰਾਗੁ ਸੋਰਠਿ', start: 595, end: 659 },
-    { name: 'ਰਾਗੁ ਧਨਾਸਰੀ', start: 660, end: 695 },
-    { name: 'ਰਾਗੁ ਜੈਤਸਰੀ', start: 696, end: 710 },
-    { name: 'ਰਾਗੁ ਟੋਡੀ', start: 711, end: 718 },
-    { name: 'ਰਾਗੁ ਬੈਰਾੜੀ', start: 719, end: 720 },
-    { name: 'ਰਾਗੁ ਤਿਲੰਗ', start: 721, end: 727 },
-    { name: 'ਰਾਗੁ ਸੂਹੀ', start: 728, end: 794 },
-    { name: 'ਰਾਗੁ ਬਿਲਾਵਲੁ', start: 795, end: 858 },
-    { name: 'ਰਾਗੁ ਗੋਂਡ', start: 859, end: 875 },
-    { name: 'ਰਾਗੁ ਰਾਮਕਲੀ', start: 876, end: 974 },
-    { name: 'ਰਾਗੁ ਨਟ ਨਾਰਾਇਣ', start: 975, end: 983 },
-    { name: 'ਰਾਗੁ ਮਾਲੀ ਗਉੜਾ', start: 984, end: 988 },
-    { name: 'ਰਾਗੁ ਮਾਰੂ', start: 989, end: 1106 },
-    { name: 'ਰਾਗੁ ਤੁਖਾਰੀ', start: 1107, end: 1117 },
-    { name: 'ਰਾਗੁ ਕੇਦਾਰਾ', start: 1118, end: 1124 },
-    { name: 'ਰਾਗੁ ਭੈਰਉ', start: 1125, end: 1167 },
-    { name: 'ਰਾਗੁ ਬਸੰਤੁ', start: 1168, end: 1196 },
-    { name: 'ਰਾਗੁ ਸਾਰੰਗ', start: 1197, end: 1253 },
-    { name: 'ਰਾਗੁ ਮਲਾਰ', start: 1254, end: 1293 },
-    { name: 'ਰਾਗੁ ਕਾਨੜਾ', start: 1294, end: 1318 },
-    { name: 'ਰਾਗੁ ਕਲਿਆਣ', start: 1319, end: 1326 },
-    { name: 'ਰਾਗੁ ਪ੍ਰਭਾਤੀ', start: 1327, end: 1351 },
-    { name: 'ਰਾਗੁ ਜੈਜਾਵੰਤੀ', start: 1352, end: 1353 },
-    { name: 'ਸਲੋਕ ਸਹਸਕ੍ਰਿਤੀ', start: 1353, end: 1360 },
-    { name: 'ਗਾਥਾ ਮਹਲਾ ੫', start: 1360, end: 1361 },
-    { name: 'ਫੁਨਹੇ ਮਹਲਾ ੫', start: 1361, end: 1363 },
-    { name: 'ਚਉਬੋਲੇ ਮਹਲਾ ੫', start: 1363, end: 1364 },
-    { name: 'ਸਲੋਕ ਕਬੀਰ ਜੀ', start: 1364, end: 1377 },
-    { name: 'ਸਲੋਕ ਫਰੀਦ ਜੀ', start: 1377, end: 1384 },
-    { name: 'ਸਵਈਏ', start: 1385, end: 1409 },
-    { name: 'ਸਲੋਕ ਵਾਰਾ ਤੇ ਵਧੀਕ', start: 1410, end: 1426 },
-    { name: 'ਸਲੋਕ ਮਹਲਾ ੯', start: 1426, end: 1429 },
-    { name: 'ਮੁੰਦਾਵਣੀ / ਰਾਗਮਾਲਾ', start: 1429, end: 1430 },
-  ];
-  const raag = raagRanges.find(r => angNumber >= r.start && angNumber <= r.end);
-  return raag?.name || 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ';
+  return getRaagForAng(angNumber).pa;
 }
 
 // Get English meaning with source attribution
@@ -147,8 +95,13 @@ function getPunjabiMeaning(verse: BaniDBVerse): { text: string; source: string }
 
 export default function GurbaniPage() {
   const [language, setLanguage] = useState<Language>('pa');
-  const [currentAng, setCurrentAng] = useState(1);
-  const [hasAcknowledged, setHasAcknowledged] = useState(false);
+  const [hasAcknowledged, setHasAcknowledged] = useState(() => {
+    // Persist disclaimer acknowledgement
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('sikhi-gurbani-acknowledged') === 'true';
+    }
+    return false;
+  });
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [angData, setAngData] = useState<BaniDBAngResponse | null>(null);
@@ -156,6 +109,58 @@ export default function GurbaniPage() {
   const [error, setError] = useState<string | null>(null);
   const [expandedVerses, setExpandedVerses] = useState<Set<number>>(new Set());
   const [showMeanings, setShowMeanings] = useState(false);
+
+  // Initialize Ang from URL or localStorage (reading position)
+  const [currentAng, setCurrentAng] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlAng = urlParams.get('ang');
+      if (urlAng) {
+        const parsed = parseInt(urlAng, 10);
+        if (parsed >= 1 && parsed <= 1430) return parsed;
+      }
+      // Fall back to saved reading position
+      const saved = localStorage.getItem('sikhi-last-ang');
+      if (saved) {
+        const parsed = parseInt(saved, 10);
+        if (parsed >= 1 && parsed <= 1430) return parsed;
+      }
+    }
+    return 1;
+  });
+
+  // Sync Ang to URL and localStorage
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const url = new URL(window.location.href);
+      url.searchParams.set('ang', String(currentAng));
+      window.history.replaceState({}, '', url.toString());
+      localStorage.setItem('sikhi-last-ang', String(currentAng));
+    }
+  }, [currentAng]);
+
+  // Handle browser back/forward for Ang navigation
+  useEffect(() => {
+    const handlePopState = () => {
+      const urlParams = new URLSearchParams(window.location.search);
+      const urlAng = urlParams.get('ang');
+      if (urlAng) {
+        const parsed = parseInt(urlAng, 10);
+        if (parsed >= 1 && parsed <= 1430) {
+          setCurrentAng(parsed);
+        }
+      }
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
+  const handleAcknowledge = () => {
+    setHasAcknowledged(true);
+    if (typeof window !== 'undefined') {
+      localStorage.setItem('sikhi-gurbani-acknowledged', 'true');
+    }
+  };
 
   // Fetch data from BaniDB API when Ang changes
   const loadAngData = useCallback(async (ang: number) => {
@@ -185,6 +190,10 @@ export default function GurbaniPage() {
 
   const handleAngChange = (ang: number) => {
     if (ang >= 1 && ang <= 1430) {
+      // Push to browser history for back/forward navigation
+      const url = new URL(window.location.href);
+      url.searchParams.set('ang', String(ang));
+      window.history.pushState({}, '', url.toString());
       setCurrentAng(ang);
       setExpandedVerses(new Set());
     }
@@ -233,7 +242,7 @@ export default function GurbaniPage() {
             <GurbaniDisclaimer
               language={language}
               requiresAcknowledgement={true}
-              onAcknowledge={() => setHasAcknowledged(true)}
+              onAcknowledge={handleAcknowledge}
             />
           </div>
         </div>
