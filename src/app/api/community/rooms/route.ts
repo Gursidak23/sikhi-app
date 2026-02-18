@@ -16,11 +16,12 @@ export async function GET() {
     
     const rooms = await getRooms();
     return NextResponse.json({ rooms });
-  } catch (error) {
-    console.error('Error fetching rooms:', error);
+  } catch (error: any) {
+    console.error('Error fetching rooms:', error?.message || error);
+    const isDbError = error?.message?.includes('DATABASE_URL') || error?.message?.includes('datasource');
     return NextResponse.json(
-      { error: 'Failed to fetch rooms' },
-      { status: 500 }
+      { error: isDbError ? error.message : 'Failed to fetch rooms' },
+      { status: isDbError ? 503 : 500 }
     );
   }
 }
@@ -46,10 +47,11 @@ export async function POST(request: NextRequest) {
         { status: 409 }
       );
     }
-    console.error('Error creating room:', error);
+    console.error('Error creating room:', error?.message || error);
+    const isDbError = error?.message?.includes('DATABASE_URL') || error?.message?.includes('datasource');
     return NextResponse.json(
-      { error: 'Failed to create room' },
-      { status: 500 }
+      { error: isDbError ? error.message : 'Failed to create room' },
+      { status: isDbError ? 503 : 500 }
     );
   }
 }

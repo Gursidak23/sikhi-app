@@ -27,11 +27,12 @@ export async function GET(request: NextRequest) {
 
     const result = await getMessages(roomId, cursor, limit);
     return NextResponse.json(result);
-  } catch (error) {
-    console.error('Error fetching messages:', error);
+  } catch (error: any) {
+    console.error('Error fetching messages:', error?.message || error);
+    const isDbError = error?.message?.includes('DATABASE_URL') || error?.message?.includes('datasource');
     return NextResponse.json(
-      { error: 'Failed to fetch messages' },
-      { status: 500 }
+      { error: isDbError ? error.message : 'Failed to fetch messages' },
+      { status: isDbError ? 503 : 500 }
     );
   }
 }
