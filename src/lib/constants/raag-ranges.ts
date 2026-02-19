@@ -87,7 +87,7 @@ export const NITNEM_BANIS_CONFIG = [
   },
   {
     id: 'jaap',
-    baniId: 3,
+    baniId: 4,
     name: { pa: 'ਜਾਪੁ ਸਾਹਿਬ', en: 'Jaap Sahib' },
     description: { pa: 'ਗੁਰੂ ਗੋਬਿੰਦ ਸਿੰਘ ਜੀ', en: 'Guru Gobind Singh Ji' },
     source: 'ਸ੍ਰੀ ਦਸਮ ਗ੍ਰੰਥ ਸਾਹਿਬ',
@@ -97,7 +97,7 @@ export const NITNEM_BANIS_CONFIG = [
   },
   {
     id: 'tav-prasad-savaiye',
-    baniId: 4,
+    baniId: 6,
     name: { pa: 'ਤ੍ਵ ਪ੍ਰਸਾਦਿ ਸਵੈਯੇ', en: 'Tav-Prasad Savaiye' },
     description: { pa: 'ਗੁਰੂ ਗੋਬਿੰਦ ਸਿੰਘ ਜੀ', en: 'Guru Gobind Singh Ji' },
     source: 'ਸ੍ਰੀ ਦਸਮ ਗ੍ਰੰਥ ਸਾਹਿਬ',
@@ -107,7 +107,7 @@ export const NITNEM_BANIS_CONFIG = [
   },
   {
     id: 'chaupai',
-    baniId: 5,
+    baniId: 9,
     name: { pa: 'ਚੌਪਈ ਸਾਹਿਬ', en: 'Chaupai Sahib' },
     description: { pa: 'ਗੁਰੂ ਗੋਬਿੰਦ ਸਿੰਘ ਜੀ', en: 'Guru Gobind Singh Ji' },
     source: 'ਸ੍ਰੀ ਦਸਮ ਗ੍ਰੰਥ ਸਾਹਿਬ',
@@ -157,7 +157,7 @@ export const NITNEM_BANIS_CONFIG = [
   },
   {
     id: 'asa-di-var',
-    baniId: 15,
+    baniId: 90,
     name: { pa: 'ਆਸਾ ਦੀ ਵਾਰ', en: 'Asa Di Var' },
     description: { pa: 'ਗੁਰੂ ਨਾਨਕ ਦੇਵ ਜੀ', en: 'Guru Nanak Dev Ji' },
     source: 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ, ਅੰਗ ੪੬੨-੪੭੫',
