@@ -5,9 +5,12 @@
  * 
  * BaniDB is the most accurate Gurbani database with over 43,000+ corrections.
  * Used by SikhiToTheMax and approved by SGPC.
+ * 
+ * To use the local BaniDB backup, set NEXT_PUBLIC_BANIDB_API_URL in .env.local:
+ *   NEXT_PUBLIC_BANIDB_API_URL=http://localhost:3001/v2
  */
 
-const BANIDB_API_BASE = 'https://api.banidb.com/v2';
+const BANIDB_API_BASE = process.env.NEXT_PUBLIC_BANIDB_API_URL || 'https://api.banidb.com/v2';
 
 export interface BaniDBVerse {
   verseId: number;

@@ -36,3 +36,6 @@ coverage/
 # Misc
 *.log
 *.tsbuildinfo
+
+# Local BaniDB API backup (cloned repos)
+banidb-local/
