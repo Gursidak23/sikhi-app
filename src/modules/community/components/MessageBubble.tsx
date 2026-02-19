@@ -195,7 +195,7 @@ export function MessageBubble({
                       ? 'bg-amber-100 dark:bg-amber-900/30'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-800'
                   )}
-                  title={emoji}
+                  title={"Reactions are temporary and only visible to you"}
                 >
                   {emoji}
                 </button>

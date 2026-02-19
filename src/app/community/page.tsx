@@ -39,6 +39,16 @@ export default function CommunityPage() {
         onLanguageChange={setLanguage}
       />
 
+      {/* Ephemeral chat warning banner */}
+      <div className="w-full bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm font-medium py-2 px-4 flex items-center gap-2 dark:bg-yellow-900/30 dark:text-yellow-200 dark:border-yellow-700">
+        <svg className="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span>
+          <strong>Notice:</strong> All chat data is temporary and will reset periodically. For production, use a persistent backend.
+        </span>
+      </div>
+
       <main id="main-content" className="flex-1 flex flex-col">
         {/* Compact Hero Header with Sikh ornamental style */}
         <div className="relative overflow-hidden">

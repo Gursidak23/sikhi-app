@@ -2,6 +2,7 @@
 // RATE LIMITING
 // ============================================================================
 // Simple in-memory rate limiter for API routes
+// WARNING: Not production safe — resets on serverless cold start. Use Redis or distributed store for production.
 // For production, consider using Redis-based solutions like @upstash/ratelimit
 // ============================================================================
 
