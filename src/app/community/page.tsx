@@ -75,8 +75,13 @@ export default function CommunityPage() {
                 </div>
               </div>
 
-              {/* Live indicator + Guidelines badge */}
-              <div className="flex items-center gap-3">
+              {/* Live indicator + Sikh Greeting + Guidelines badge */}
+              <div className="flex items-center gap-2">
+                {/* Sikh Greeting */}
+                <div className="hidden sm:flex items-center gap-1.5 px-3 py-1.5 bg-white/10 backdrop-blur-sm rounded-full border border-white/15">
+                  <span className="text-xs font-gurmukhi text-white/90">ਵਾਹਿਗੁਰੂ ਜੀ ਕਾ ਖ਼ਾਲਸਾ</span>
+                </div>
+
                 <div className="flex items-center gap-2 px-3 py-1.5 bg-white/15 backdrop-blur-sm rounded-full border border-white/20">
                   <div className="relative">
                     <div className="w-2 h-2 bg-green-400 rounded-full" />

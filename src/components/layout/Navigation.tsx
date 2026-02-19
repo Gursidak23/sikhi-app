@@ -346,11 +346,11 @@ export function MainNavigation({
       {/* Nanakshahi Calendar Modal */}
       {showCalendar && (
         <div 
-          className="fixed inset-0 z-[100] flex items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm"
+          className="fixed inset-0 z-[100] flex items-start justify-center pt-16 sm:pt-20 pb-4 px-2 sm:px-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
           onClick={() => setShowCalendar(false)}
         >
           <div 
-            className="w-full max-w-2xl max-h-[95vh] overflow-auto rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200"
+            className="w-full max-w-lg rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200"
             onClick={(e) => e.stopPropagation()}
           >
             <NanakshahiCalendarFull language={currentLanguage} onClose={() => setShowCalendar(false)} />

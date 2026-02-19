@@ -1,5 +1,5 @@
 /**
- * GET /api/community/messages/poll - Poll for new messages since a given timestamp
+ * GET /api/community/messages/poll - Poll for new messages (in-memory)
  */
 
 export const dynamic = 'force-dynamic';
@@ -40,10 +40,6 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: any) {
     console.error('Error polling messages:', error?.message || error);
-    const isDbError = error?.message?.includes('DATABASE_URL') || error?.message?.includes('datasource');
-    return NextResponse.json(
-      { error: isDbError ? error.message : 'Failed to poll messages' },
-      { status: isDbError ? 503 : 500 }
-    );
+    return NextResponse.json({ error: 'Failed to poll messages' }, { status: 500 });
   }
 }

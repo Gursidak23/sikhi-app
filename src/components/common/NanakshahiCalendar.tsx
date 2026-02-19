@@ -287,33 +287,33 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
       </div>
       
       {/* Month Navigator */}
-      <div className="p-3 sm:p-4 bg-amber-50 dark:bg-neutral-800 border-b border-amber-200 dark:border-neutral-700">
+      <div className="px-3 py-2 sm:px-4 sm:py-2.5 bg-amber-50 dark:bg-neutral-800 border-b border-amber-200 dark:border-neutral-700">
         <div className="flex items-center justify-between">
           <button
             onClick={() => setSelectedMonth((prev) => (prev === 0 ? 11 : prev - 1))}
-            className="p-2 sm:p-3 rounded-xl bg-white dark:bg-neutral-700 hover:bg-amber-100 dark:hover:bg-neutral-600 transition-colors shadow-sm border border-amber-200 dark:border-neutral-600"
+            className="p-1.5 sm:p-2 rounded-lg bg-white dark:bg-neutral-700 hover:bg-amber-100 dark:hover:bg-neutral-600 transition-colors shadow-sm border border-amber-200 dark:border-neutral-600"
             aria-label="Previous month"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-amber-700 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
             </svg>
           </button>
           
           <div className="text-center">
-            <h3 className="text-xl sm:text-2xl font-gurmukhi font-bold text-amber-900 dark:text-amber-200">
+            <h3 className="text-lg sm:text-xl font-gurmukhi font-bold text-amber-900 dark:text-amber-200">
               {language === 'pa' ? currentMonth.pa : currentMonth.en}
             </h3>
-            <p className="text-xs sm:text-sm text-amber-700 dark:text-amber-400">
+            <p className="text-[10px] sm:text-xs text-amber-700 dark:text-amber-400">
               {currentMonth.days} {language === 'pa' ? 'ਦਿਨ' : 'days'}
             </p>
           </div>
           
           <button
             onClick={() => setSelectedMonth((prev) => (prev === 11 ? 0 : prev + 1))}
-            className="p-2 sm:p-3 rounded-xl bg-white dark:bg-neutral-700 hover:bg-amber-100 dark:hover:bg-neutral-600 transition-colors shadow-sm border border-amber-200 dark:border-neutral-600"
+            className="p-1.5 sm:p-2 rounded-lg bg-white dark:bg-neutral-700 hover:bg-amber-100 dark:hover:bg-neutral-600 transition-colors shadow-sm border border-amber-200 dark:border-neutral-600"
             aria-label="Next month"
           >
-            <svg className="w-4 h-4 sm:w-5 sm:h-5 text-amber-700 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className="w-4 h-4 text-amber-700 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </button>
@@ -321,20 +321,20 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
       </div>
       
       {/* Calendar Grid */}
-      <div className="p-2 sm:p-4 bg-white dark:bg-neutral-900">
+      <div className="p-2 sm:p-3 bg-white dark:bg-neutral-900">
         {/* Week day headers */}
-        <div className="grid grid-cols-7 gap-1 mb-2">
+        <div className="grid grid-cols-7 gap-0.5 mb-1">
           {weekDays.map((day, index) => (
-            <div key={index} className="text-center text-[10px] sm:text-xs font-semibold text-amber-700 dark:text-amber-400 py-1 sm:py-2">
+            <div key={index} className="text-center text-[10px] sm:text-xs font-semibold text-amber-700 dark:text-amber-400 py-1">
               {day}
             </div>
           ))}
         </div>
         
         {/* Days grid */}
-        <div className="space-y-1">
+        <div className="space-y-0.5">
           {weeksGrid.map((week, weekIndex) => (
-            <div key={weekIndex} className="grid grid-cols-7 gap-1">
+            <div key={weekIndex} className="grid grid-cols-7 gap-0.5">
               {week.map((day, dayIndex) => {
                 const event = day ? getEventForDay(day) : undefined;
                 const isToday = day === nanakshahiDate.day && selectedMonth === nanakshahiDate.month;
@@ -343,7 +343,7 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
                   <div
                     key={dayIndex}
                     className={cn(
-                      'relative aspect-square flex items-center justify-center rounded-md sm:rounded-lg text-xs sm:text-sm transition-colors',
+                      'relative min-h-[2rem] sm:min-h-[2.5rem] flex items-center justify-center rounded-md text-xs sm:text-sm transition-colors',
                       day === null && 'bg-transparent',
                       day !== null && !isToday && !event && 'bg-amber-50 dark:bg-neutral-800 hover:bg-amber-100 dark:hover:bg-neutral-700 text-neutral-700 dark:text-neutral-300',
                       isToday && 'bg-amber-500 text-white font-bold shadow-md',
@@ -353,7 +353,7 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
                   >
                     {day}
                     {event && (
-                      <span className="absolute -top-0.5 -right-0.5 sm:-top-1 sm:-right-1 text-[8px] sm:text-xs">{event.icon}</span>
+                      <span className="absolute -top-0.5 -right-0.5 text-[8px] sm:text-[10px]">{event.icon}</span>
                     )}
                   </div>
                 );
@@ -364,8 +364,8 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
       </div>
       
       {/* Events for this month */}
-      <div className="p-3 sm:p-4 border-t border-neutral-200 dark:border-neutral-700">
-        <h4 className="text-xs sm:text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-3 flex items-center gap-2">
+      <div className="p-2.5 sm:p-3 border-t border-neutral-200 dark:border-neutral-700">
+        <h4 className="text-[10px] sm:text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
           <span>📅</span>
           {language === 'pa' ? 'ਇਸ ਮਹੀਨੇ ਦੇ ਦਿਹਾੜੇ' : 'Events This Month'}
         </h4>
@@ -382,10 +382,10 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
                   event.type === 'historical' && 'bg-blue-50 dark:bg-blue-900/20 border-blue-500'
                 )}
               >
-                <span className="text-lg sm:text-2xl">{event.icon}</span>
+                <span className="text-base sm:text-lg">{event.icon}</span>
                 <div className="flex-1 min-w-0">
-                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-1 sm:gap-2">
-                    <p className="font-semibold text-sm sm:text-base text-neutral-900 dark:text-neutral-100">
+                  <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-0.5 sm:gap-2">
+                    <p className="font-semibold text-xs sm:text-sm text-neutral-900 dark:text-neutral-100">
                       {language === 'pa' ? event.name.pa : event.name.en}
                     </p>
                     <span className="text-[10px] sm:text-xs bg-white dark:bg-neutral-700 px-2 py-0.5 sm:py-1 rounded-full text-neutral-600 dark:text-neutral-300 whitespace-nowrap w-fit">
@@ -412,8 +412,8 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
       </div>
       
       {/* Legend */}
-      <div className="p-3 sm:p-4 bg-neutral-50 dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700">
-        <div className="grid grid-cols-2 sm:flex sm:flex-wrap gap-2 sm:gap-4 text-[10px] sm:text-xs">
+      <div className="px-3 py-2 sm:px-4 sm:py-2.5 bg-neutral-50 dark:bg-neutral-800 border-t border-neutral-200 dark:border-neutral-700">
+        <div className="flex flex-wrap gap-3 sm:gap-4 text-[10px] sm:text-xs">
           <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="w-2 h-2 sm:w-3 sm:h-3 bg-amber-400 rounded-full"></span>
             <span className="text-neutral-600 dark:text-neutral-400">

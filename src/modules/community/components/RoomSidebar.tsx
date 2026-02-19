@@ -1,9 +1,10 @@
 /**
- * Chat Room Sidebar - Enhanced room list with unread badges
+ * Chat Room Sidebar - Enhanced room list with unread badges, search, stats
  */
 
 'use client';
 
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 import type { ChatRoom } from '../hooks/useChat';
@@ -19,6 +20,20 @@ interface RoomSidebarProps {
 
 export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose, unreadCounts = {} }: RoomSidebarProps) {
   const isPunjabi = language === 'pa';
+  const [search, setSearch] = useState('');
+
+  const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
+  const totalMembers = rooms.reduce((a, r) => a + (r._count?.members || 0), 0);
+
+  const filteredRooms = rooms.filter((room) => {
+    if (!search.trim()) return true;
+    const q = search.toLowerCase();
+    return (
+      room.name.toLowerCase().includes(q) ||
+      (room.nameGurmukhi && room.nameGurmukhi.includes(q)) ||
+      (room.description && room.description.toLowerCase().includes(q))
+    );
+  });
 
   return (
     <div className="flex flex-col h-full bg-gradient-to-b from-gray-50 to-white dark:from-gray-900 dark:to-gray-950 border-r border-gray-100 dark:border-gray-800">
@@ -31,12 +46,19 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
               </svg>
             </div>
-            <h2 className={cn(
-              'text-base font-bold text-gray-900 dark:text-white',
-              isPunjabi && 'font-gurmukhi text-lg'
-            )}>
-              {isPunjabi ? 'ਕਮਰੇ' : 'Rooms'}
-            </h2>
+            <div>
+              <h2 className={cn(
+                'text-base font-bold text-gray-900 dark:text-white',
+                isPunjabi && 'font-gurmukhi text-lg'
+              )}>
+                {isPunjabi ? 'ਕਮਰੇ' : 'Rooms'}
+              </h2>
+              {totalUnread > 0 && (
+                <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
+                  {totalUnread} {isPunjabi ? 'ਨਵੇਂ' : 'unread'}
+                </p>
+              )}
+            </div>
           </div>
           {onClose && (
             <button
@@ -50,11 +72,50 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
             </button>
           )}
         </div>
+
+        {/* Quick Stats */}
+        <div className="flex items-center gap-3 mt-3 px-1">
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            </svg>
+            {rooms.length} {isPunjabi ? 'ਕਮਰੇ' : 'rooms'}
+          </div>
+          <div className="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
+          <div className="flex items-center gap-1.5 text-xs text-gray-400">
+            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
+            </svg>
+            {totalMembers} {isPunjabi ? 'ਮੈਂਬਰ' : 'members'}
+          </div>
+        </div>
+
+        {/* Search Rooms */}
+        {rooms.length > 3 && (
+          <div className="mt-3 relative">
+            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={isPunjabi ? 'ਕਮਰਾ ਲੱਭੋ...' : 'Search rooms...'}
+              className={cn(
+                'w-full pl-8 pr-3 py-2 text-xs bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg',
+                'text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-400 transition-all',
+                isPunjabi && 'font-gurmukhi'
+              )}
+            />
+          </div>
+        )}
       </div>
 
       {/* Room List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-        {rooms.map((room) => {
+        {filteredRooms.map((room) => {
           const isActive = activeRoom?.id === room.id;
           const displayName = isPunjabi && room.nameGurmukhi ? room.nameGurmukhi : room.name;
           const displayDesc = isPunjabi && room.descriptionGurmukhi
@@ -122,6 +183,18 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
             </button>
           );
         })}
+
+        {/* No search results */}
+        {search.trim() && filteredRooms.length === 0 && (
+          <div className="text-center py-6 px-3">
+            <p className={cn(
+              'text-xs text-gray-400',
+              isPunjabi && 'font-gurmukhi text-sm'
+            )}>
+              {isPunjabi ? 'ਕੋਈ ਕਮਰਾ ਨਹੀਂ ਮਿਲਿਆ' : 'No rooms found'}
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Footer */}
