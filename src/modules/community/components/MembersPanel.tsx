@@ -1,9 +1,10 @@
 /**
- * Members Panel - Enhanced online/offline members display
+ * Members Panel - Enhanced online/offline members with status and search
  */
 
 'use client';
 
+import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 import type { ChatUser } from '../hooks/useChat';
@@ -16,8 +17,22 @@ interface MembersPanelProps {
 
 export function MembersPanel({ members, language, currentUserId }: MembersPanelProps) {
   const isPunjabi = language === 'pa';
+  const [search, setSearch] = useState('');
+
   const onlineMembers = members.filter((m) => m.isOnline);
   const offlineMembers = members.filter((m) => !m.isOnline);
+
+  const filterMembers = (list: ChatUser[]) => {
+    if (!search.trim()) return list;
+    const q = search.toLowerCase();
+    return list.filter(m =>
+      m.displayName.toLowerCase().includes(q) ||
+      (m.displayNameGurmukhi && m.displayNameGurmukhi.includes(q))
+    );
+  };
+
+  const filteredOnline = filterMembers(onlineMembers);
+  const filteredOffline = filterMembers(offlineMembers);
 
   const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
 
@@ -100,32 +115,54 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
             {members.length}
           </span>
         </h3>
+
+        {/* Member search */}
+        {members.length > 5 && (
+          <div className="mt-3 relative">
+            <div className="absolute inset-y-0 left-0 pl-2.5 flex items-center pointer-events-none">
+              <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </div>
+            <input
+              type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={isPunjabi ? 'ਮੈਂਬਰ ਲੱਭੋ...' : 'Search members...'}
+              className={cn(
+                'w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg',
+                'text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all',
+                isPunjabi && 'font-gurmukhi'
+              )}
+            />
+          </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto py-2">
         {/* Online */}
-        {onlineMembers.length > 0 && (
+        {filteredOnline.length > 0 && (
           <div className="mb-3">
             <div className="px-4 py-1.5 flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full" />
               <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">
-                {isPunjabi ? 'ਔਨਲਾਈਨ' : 'Online'} — {onlineMembers.length}
+                {isPunjabi ? 'ਔਨਲਾਈਨ' : 'Online'} — {filteredOnline.length}
               </span>
             </div>
-            {onlineMembers.map(renderMember)}
+            {filteredOnline.map(renderMember)}
           </div>
         )}
 
         {/* Offline */}
-        {offlineMembers.length > 0 && (
+        {filteredOffline.length > 0 && (
           <div>
             <div className="px-4 py-1.5 flex items-center gap-2">
               <div className="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full" />
               <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                {isPunjabi ? 'ਔਫ਼ਲਾਈਨ' : 'Offline'} — {offlineMembers.length}
+                {isPunjabi ? 'ਔਫ਼ਲਾਈਨ' : 'Offline'} — {filteredOffline.length}
               </span>
             </div>
-            {offlineMembers.map(renderMember)}
+            {filteredOffline.map(renderMember)}
           </div>
         )}
 

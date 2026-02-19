@@ -39,6 +39,7 @@ export function ChatView({ language }: ChatViewProps) {
     connectionStatus,
     unreadCounts,
     onlineCount,
+    typingUsers,
     registerUser,
     selectRoom,
     sendMessage,
@@ -321,13 +322,36 @@ export function ChatView({ language }: ChatViewProps) {
                   {isPunjabi ? 'ਗੱਲਬਾਤ ਸ਼ੁਰੂ ਕਰੋ' : 'Start the conversation'}
                 </h3>
                 <p className={cn(
-                  'text-sm text-gray-400 leading-relaxed',
+                  'text-sm text-gray-400 leading-relaxed mb-5',
                   isPunjabi && 'font-gurmukhi'
                 )}>
                   {isPunjabi
                     ? 'ਪਹਿਲਾ ਸੁਨੇਹਾ ਭੇਜ ਕੇ ਗੱਲਬਾਤ ਸ਼ੁਰੂ ਕਰੋ!'
                     : 'Be the first to send a message!'}
                 </p>
+
+                {/* Quick tips */}
+                <div className="text-left space-y-2">
+                  {(isPunjabi ? [
+                    { icon: '🙏', text: 'ਸਤਿਕਾਰ ਨਾਲ ਗੱਲ ਕਰੋ' },
+                    { icon: '📚', text: 'ਗੁਰਬਾਣੀ ਅਤੇ ਇਤਿਹਾਸ ਬਾਰੇ ਸਿੱਖੋ' },
+                    { icon: '💡', text: 'ਸਵਾਲ ਪੁੱਛੋ ਅਤੇ ਜਵਾਬ ਦਿਓ' },
+                  ] : [
+                    { icon: '🙏', text: 'Communicate with respect' },
+                    { icon: '📚', text: 'Discuss Gurbani & Sikh history' },
+                    { icon: '💡', text: 'Ask questions & share knowledge' },
+                  ]).map((tip, i) => (
+                    <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/50">
+                      <span className="text-sm flex-shrink-0">{tip.icon}</span>
+                      <span className={cn(
+                        'text-xs text-gray-500 dark:text-gray-400',
+                        isPunjabi && 'font-gurmukhi text-sm'
+                      )}>
+                        {tip.text}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
             </div>
           ) : (
@@ -389,6 +413,23 @@ export function ChatView({ language }: ChatViewProps) {
             </button>
           )}
         </div>
+
+        {/* Typing Indicator */}
+        {typingUsers.length > 0 && (
+          <div className="px-4 py-1.5 flex items-center gap-2">
+            <div className="flex gap-1">
+              <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </div>
+            <span className={cn(
+              'text-xs text-gray-400 italic',
+              isPunjabi && 'font-gurmukhi'
+            )}>
+              {isPunjabi ? 'ਕੋਈ ਲਿਖ ਰਿਹਾ ਹੈ...' : 'Someone is typing...'}
+            </span>
+          </div>
+        )}
 
         {/* Chat Input */}
         <ChatInput

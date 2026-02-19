@@ -23,11 +23,7 @@ export async function GET(
     return NextResponse.json({ room, members });
   } catch (error: any) {
     console.error('Error fetching room:', error?.message || error);
-    const isDbError = error?.message?.includes('DATABASE_URL') || error?.message?.includes('datasource');
-    return NextResponse.json(
-      { error: isDbError ? error.message : 'Failed to fetch room details' },
-      { status: isDbError ? 503 : 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch room details' }, { status: 500 });
   }
 }
 
@@ -40,10 +36,7 @@ export async function POST(
     const userId = body.userId;
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'userId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
     }
 
     const membership = await joinRoom(userId, params.roomId);
@@ -66,19 +59,13 @@ export async function DELETE(
     const userId = searchParams.get('userId');
 
     if (!userId) {
-      return NextResponse.json(
-        { error: 'userId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'userId is required' }, { status: 400 });
     }
 
     await leaveRoom(userId, params.roomId);
     return NextResponse.json({ success: true });
   } catch (error) {
     console.error('Error leaving room:', error);
-    return NextResponse.json(
-      { error: 'Failed to leave room' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Failed to leave room' }, { status: 500 });
   }
 }

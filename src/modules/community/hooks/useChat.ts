@@ -177,13 +177,13 @@ export function useChat() {
   }, [unreadCounts]);
 
   // ---- Register / Create User ----
-  const registerUser = useCallback(async (displayName: string, displayNameGurmukhi?: string) => {
+  const registerUser = useCallback(async (displayName: string, displayNameGurmukhi?: string, avatarColor?: string) => {
     try {
       setError(null);
       const res = await fetch('/api/community/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName, displayNameGurmukhi }),
+        body: JSON.stringify({ displayName, displayNameGurmukhi, avatarColor }),
       });
 
       if (!res.ok) {

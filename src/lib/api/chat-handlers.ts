@@ -1,71 +1,276 @@
 /**
- * Community Chat API Handlers
- * Server-side business logic for chat operations
+ * Community Chat API Handlers — IN-MEMORY (no database)
+ * 
+ * All chat state lives in server memory for maximum performance.
+ * Messages, users, rooms, and memberships reset on server restart.
+ * This is intentional — performance over persistence.
  */
 
-import prisma from '@/lib/db/prisma';
+// ============================================================================
+// In-Memory Data Stores
+// ============================================================================
+
+interface MemChatUser {
+  id: string;
+  displayName: string;
+  displayNameGurmukhi: string | null;
+  avatarColor: string;
+  isOnline: boolean;
+  lastSeenAt: Date;
+}
+
+interface MemChatRoom {
+  id: string;
+  name: string;
+  nameGurmukhi: string | null;
+  description: string | null;
+  descriptionGurmukhi: string | null;
+  icon: string;
+  isDefault: boolean;
+  isActive: boolean;
+  maxMembers: number;
+}
+
+interface MemChatMessage {
+  id: string;
+  content: string;
+  userId: string;
+  roomId: string;
+  replyToId: string | null;
+  isEdited: boolean;
+  isDeleted: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface MemChatRoomMember {
+  userId: string;
+  roomId: string;
+  joinedAt: Date;
+}
+
+// ---------- Stores ----------
+const users = new Map<string, MemChatUser>();
+const rooms = new Map<string, MemChatRoom>();
+const roomMembers: MemChatRoomMember[] = [];
+const messages: MemChatMessage[] = [];
+
+// ---------- Counters ----------
+let idCounter = 0;
+function genId(): string {
+  return `mem_${Date.now()}_${++idCounter}_${Math.random().toString(36).slice(2, 8)}`;
+}
+
+// ---------- Seed default rooms on first import ----------
+const DEFAULT_ROOMS: Omit<MemChatRoom, 'id'>[] = [
+  {
+    name: 'General',
+    nameGurmukhi: 'ਆਮ ਗੱਲਬਾਤ',
+    description: 'General discussion for the Sangat',
+    descriptionGurmukhi: 'ਸੰਗਤ ਲਈ ਆਮ ਵਿਚਾਰ',
+    icon: '🏠',
+    isDefault: true,
+    isActive: true,
+    maxMembers: 500,
+  },
+  {
+    name: 'Gurbani Vichar',
+    nameGurmukhi: 'ਗੁਰਬਾਣੀ ਵਿਚਾਰ',
+    description: 'Discuss Gurbani meanings and interpretations',
+    descriptionGurmukhi: 'ਗੁਰਬਾਣੀ ਦੇ ਅਰਥ ਅਤੇ ਵਿਆਖਿਆ ਬਾਰੇ ਗੱਲਬਾਤ',
+    icon: '📖',
+    isDefault: true,
+    isActive: true,
+    maxMembers: 500,
+  },
+  {
+    name: 'Sikh History',
+    nameGurmukhi: 'ਸਿੱਖ ਇਤਿਹਾਸ',
+    description: 'Discuss Sikh history and events',
+    descriptionGurmukhi: 'ਸਿੱਖ ਇਤਿਹਾਸ ਅਤੇ ਘਟਨਾਵਾਂ ਬਾਰੇ ਵਿਚਾਰ',
+    icon: '📜',
+    isDefault: true,
+    isActive: true,
+    maxMembers: 500,
+  },
+  {
+    name: 'Kirtan & Sangeet',
+    nameGurmukhi: 'ਕੀਰਤਨ ਤੇ ਸੰਗੀਤ',
+    description: 'Share and discuss Kirtan, Raags, and Sikh music',
+    descriptionGurmukhi: 'ਕੀਰਤਨ, ਰਾਗ, ਅਤੇ ਸਿੱਖ ਸੰਗੀਤ ਬਾਰੇ ਸਾਂਝਾ ਕਰੋ',
+    icon: '🎵',
+    isDefault: false,
+    isActive: true,
+    maxMembers: 500,
+  },
+  {
+    name: 'Newcomers',
+    nameGurmukhi: 'ਨਵੇਂ ਆਏ',
+    description: 'Welcome area for those new to Sikhi',
+    descriptionGurmukhi: 'ਸਿੱਖੀ ਵਿੱਚ ਨਵੇਂ ਆਏ ਲਈ ਸੁਆਗਤ',
+    icon: '🌱',
+    isDefault: false,
+    isActive: true,
+    maxMembers: 500,
+  },
+];
+
+// Seed once at module init
+for (const r of DEFAULT_ROOMS) {
+  const id = genId();
+  rooms.set(id, { id, ...r });
+}
+
+// Message cap per room
+const MAX_MESSAGES_PER_ROOM = 500;
+
+function pruneMessages(roomId: string) {
+  let count = 0;
+  for (const m of messages) {
+    if (m.roomId === roomId) count++;
+  }
+  if (count <= MAX_MESSAGES_PER_ROOM) return;
+  
+  let toRemove = count - MAX_MESSAGES_PER_ROOM;
+  for (let i = 0; i < messages.length && toRemove > 0; i++) {
+    if (messages[i].roomId === roomId) {
+      messages.splice(i, 1);
+      toRemove--;
+      i--;
+    }
+  }
+}
+
+// Auto-cleanup: mark users offline if not seen in 2 min
+function cleanupOfflineUsers() {
+  const cutoff = Date.now() - 2 * 60 * 1000;
+  for (const u of Array.from(users.values())) {
+    if (u.isOnline && u.lastSeenAt.getTime() < cutoff) {
+      u.isOnline = false;
+    }
+  }
+}
+
+if (typeof setInterval !== 'undefined') {
+  setInterval(cleanupOfflineUsers, 30000);
+}
+
+// ============================================================================
+// Response Builders (match the shapes Prisma used to return)
+// ============================================================================
+
+function userToResponse(u: MemChatUser) {
+  return {
+    id: u.id,
+    displayName: u.displayName,
+    displayNameGurmukhi: u.displayNameGurmukhi,
+    avatarColor: u.avatarColor,
+    isOnline: u.isOnline,
+    lastSeenAt: u.lastSeenAt.toISOString(),
+  };
+}
+
+function messageToResponse(m: MemChatMessage) {
+  const u = users.get(m.userId);
+  let replyTo = null;
+  if (m.replyToId) {
+    const rm = messages.find((msg) => msg.id === m.replyToId);
+    if (rm) {
+      const ru = users.get(rm.userId);
+      replyTo = {
+        id: rm.id,
+        content: rm.content,
+        user: { displayName: ru?.displayName || 'Unknown' },
+      };
+    }
+  }
+
+  return {
+    id: m.id,
+    content: m.content,
+    userId: m.userId,
+    roomId: m.roomId,
+    isEdited: m.isEdited,
+    isDeleted: m.isDeleted,
+    createdAt: m.createdAt.toISOString(),
+    updatedAt: m.updatedAt.toISOString(),
+    user: {
+      id: u?.id || m.userId,
+      displayName: u?.displayName || 'Unknown',
+      displayNameGurmukhi: u?.displayNameGurmukhi || null,
+      avatarColor: u?.avatarColor || '#888',
+    },
+    replyTo,
+  };
+}
+
+function roomToResponse(r: MemChatRoom) {
+  const memberCount = roomMembers.filter((m) => m.roomId === r.id).length;
+  const msgCount = messages.filter((m) => m.roomId === r.id && !m.isDeleted).length;
+  return {
+    id: r.id,
+    name: r.name,
+    nameGurmukhi: r.nameGurmukhi,
+    description: r.description,
+    descriptionGurmukhi: r.descriptionGurmukhi,
+    icon: r.icon,
+    isDefault: r.isDefault,
+    isActive: r.isActive,
+    _count: {
+      members: memberCount,
+      messages: msgCount,
+    },
+  };
+}
 
 // ============================================================================
 // User Handlers
 // ============================================================================
 
 export async function createOrGetUser(displayName: string, displayNameGurmukhi?: string, avatarColor?: string) {
-  const user = await prisma.chatUser.create({
-    data: {
-      displayName,
-      displayNameGurmukhi,
-      avatarColor: avatarColor || getRandomColor(),
-      isOnline: true,
-      lastSeenAt: new Date(),
-    },
-  });
+  const id = genId();
+  const user: MemChatUser = {
+    id,
+    displayName,
+    displayNameGurmukhi: displayNameGurmukhi || null,
+    avatarColor: avatarColor || getRandomColor(),
+    isOnline: true,
+    lastSeenAt: new Date(),
+  };
+  users.set(id, user);
 
   // Auto-join default rooms
-  const defaultRooms = await prisma.chatRoom.findMany({
-    where: { isDefault: true, isActive: true },
-  });
-
-  if (defaultRooms.length > 0) {
-    await prisma.chatRoomMember.createMany({
-      data: defaultRooms.map((room) => ({
-        userId: user.id,
-        roomId: room.id,
-      })),
-      skipDuplicates: true,
-    });
+  for (const r of Array.from(rooms.values())) {
+    if (r.isDefault && r.isActive) {
+      const already = roomMembers.some((m) => m.userId === id && m.roomId === r.id);
+      if (!already) {
+        roomMembers.push({ userId: id, roomId: r.id, joinedAt: new Date() });
+      }
+    }
   }
 
-  return user;
+  return userToResponse(user);
 }
 
 export async function updateUserPresence(userId: string, isOnline: boolean) {
-  return prisma.chatUser.update({
-    where: { id: userId },
-    data: {
-      isOnline,
-      lastSeenAt: new Date(),
-    },
-  });
+  const user = users.get(userId);
+  if (!user) return null;
+  user.isOnline = isOnline;
+  user.lastSeenAt = new Date();
+  return userToResponse(user);
 }
 
 export async function getOnlineUsers(roomId: string) {
-  const members = await prisma.chatRoomMember.findMany({
-    where: { roomId },
-    include: {
-      user: {
-        select: {
-          id: true,
-          displayName: true,
-          displayNameGurmukhi: true,
-          avatarColor: true,
-          isOnline: true,
-          lastSeenAt: true,
-        },
-      },
-    },
-  });
+  const memberIds = new Set(
+    roomMembers.filter((m) => m.roomId === roomId).map((m) => m.userId)
+  );
 
-  return members.map((m) => m.user);
+  const result = [];
+  for (const id of Array.from(memberIds)) {
+    const u = users.get(id);
+    if (u) result.push(userToResponse(u));
+  }
+  return result;
 }
 
 // ============================================================================
@@ -73,37 +278,18 @@ export async function getOnlineUsers(roomId: string) {
 // ============================================================================
 
 export async function getRooms() {
-  const rooms = await prisma.chatRoom.findMany({
-    where: { isActive: true },
-    include: {
-      _count: {
-        select: {
-          members: true,
-          messages: true,
-        },
-      },
-    },
-    orderBy: [
-      { isDefault: 'desc' },
-      { name: 'asc' },
-    ],
-  });
-
-  return rooms;
+  return Array.from(rooms.values())
+    .filter((r) => r.isActive)
+    .sort((a, b) => {
+      if (a.isDefault !== b.isDefault) return a.isDefault ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    })
+    .map(roomToResponse);
 }
 
 export async function getRoomById(roomId: string) {
-  return prisma.chatRoom.findUnique({
-    where: { id: roomId },
-    include: {
-      _count: {
-        select: {
-          members: true,
-          messages: true,
-        },
-      },
-    },
-  });
+  const room = rooms.get(roomId);
+  return room ? roomToResponse(room) : null;
 }
 
 export async function createRoom(data: {
@@ -113,45 +299,45 @@ export async function createRoom(data: {
   descriptionGurmukhi?: string;
   icon?: string;
 }) {
-  return prisma.chatRoom.create({
-    data: {
-      name: data.name,
-      nameGurmukhi: data.nameGurmukhi,
-      description: data.description,
-      descriptionGurmukhi: data.descriptionGurmukhi,
-      icon: data.icon || '💬',
-    },
-  });
+  const id = genId();
+  const room: MemChatRoom = {
+    id,
+    name: data.name,
+    nameGurmukhi: data.nameGurmukhi || null,
+    description: data.description || null,
+    descriptionGurmukhi: data.descriptionGurmukhi || null,
+    icon: data.icon || '💬',
+    isDefault: false,
+    isActive: true,
+    maxMembers: 500,
+  };
+  rooms.set(id, room);
+  return roomToResponse(room);
 }
 
 export async function joinRoom(userId: string, roomId: string) {
-  // Check room exists and has capacity
-  const room = await prisma.chatRoom.findUnique({
-    where: { id: roomId },
-    include: { _count: { select: { members: true } } },
-  });
-
+  const room = rooms.get(roomId);
   if (!room || !room.isActive) {
     throw new Error('Room not found or inactive');
   }
 
-  if (room._count.members >= room.maxMembers) {
+  const memberCount = roomMembers.filter((m) => m.roomId === roomId).length;
+  if (memberCount >= room.maxMembers) {
     throw new Error('Room is full');
   }
 
-  return prisma.chatRoomMember.upsert({
-    where: {
-      userId_roomId: { userId, roomId },
-    },
-    create: { userId, roomId },
-    update: {},
-  });
+  const already = roomMembers.some((m) => m.userId === userId && m.roomId === roomId);
+  if (!already) {
+    roomMembers.push({ userId, roomId, joinedAt: new Date() });
+  }
+
+  return { userId, roomId };
 }
 
 export async function leaveRoom(userId: string, roomId: string) {
-  return prisma.chatRoomMember.deleteMany({
-    where: { userId, roomId },
-  });
+  const idx = roomMembers.findIndex((m) => m.userId === userId && m.roomId === roomId);
+  if (idx !== -1) roomMembers.splice(idx, 1);
+  return { count: idx !== -1 ? 1 : 0 };
 }
 
 // ============================================================================
@@ -164,223 +350,98 @@ export async function sendMessage(data: {
   roomId: string;
   replyToId?: string;
 }) {
-  // Verify user is a member of the room
-  const membership = await prisma.chatRoomMember.findUnique({
-    where: {
-      userId_roomId: { userId: data.userId, roomId: data.roomId },
-    },
-  });
-
-  if (!membership) {
+  const isMember = roomMembers.some((m) => m.userId === data.userId && m.roomId === data.roomId);
+  if (!isMember) {
     throw new Error('You must join this room to send messages');
   }
 
-  // Sanitize content - strip HTML tags
-  const sanitizedContent = data.content
-    .replace(/<[^>]*>/g, '')
-    .trim();
-
+  const sanitizedContent = data.content.replace(/<[^>]*>/g, '').trim();
   if (!sanitizedContent) {
     throw new Error('Message cannot be empty after sanitization');
   }
 
-  const message = await prisma.chatMessage.create({
-    data: {
-      content: sanitizedContent,
-      userId: data.userId,
-      roomId: data.roomId,
-      replyToId: data.replyToId,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          displayName: true,
-          displayNameGurmukhi: true,
-          avatarColor: true,
-        },
-      },
-      replyTo: {
-        select: {
-          id: true,
-          content: true,
-          user: {
-            select: {
-              displayName: true,
-            },
-          },
-        },
-      },
-    },
-  });
+  const now = new Date();
+  const msg: MemChatMessage = {
+    id: genId(),
+    content: sanitizedContent,
+    userId: data.userId,
+    roomId: data.roomId,
+    replyToId: data.replyToId || null,
+    isEdited: false,
+    isDeleted: false,
+    createdAt: now,
+    updatedAt: now,
+  };
 
-  // Update user last seen
-  await prisma.chatUser.update({
-    where: { id: data.userId },
-    data: { lastSeenAt: new Date(), isOnline: true },
-  });
+  messages.push(msg);
 
-  return message;
+  // Update user presence
+  const user = users.get(data.userId);
+  if (user) {
+    user.lastSeenAt = now;
+    user.isOnline = true;
+  }
+
+  pruneMessages(data.roomId);
+  return messageToResponse(msg);
 }
 
 export async function getMessages(roomId: string, cursor?: string, limit = 50) {
-  const messages = await prisma.chatMessage.findMany({
-    where: {
-      roomId,
-      isDeleted: false,
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          displayName: true,
-          displayNameGurmukhi: true,
-          avatarColor: true,
-        },
-      },
-      replyTo: {
-        select: {
-          id: true,
-          content: true,
-          user: {
-            select: {
-              displayName: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: limit + 1, // Fetch one extra to determine if there are more
-    ...(cursor
-      ? {
-          cursor: { id: cursor },
-          skip: 1, // Skip the cursor itself
-        }
-      : {}),
-  });
+  const roomMsgs = messages.filter((m) => m.roomId === roomId && !m.isDeleted);
 
-  const hasMore = messages.length > limit;
-  const items = hasMore ? messages.slice(0, limit) : messages;
-  const nextCursor = hasMore ? items[items.length - 1]?.id : undefined;
+  if (cursor) {
+    const cursorIdx = roomMsgs.findIndex((m) => m.id === cursor);
+    if (cursorIdx > 0) {
+      const start = Math.max(0, cursorIdx - limit);
+      const slice = roomMsgs.slice(start, cursorIdx);
+      return {
+        messages: slice.map(messageToResponse),
+        nextCursor: start > 0 ? slice[0]?.id : undefined,
+        hasMore: start > 0,
+      };
+    }
+  }
 
+  const total = roomMsgs.length;
+  const start = Math.max(0, total - limit);
+  const slice = roomMsgs.slice(start);
   return {
-    messages: items.reverse(), // Return in chronological order
-    nextCursor,
-    hasMore,
+    messages: slice.map(messageToResponse),
+    nextCursor: start > 0 ? slice[0]?.id : undefined,
+    hasMore: start > 0,
   };
 }
 
 export async function pollNewMessages(roomId: string, since: Date) {
-  return prisma.chatMessage.findMany({
-    where: {
-      roomId,
-      isDeleted: false,
-      createdAt: { gt: since },
-    },
-    include: {
-      user: {
-        select: {
-          id: true,
-          displayName: true,
-          displayNameGurmukhi: true,
-          avatarColor: true,
-        },
-      },
-      replyTo: {
-        select: {
-          id: true,
-          content: true,
-          user: {
-            select: {
-              displayName: true,
-            },
-          },
-        },
-      },
-    },
-    orderBy: { createdAt: 'asc' },
-    take: 100, // Cap to prevent abuse
-  });
+  return messages
+    .filter(
+      (m) =>
+        m.roomId === roomId &&
+        !m.isDeleted &&
+        m.createdAt > since
+    )
+    .slice(0, 100)
+    .map(messageToResponse);
 }
 
 export async function deleteMessage(messageId: string, userId: string) {
-  // Only the author can delete their messages
-  const message = await prisma.chatMessage.findUnique({
-    where: { id: messageId },
-  });
-
-  if (!message || message.userId !== userId) {
+  const msg = messages.find((m) => m.id === messageId);
+  if (!msg || msg.userId !== userId) {
     throw new Error('Message not found or unauthorized');
   }
 
-  return prisma.chatMessage.update({
-    where: { id: messageId },
-    data: { isDeleted: true, content: '[Message deleted]' },
-  });
+  msg.isDeleted = true;
+  msg.content = '[Message deleted]';
+  msg.updatedAt = new Date();
+  return messageToResponse(msg);
 }
 
 // ============================================================================
-// Seed Default Rooms
+// Seed Default Rooms — no-op (seeded at module init)
 // ============================================================================
 
 export async function ensureDefaultRooms() {
-  const defaultRooms = [
-    {
-      name: 'General',
-      nameGurmukhi: 'ਆਮ ਗੱਲਬਾਤ',
-      description: 'General discussion for the Sangat',
-      descriptionGurmukhi: 'ਸੰਗਤ ਲਈ ਆਮ ਵਿਚਾਰ',
-      icon: '🏠',
-      isDefault: true,
-    },
-    {
-      name: 'Gurbani Vichar',
-      nameGurmukhi: 'ਗੁਰਬਾਣੀ ਵਿਚਾਰ',
-      description: 'Discuss Gurbani meanings and interpretations',
-      descriptionGurmukhi: 'ਗੁਰਬਾਣੀ ਦੇ ਅਰਥ ਅਤੇ ਵਿਆਖਿਆ ਬਾਰੇ ਗੱਲਬਾਤ',
-      icon: '📖',
-      isDefault: true,
-    },
-    {
-      name: 'Sikh History',
-      nameGurmukhi: 'ਸਿੱਖ ਇਤਿਹਾਸ',
-      description: 'Discuss Sikh history and events',
-      descriptionGurmukhi: 'ਸਿੱਖ ਇਤਿਹਾਸ ਅਤੇ ਘਟਨਾਵਾਂ ਬਾਰੇ ਵਿਚਾਰ',
-      icon: '📜',
-      isDefault: true,
-    },
-    {
-      name: 'Kirtan & Sangeet',
-      nameGurmukhi: 'ਕੀਰਤਨ ਤੇ ਸੰਗੀਤ',
-      description: 'Share and discuss Kirtan, Raags, and Sikh music',
-      descriptionGurmukhi: 'ਕੀਰਤਨ, ਰਾਗ, ਅਤੇ ਸਿੱਖ ਸੰਗੀਤ ਬਾਰੇ ਸਾਂਝਾ ਕਰੋ',
-      icon: '🎵',
-      isDefault: false,
-    },
-    {
-      name: 'Newcomers',
-      nameGurmukhi: 'ਨਵੇਂ ਆਏ',
-      description: 'Welcome area for those new to Sikhi',
-      descriptionGurmukhi: 'ਸਿੱਖੀ ਵਿੱਚ ਨਵੇਂ ਆਏ ਲਈ ਸੁਆਗਤ',
-      icon: '🌱',
-      isDefault: false,
-    },
-  ];
-
-  for (const room of defaultRooms) {
-    await prisma.chatRoom.upsert({
-      where: { name: room.name },
-      create: room,
-      update: {
-        nameGurmukhi: room.nameGurmukhi,
-        description: room.description,
-        descriptionGurmukhi: room.descriptionGurmukhi,
-        icon: room.icon,
-        isDefault: room.isDefault,
-      },
-    });
-  }
+  return;
 }
 
 // ============================================================================

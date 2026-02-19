@@ -1,5 +1,5 @@
 /**
- * GET /api/community/messages - Get messages for a room (paginated)
+ * GET /api/community/messages - Get messages for a room (paginated, in-memory)
  * POST /api/community/messages - Send a new message
  * DELETE /api/community/messages - Delete a message
  */
@@ -19,27 +19,19 @@ export async function GET(request: NextRequest) {
     const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
 
     if (!roomId) {
-      return NextResponse.json(
-        { error: 'roomId is required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'roomId is required' }, { status: 400 });
     }
 
     const result = await getMessages(roomId, cursor, limit);
     return NextResponse.json(result);
   } catch (error: any) {
     console.error('Error fetching messages:', error?.message || error);
-    const isDbError = error?.message?.includes('DATABASE_URL') || error?.message?.includes('datasource');
-    return NextResponse.json(
-      { error: isDbError ? error.message : 'Failed to fetch messages' },
-      { status: isDbError ? 503 : 500 }
-    );
+    return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
   }
 }
 
 export async function POST(request: NextRequest) {
   try {
-    // Rate limit: 30 messages per minute per IP
     const ip = getClientIdentifier(request);
     const rateLimitResult = rateLimit(`chat-send:${ip}`, { limit: 30, windowSeconds: 60 });
     if (!rateLimitResult.success) {
@@ -74,10 +66,7 @@ export async function DELETE(request: NextRequest) {
     const parsed = editMessageSchema.omit({ content: true }).safeParse(body);
 
     if (!parsed.success) {
-      return NextResponse.json(
-        { error: 'messageId and userId are required' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'messageId and userId are required' }, { status: 400 });
     }
 
     await deleteMessage(parsed.data.messageId, parsed.data.userId);

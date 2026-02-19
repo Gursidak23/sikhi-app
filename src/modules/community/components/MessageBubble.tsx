@@ -1,13 +1,15 @@
 /**
- * Chat Message Bubble Component - Enhanced with optimistic state
+ * Chat Message Bubble Component - Enhanced with reactions and optimistic state
  */
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 import type { ChatMessage, ChatUser } from '../hooks/useChat';
+
+const QUICK_REACTIONS = ['🙏', '❤️', '👍', '✨', '😊'];
 
 interface MessageBubbleProps {
   message: ChatMessage;
@@ -25,6 +27,8 @@ export function MessageBubble({
   onDelete,
 }: MessageBubbleProps) {
   const [showActions, setShowActions] = useState(false);
+  const [reactions, setReactions] = useState<Record<string, number>>({});
+  const [myReaction, setMyReaction] = useState<string | null>(null);
   const isOwn = currentUser?.id === message.userId;
   const isPunjabi = language === 'pa';
   const isOptimistic = (message as any)._optimistic;
@@ -32,6 +36,28 @@ export function MessageBubble({
   const displayName = isPunjabi && message.user.displayNameGurmukhi
     ? message.user.displayNameGurmukhi
     : message.user.displayName;
+
+  const toggleReaction = useCallback((emoji: string) => {
+    setReactions(prev => {
+      const next = { ...prev };
+      if (myReaction === emoji) {
+        // Un-react
+        next[emoji] = (next[emoji] || 1) - 1;
+        if (next[emoji] <= 0) delete next[emoji];
+        setMyReaction(null);
+      } else {
+        // Remove old reaction
+        if (myReaction) {
+          next[myReaction] = (next[myReaction] || 1) - 1;
+          if (next[myReaction] <= 0) delete next[myReaction];
+        }
+        // Add new reaction
+        next[emoji] = (next[emoji] || 0) + 1;
+        setMyReaction(emoji);
+      }
+      return next;
+    });
+  }, [myReaction]);
 
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -155,8 +181,27 @@ export function MessageBubble({
         {showActions && !isOptimistic && (
           <div className={cn(
             'flex items-center gap-0.5 mt-1',
-            isOwn && 'justify-end'
+            isOwn && 'flex-row-reverse'
           )}>
+            {/* Quick Reactions */}
+            <div className="flex items-center gap-0.5 mr-1">
+              {QUICK_REACTIONS.map((emoji) => (
+                <button
+                  key={emoji}
+                  onClick={() => toggleReaction(emoji)}
+                  className={cn(
+                    'p-1 rounded-md text-sm transition-all hover:scale-125',
+                    myReaction === emoji
+                      ? 'bg-amber-100 dark:bg-amber-900/30'
+                      : 'hover:bg-gray-100 dark:hover:bg-gray-800'
+                  )}
+                  title={emoji}
+                >
+                  {emoji}
+                </button>
+              ))}
+            </div>
+            <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-0.5" />
             <button
               onClick={() => onReply(message)}
               className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all"
@@ -177,6 +222,27 @@ export function MessageBubble({
                 </svg>
               </button>
             )}
+          </div>
+        )}
+
+        {/* Reaction badges */}
+        {Object.keys(reactions).length > 0 && (
+          <div className={cn('flex flex-wrap gap-1 mt-1', isOwn && 'justify-end')}>
+            {Object.entries(reactions).map(([emoji, count]) => (
+              <button
+                key={emoji}
+                onClick={() => toggleReaction(emoji)}
+                className={cn(
+                  'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition-all border',
+                  myReaction === emoji
+                    ? 'bg-amber-50 border-amber-300 dark:bg-amber-900/20 dark:border-amber-700'
+                    : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
+                )}
+              >
+                <span>{emoji}</span>
+                <span className="text-gray-500 dark:text-gray-400 font-medium">{count}</span>
+              </button>
+            ))}
           </div>
         )}
       </div>

@@ -1,13 +1,15 @@
 /**
- * Chat Input Bar with reply preview and enhanced UX
+ * Chat Input Bar with reply preview, emoji picker, and enhanced UX
  */
 
 'use client';
 
-import { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 import type { ChatMessage } from '../hooks/useChat';
+
+const QUICK_EMOJIS = ['🙏', '😊', '❤️', '👍', '✨', 'ੴ', '🎵', '📖', '💡', '🌸'];
 
 interface ChatInputProps {
   onSend: (content: string) => Promise<void>;
@@ -29,6 +31,7 @@ export function ChatInput({
   onActivity,
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
+  const [showEmojis, setShowEmojis] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const isPunjabi = language === 'pa';
 
@@ -52,9 +55,16 @@ export function ChatInput({
     if (!message.trim() || isSending || disabled) return;
     const content = message;
     setMessage('');
+    setShowEmojis(false);
     onActivity?.();
     await onSend(content);
   };
+
+  const insertEmoji = useCallback((emoji: string) => {
+    setMessage(prev => prev + emoji);
+    textareaRef.current?.focus();
+    onActivity?.();
+  }, [onActivity]);
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
@@ -96,8 +106,39 @@ export function ChatInput({
         </div>
       )}
 
+      {/* Emoji Quick Picker */}
+      {showEmojis && (
+        <div className="flex items-center gap-1 px-3 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+          {QUICK_EMOJIS.map((emoji) => (
+            <button
+              key={emoji}
+              onClick={() => insertEmoji(emoji)}
+              className="p-1.5 rounded-lg text-base hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:scale-110 transition-all"
+            >
+              {emoji}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Input Area */}
       <div className="flex items-end gap-2 p-3">
+        {/* Emoji Toggle */}
+        <button
+          onClick={() => setShowEmojis(!showEmojis)}
+          className={cn(
+            'p-2.5 rounded-xl transition-all flex-shrink-0 mb-0.5',
+            showEmojis
+              ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
+              : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'
+          )}
+          aria-label={isPunjabi ? 'ਇਮੋਜੀ' : 'Emoji'}
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          </svg>
+        </button>
+
         <div className="flex-1 relative">
           <textarea
             ref={textareaRef}
