@@ -8,6 +8,7 @@ import type { NextRequest } from 'next/server';
 
 /** Allowed origins for API requests */
 function getAllowedOrigins(): string[] {
+  // WARNING: For production, restrict origins to your own domain(s) only.
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '';
   const origins = [
