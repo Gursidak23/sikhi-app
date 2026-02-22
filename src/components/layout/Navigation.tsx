@@ -259,7 +259,7 @@ export function MainNavigation({
             {/* Mobile Menu Button */}
             <button
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden p-2 text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all"
+              className="md:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800 rounded-lg transition-all"
               aria-expanded={mobileMenuOpen}
               aria-label="Toggle navigation menu"
             >
@@ -467,7 +467,7 @@ export function Footer({ language = 'pa' }: FooterProps) {
             </p>
             
             {/* Three pillars */}
-            <div className="mt-5 flex gap-3">
+            <div className="mt-5 flex flex-wrap gap-2 sm:gap-3">
               {['ਕਿਰਤ ਕਰੋ', 'ਨਾਮ ਜਪੋ', 'ਵੰਡ ਛਕੋ'].map((pillar) => (
                 <span key={pillar} className="font-gurmukhi text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   {pillar}

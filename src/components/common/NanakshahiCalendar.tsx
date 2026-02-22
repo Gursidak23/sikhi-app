@@ -291,7 +291,7 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
         <div className="flex items-center justify-between">
           <button
             onClick={() => setSelectedMonth((prev) => (prev === 0 ? 11 : prev - 1))}
-            className="p-1.5 sm:p-2 rounded-lg bg-white dark:bg-neutral-700 hover:bg-amber-100 dark:hover:bg-neutral-600 transition-colors shadow-sm border border-amber-200 dark:border-neutral-600"
+            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-white dark:bg-neutral-700 hover:bg-amber-100 dark:hover:bg-neutral-600 transition-colors shadow-sm border border-amber-200 dark:border-neutral-600"
             aria-label="Previous month"
           >
             <svg className="w-4 h-4 text-amber-700 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -310,7 +310,7 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
           
           <button
             onClick={() => setSelectedMonth((prev) => (prev === 11 ? 0 : prev + 1))}
-            className="p-1.5 sm:p-2 rounded-lg bg-white dark:bg-neutral-700 hover:bg-amber-100 dark:hover:bg-neutral-600 transition-colors shadow-sm border border-amber-200 dark:border-neutral-600"
+            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-white dark:bg-neutral-700 hover:bg-amber-100 dark:hover:bg-neutral-600 transition-colors shadow-sm border border-amber-200 dark:border-neutral-600"
             aria-label="Next month"
           >
             <svg className="w-4 h-4 text-amber-700 dark:text-amber-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -491,7 +491,7 @@ export function NanakshahiCalendar({ language }: { language: Language }) {
         <div className="flex items-center justify-between">
           <button
             onClick={() => setSelectedMonth((prev) => (prev === 0 ? 11 : prev - 1))}
-            className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             aria-label="Previous month"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -510,7 +510,7 @@ export function NanakshahiCalendar({ language }: { language: Language }) {
           
           <button
             onClick={() => setSelectedMonth((prev) => (prev === 11 ? 0 : prev + 1))}
-            className="p-2 rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
+            className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors"
             aria-label="Next month"
           >
             <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

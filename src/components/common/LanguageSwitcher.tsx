@@ -131,7 +131,7 @@ export function LanguageSwitcherMobile({
                   setIsOpen(false);
                 }}
                 className={cn(
-                  'w-full text-left px-3 py-2 text-sm transition-colors',
+                  'w-full text-left px-3 py-2.5 min-h-[44px] text-sm transition-colors',
                   isActive
                     ? 'bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300'
                     : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-100 dark:hover:bg-neutral-700',

@@ -239,7 +239,7 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
                       key={color}
                       onClick={() => setSelectedColor(color)}
                       className={cn(
-                        'w-10 h-10 rounded-xl transition-all duration-200',
+                        'w-11 h-11 rounded-xl transition-all duration-200',
                         selectedColor === color
                           ? 'ring-2 ring-offset-2 ring-amber-500 dark:ring-offset-gray-900 scale-110 shadow-lg'
                           : 'hover:scale-105 hover:shadow-md'

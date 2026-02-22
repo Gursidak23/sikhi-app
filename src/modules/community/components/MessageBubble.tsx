@@ -200,7 +200,7 @@ export function MessageBubble({
                   key={emoji}
                   onClick={() => toggleReaction(emoji)}
                   className={cn(
-                    'p-1 rounded-md text-sm transition-all hover:scale-125',
+                    'p-1.5 sm:p-1 min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-md text-sm transition-all hover:scale-125',
                     myReaction === emoji
                       ? 'bg-amber-100 dark:bg-amber-900/30'
                       : 'hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -214,7 +214,7 @@ export function MessageBubble({
             <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-0.5" />
             <button
               onClick={() => onReply(message)}
-              className="p-1.5 rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all"
+              className="p-2 min-w-[40px] min-h-[40px] sm:p-1.5 sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all"
               title={isPunjabi ? 'ਜਵਾਬ' : 'Reply'}
             >
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -224,7 +224,7 @@ export function MessageBubble({
             {isOwn && (
               <button
                 onClick={() => onDelete(message.id)}
-                className="p-1.5 rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
+                className="p-2 min-w-[40px] min-h-[40px] sm:p-1.5 sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
                 title={isPunjabi ? 'ਮਿਟਾਓ' : 'Delete'}
               >
                 <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -235,7 +235,7 @@ export function MessageBubble({
             {/* Dismiss button for mobile */}
             <button
               onClick={() => setShowActions(false)}
-              className="md:hidden p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all ml-0.5"
+              className="md:hidden p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all ml-0.5"
               aria-label="Close actions"
             >
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">

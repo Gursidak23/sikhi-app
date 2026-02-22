@@ -63,7 +63,7 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
           {onClose && (
             <button
               onClick={onClose}
-              className="md:hidden p-1.5 rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-400"
+              className="md:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-400"
               aria-label="Close sidebar"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">

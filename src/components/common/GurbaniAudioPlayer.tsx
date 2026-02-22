@@ -200,7 +200,7 @@ export function GurbaniAudioPlayer({
             {/* Skip Back */}
             <button
               onClick={skipBackward}
-              className="p-2 rounded-full hover:bg-neela-200 dark:hover:bg-neela-700 transition-colors text-neela-700 dark:text-neela-300"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-neela-200 dark:hover:bg-neela-700 transition-colors text-neela-700 dark:text-neela-300"
               aria-label="Skip back 10 seconds"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -235,7 +235,7 @@ export function GurbaniAudioPlayer({
             {/* Skip Forward */}
             <button
               onClick={skipForward}
-              className="p-2 rounded-full hover:bg-neela-200 dark:hover:bg-neela-700 transition-colors text-neela-700 dark:text-neela-300"
+              className="p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-full hover:bg-neela-200 dark:hover:bg-neela-700 transition-colors text-neela-700 dark:text-neela-300"
               aria-label="Skip forward 10 seconds"
             >
               <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -268,7 +268,7 @@ export function GurbaniAudioPlayer({
             <button
               onClick={() => setIsLooped(!isLooped)}
               className={cn(
-                'flex items-center gap-1 px-3 py-1 rounded-full text-sm transition-colors',
+                'flex items-center gap-1 px-3 py-2 min-h-[44px] rounded-full text-sm transition-colors',
                 isLooped
                   ? 'bg-neela-600 text-white'
                   : 'bg-neela-200 dark:bg-neela-700 text-neela-700 dark:text-neela-300'
