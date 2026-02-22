@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getShabadById } from '@/lib/api/gurbani-handlers';
+import { logApiError } from '@/lib/error-tracking';
 
 /**
  * GET /api/gurbani/shabad/[id]
@@ -18,8 +19,6 @@ export async function GET(
         'Meanings are interpretations from named sources, not literal translations.',
     });
   } catch (error) {
-    console.error('Error fetching Shabad:', error);
-
     if (error instanceof Error && error.message === 'Shabad not found') {
       return NextResponse.json(
         {
@@ -30,10 +29,11 @@ export async function GET(
       );
     }
 
+    logApiError('/api/gurbani/shabad', error instanceof Error ? error : new Error(String(error)), 500);
     return NextResponse.json(
       {
         error: 'Failed to fetch Shabad',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: 'An internal error occurred. Please try again later.',
       },
       { status: 500 }
     );

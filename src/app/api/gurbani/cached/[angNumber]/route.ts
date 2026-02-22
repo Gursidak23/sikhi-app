@@ -8,6 +8,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/error-tracking';
 
 // Dynamic import to handle cases where DB isn't configured
 let prismaInstance: typeof import('@/lib/db/prisma').prisma | null = null;
@@ -151,7 +152,7 @@ export async function GET(
       }
     );
   } catch (error) {
-    console.error('Error fetching ang:', error);
+    logApiError('/api/gurbani/cached', error instanceof Error ? error : new Error(String(error)), 500);
     
     // Last resort: direct BaniDB fetch
     try {

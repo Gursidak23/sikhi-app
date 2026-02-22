@@ -1,15 +1,16 @@
 /**
- * GET /api/community/messages - Get messages for a room (paginated, in-memory)
- * POST /api/community/messages - Send a new message
- * DELETE /api/community/messages - Delete a message
+ * GET /api/community/messages - Get messages for a room (paginated)
+ * POST /api/community/messages - Send a new message (requires session token)
+ * DELETE /api/community/messages - Delete a message (requires session token)
  */
 
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMessage, getMessages, deleteMessage } from '@/lib/api/chat-handlers';
+import { sendMessage, getMessages, deleteMessage, verifySessionToken } from '@/lib/api/chat-handlers';
 import { sendMessageSchema, editMessageSchema } from '@/lib/validation/chat-schemas';
 import { rateLimit, getClientIdentifier } from '@/lib/rate-limit';
+import { logApiError } from '@/lib/error-tracking';
 
 export async function GET(request: NextRequest) {
   try {
@@ -24,8 +25,8 @@ export async function GET(request: NextRequest) {
 
     const result = await getMessages(roomId, cursor, limit);
     return NextResponse.json(result);
-  } catch (error: any) {
-    console.error('Error fetching messages:', error?.message || error);
+  } catch (error) {
+    logApiError('GET /api/community/messages', error instanceof Error ? error : new Error(String(error)));
     return NextResponse.json({ error: 'Failed to fetch messages' }, { status: 500 });
   }
 }
@@ -51,12 +52,24 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Verify session token
+    const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
+    if (!sessionToken || !verifySessionToken(parsed.data.userId, sessionToken)) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const message = await sendMessage(parsed.data);
     return NextResponse.json({ message }, { status: 201 });
-  } catch (error: any) {
-    const errorMsg = error?.message || 'Failed to send message';
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : '';
     const status = errorMsg.includes('join') ? 403 : 500;
-    return NextResponse.json({ error: errorMsg }, { status });
+    if (status === 500) {
+      logApiError('POST /api/community/messages', error instanceof Error ? error : new Error(String(error)));
+    }
+    return NextResponse.json(
+      { error: status === 403 ? 'You must join this room first' : 'Failed to send message' },
+      { status }
+    );
   }
 }
 
@@ -69,12 +82,23 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'messageId and userId are required' }, { status: 400 });
     }
 
+    // Verify session token
+    const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
+    if (!sessionToken || !verifySessionToken(parsed.data.userId, sessionToken)) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     await deleteMessage(parsed.data.messageId, parsed.data.userId);
     return NextResponse.json({ success: true });
-  } catch (error: any) {
+  } catch (error) {
+    const errorMsg = error instanceof Error ? error.message : '';
+    const isAuthError = errorMsg.includes('unauthorized') || errorMsg.includes('not found');
+    if (!isAuthError) {
+      logApiError('DELETE /api/community/messages', error instanceof Error ? error : new Error(String(error)));
+    }
     return NextResponse.json(
-      { error: error?.message || 'Failed to delete message' },
-      { status: 403 }
+      { error: isAuthError ? 'Message not found or unauthorized' : 'Failed to delete message' },
+      { status: isAuthError ? 403 : 500 }
     );
   }
 }

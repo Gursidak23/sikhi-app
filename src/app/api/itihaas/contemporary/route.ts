@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getContemporaryEvents } from '@/lib/api/history-handlers';
+import { logApiError } from '@/lib/error-tracking';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';
@@ -19,11 +20,11 @@ export async function GET(request: NextRequest) {
         'Content in this section represents contemporary, evolving history. Information may be subject to revision as new information becomes available.',
     });
   } catch (error) {
-    console.error('Error fetching contemporary events:', error);
+    logApiError('/api/itihaas/contemporary', error instanceof Error ? error : new Error(String(error)), 500);
     return NextResponse.json(
       {
         error: 'Failed to fetch contemporary events',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: 'An internal error occurred. Please try again later.',
       },
       { status: 500 }
     );

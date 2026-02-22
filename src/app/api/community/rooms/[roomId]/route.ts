@@ -7,22 +7,28 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getRoomById, joinRoom, leaveRoom, getOnlineUsers } from '@/lib/api/chat-handlers';
+import { getRoomById, joinRoom, leaveRoom, getOnlineUsers, verifySessionToken } from '@/lib/api/chat-handlers';
+import { logApiError } from '@/lib/error-tracking';
 
 export async function GET(
   request: NextRequest,
   { params }: { params: { roomId: string } }
 ) {
   try {
-    const room = await getRoomById(params.roomId);
+    const roomId = params.roomId;
+    if (!roomId || roomId.length > 100) {
+      return NextResponse.json({ error: 'Invalid room ID' }, { status: 400 });
+    }
+
+    const room = await getRoomById(roomId);
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    const members = await getOnlineUsers(params.roomId);
+    const members = await getOnlineUsers(roomId);
     return NextResponse.json({ room, members });
-  } catch (error: any) {
-    console.error('Error fetching room:', error?.message || error);
+  } catch (error) {
+    logApiError('GET /api/community/rooms/[roomId]', error instanceof Error ? error : new Error(String(error)));
     return NextResponse.json({ error: 'Failed to fetch room details' }, { status: 500 });
   }
 }
@@ -39,13 +45,23 @@ export async function POST(
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
     }
 
+    // Verify session token
+    const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
+    if (!sessionToken || !verifySessionToken(userId, sessionToken)) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const membership = await joinRoom(userId, params.roomId);
     return NextResponse.json({ membership }, { status: 200 });
-  } catch (error: any) {
-    const message = error?.message || 'Failed to join room';
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : '';
+    const status = msg.includes('full') ? 409 : msg.includes('not found') ? 404 : 500;
+    if (status === 500) {
+      logApiError('POST /api/community/rooms/[roomId]', error instanceof Error ? error : new Error(String(error)));
+    }
     return NextResponse.json(
-      { error: message },
-      { status: message.includes('full') ? 409 : 500 }
+      { error: status === 500 ? 'Failed to join room' : msg },
+      { status }
     );
   }
 }
@@ -65,7 +81,7 @@ export async function DELETE(
     await leaveRoom(userId, params.roomId);
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error leaving room:', error);
+    logApiError('DELETE /api/community/rooms/[roomId]', error instanceof Error ? error : new Error(String(error)));
     return NextResponse.json({ error: 'Failed to leave room' }, { status: 500 });
   }
 }

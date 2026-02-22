@@ -5,6 +5,7 @@
 
 import { NextResponse } from 'next/server';
 import prisma from '@/lib/db/prisma';
+import { logApiError } from '@/lib/error-tracking';
 
 export const dynamic = 'force-dynamic';
 
@@ -26,6 +27,7 @@ export async function GET() {
       },
     });
   } catch (error) {
+    logApiError('/api/health', error instanceof Error ? error : new Error(String(error)), 503);
     return NextResponse.json(
       {
         status: 'unhealthy',

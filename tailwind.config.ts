@@ -58,8 +58,9 @@ const config: Config = {
       },
       // Typography - Gurmukhi-first
       fontFamily: {
-        // Primary Gurmukhi font
+        // Primary Gurmukhi font (uses next/font CSS variable)
         gurmukhi: [
+          'var(--font-gurmukhi)',
           'Noto Sans Gurmukhi',
           'Raavi',
           'Mukta Mahee',
@@ -67,6 +68,7 @@ const config: Config = {
         ],
         // For English/Hindi
         sans: [
+          'var(--font-inter)',
           'Inter',
           'system-ui',
           '-apple-system',
