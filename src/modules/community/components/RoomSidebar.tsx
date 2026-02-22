@@ -79,14 +79,18 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
             </svg>
-            {rooms.length} {isPunjabi ? 'ਕਮਰੇ' : 'rooms'}
+            {rooms.length === 0
+              ? <span className="inline-block w-8 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              : <>{rooms.length} {isPunjabi ? 'ਕਮਰੇ' : 'rooms'}</>}
           </div>
           <div className="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
             <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
             </svg>
-            {totalMembers} {isPunjabi ? 'ਮੈਂਬਰ' : 'members'}
+            {rooms.length === 0
+              ? <span className="inline-block w-8 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
+              : <>{totalMembers} {isPunjabi ? 'ਮੈਂਬਰ' : 'members'}</>}
           </div>
         </div>
 
@@ -115,7 +119,21 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
 
       {/* Room List */}
       <div className="flex-1 overflow-y-auto p-2 space-y-0.5">
-        {filteredRooms.map((room) => {
+        {rooms.length === 0 ? (
+          /* Loading skeleton */
+          <div className="space-y-1">
+            {[1, 2, 3, 4, 5].map((i) => (
+              <div key={i} className="flex items-center gap-3 px-3 py-3 rounded-xl">
+                <div className="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 animate-pulse flex-shrink-0" />
+                <div className="flex-1 space-y-2">
+                  <div className="h-4 w-24 bg-gray-100 dark:bg-gray-800 rounded animate-pulse" />
+                  <div className="h-3 w-40 bg-gray-50 dark:bg-gray-800/50 rounded animate-pulse" />
+                </div>
+              </div>
+            ))}
+          </div>
+        ) : (
+        filteredRooms.map((room) => {
           const isActive = activeRoom?.id === room.id;
           const displayName = isPunjabi && room.nameGurmukhi ? room.nameGurmukhi : room.name;
           const displayDesc = isPunjabi && room.descriptionGurmukhi
@@ -182,7 +200,8 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
               </div>
             </button>
           );
-        })}
+        })
+        )}
 
         {/* No search results */}
         {search.trim() && filteredRooms.length === 0 && (
