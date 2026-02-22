@@ -43,6 +43,8 @@ export function ChatView({ language }: ChatViewProps) {
     selectRoom,
     sendMessage,
     deleteMessage,
+    editMessage,
+    toggleReaction,
     loadMore,
     setReplyingTo,
     logout,
@@ -443,6 +445,8 @@ export function ChatView({ language }: ChatViewProps) {
                       onDelete={deleteMessage}
                       onSave={saveMessage}
                       onUnsave={unsaveMessage}
+                      onEdit={editMessage}
+                      onToggleReaction={toggleReaction}
                     />
                   </div>
                 );

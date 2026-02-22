@@ -289,16 +289,24 @@ function userToResponse(u: {
   id: string;
   displayName: string;
   displayNameGurmukhi: string | null;
+  email?: string | null;
+  bio?: string | null;
+  role?: string;
   avatarColor: string;
   isOnline: boolean;
+  isBanned?: boolean;
   lastSeenAt: Date;
 }) {
   return {
     id: u.id,
     displayName: u.displayName,
     displayNameGurmukhi: u.displayNameGurmukhi,
+    email: u.email || null,
+    bio: u.bio || null,
+    role: u.role || 'member',
     avatarColor: u.avatarColor,
     isOnline: u.isOnline,
+    isBanned: u.isBanned || false,
     lastSeenAt: u.lastSeenAt.toISOString(),
   };
 }
@@ -355,10 +363,13 @@ interface MessageWithRelations {
   roomId: string;
   isEdited: boolean;
   isDeleted: boolean;
+  isPinned?: boolean;
+  editedAt?: Date | string | null;
   expiresAt: Date | string;
   createdAt: Date | string;
   updatedAt: Date | string;
   savedBy?: { id: string }[];
+  reactions?: { emoji: string; userId: string }[];
   user?: {
     id: string;
     displayName: string;
@@ -387,6 +398,22 @@ function messageToResponse(m: MessageWithRelations, requestUserId?: string) {
   // Check if this message has been saved (by anyone or by requesting user)
   const isSaved = m.savedBy ? m.savedBy.length > 0 : false;
 
+  // Aggregate reactions: { emoji: string, count: number, userIds: string[] }
+  const reactionMap = new Map<string, string[]>();
+  if (m.reactions) {
+    for (const r of m.reactions) {
+      const list = reactionMap.get(r.emoji) || [];
+      list.push(r.userId);
+      reactionMap.set(r.emoji, list);
+    }
+  }
+  const reactions = Array.from(reactionMap.entries()).map(([emoji, userIds]) => ({
+    emoji,
+    count: userIds.length,
+    userIds,
+    reacted: requestUserId ? userIds.includes(requestUserId) : false,
+  }));
+
   return {
     id: m.id,
     content: m.content,
@@ -394,10 +421,13 @@ function messageToResponse(m: MessageWithRelations, requestUserId?: string) {
     roomId: m.roomId,
     isEdited: m.isEdited,
     isDeleted: m.isDeleted,
+    isPinned: m.isPinned || false,
     expiresAt,
     isSaved,
+    reactions,
     createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : m.createdAt,
     updatedAt: m.updatedAt instanceof Date ? m.updatedAt.toISOString() : m.updatedAt,
+    editedAt: m.editedAt ? (m.editedAt instanceof Date ? m.editedAt.toISOString() : m.editedAt) : null,
     user: {
       id: user.id || m.userId,
       displayName: user.displayName || 'Unknown',
@@ -416,7 +446,8 @@ export async function createOrGetUser(
   displayName: string,
   displayNameGurmukhi?: string,
   avatarColor?: string,
-  existingUserId?: string
+  existingUserId?: string,
+  email?: string
 ) {
   const color = avatarColor || getRandomColor();
 
@@ -427,6 +458,20 @@ export async function createOrGetUser(
       where: { id: existingUserId },
     });
     if (existing) {
+      // Check if banned
+      if (existing.isBanned) {
+        const permBan = !existing.bannedUntil;
+        const stillBanned = permBan || existing.bannedUntil! > new Date();
+        if (stillBanned) {
+          throw new Error(permBan ? 'Your account has been permanently banned' : `You are banned until ${existing.bannedUntil!.toISOString()}`);
+        }
+        // Ban expired — auto-unban
+        await prisma.chatUser.update({
+          where: { id: existing.id },
+          data: { isBanned: false, banReason: null, bannedUntil: null },
+        });
+      }
+
       const { raw, hashed } = generateSessionToken();
       sessionTokenCache.set(existing.id, hashed);
       await prisma.chatUser.update({
@@ -435,6 +480,7 @@ export async function createOrGetUser(
           sessionTokenHash: hashed,
           isOnline: true,
           lastSeenAt: new Date(),
+          ...(email && { email }),
         },
       });
       return {
@@ -449,6 +495,7 @@ export async function createOrGetUser(
     data: {
       displayName,
       displayNameGurmukhi: displayNameGurmukhi || null,
+      email: email || null,
       avatarColor: color,
       isOnline: true,
       lastSeenAt: new Date(),
@@ -671,6 +718,22 @@ export async function sendMessage(data: {
   roomId: string;
   replyToId?: string;
 }) {
+  // Check if user is banned
+  const sender = await prisma.chatUser.findUnique({
+    where: { id: data.userId },
+    select: { isBanned: true, bannedUntil: true },
+  });
+  if (sender?.isBanned) {
+    const permBan = !sender.bannedUntil;
+    const stillBanned = permBan || sender.bannedUntil! > new Date();
+    if (stillBanned) throw new Error('You are banned from sending messages');
+    // Auto-unban if expired
+    await prisma.chatUser.update({
+      where: { id: data.userId },
+      data: { isBanned: false, banReason: null, bannedUntil: null },
+    });
+  }
+
   // Verify membership
   const membership = await prisma.chatRoomMember.findUnique({
     where: { userId_roomId: { userId: data.userId, roomId: data.roomId } },
@@ -698,6 +761,7 @@ export async function sendMessage(data: {
       user: true,
       replyTo: { include: { user: true } },
       savedBy: { select: { id: true } },
+      reactions: { select: { emoji: true, userId: true } },
     },
   });
 
@@ -748,6 +812,7 @@ export async function getMessages(roomId: string, cursor?: string, limit = 50) {
           user: true,
           replyTo: { include: { user: true } },
           savedBy: { select: { id: true } },
+          reactions: { select: { emoji: true, userId: true } },
         },
       });
 
@@ -776,6 +841,7 @@ export async function getMessages(roomId: string, cursor?: string, limit = 50) {
       user: true,
       replyTo: { include: { user: true } },
       savedBy: { select: { id: true } },
+      reactions: { select: { emoji: true, userId: true } },
     },
   });
 
@@ -811,6 +877,7 @@ export async function pollNewMessages(roomId: string, since: Date) {
       user: true,
       replyTo: { include: { user: true } },
       savedBy: { select: { id: true } },
+      reactions: { select: { emoji: true, userId: true } },
     },
   });
 
@@ -833,6 +900,7 @@ export async function deleteMessage(messageId: string, userId: string) {
       user: true,
       replyTo: { include: { user: true } },
       savedBy: { select: { id: true } },
+      reactions: { select: { emoji: true, userId: true } },
     },
   });
 
@@ -971,4 +1039,324 @@ export async function clearAllChats() {
   defaultRoomsEnsured = false;
   
   return { cleared: true };
+}
+
+// ============================================================================
+// Profile Update
+// ============================================================================
+
+export async function updateUserProfile(
+  userId: string,
+  data: { displayName?: string; displayNameGurmukhi?: string; email?: string; bio?: string; avatarColor?: string }
+) {
+  const updateData: Record<string, unknown> = {};
+  if (data.displayName) updateData.displayName = data.displayName;
+  if (data.displayNameGurmukhi !== undefined) updateData.displayNameGurmukhi = data.displayNameGurmukhi || null;
+  if (data.email !== undefined) updateData.email = data.email || null;
+  if (data.bio !== undefined) updateData.bio = data.bio || null;
+  if (data.avatarColor) updateData.avatarColor = data.avatarColor;
+
+  const user = await prisma.chatUser.update({
+    where: { id: userId },
+    data: updateData,
+  });
+
+  // Update in-memory type
+  return userToResponse(user);
+}
+
+// ============================================================================
+// Message Editing
+// ============================================================================
+
+export async function editMessage(messageId: string, userId: string, newContent: string) {
+  const msg = await prisma.chatMessage.findUnique({ where: { id: messageId } });
+  if (!msg) throw new Error('Message not found');
+  if (msg.userId !== userId) throw new Error('You can only edit your own messages');
+  if (msg.isDeleted) throw new Error('Cannot edit a deleted message');
+
+  // Must be within 15 minutes of creation
+  const editWindow = 15 * 60 * 1000;
+  if (Date.now() - msg.createdAt.getTime() > editWindow) {
+    throw new Error('Messages can only be edited within 15 minutes of sending');
+  }
+
+  const sanitized = sanitizeContent(newContent);
+  if (!sanitized) throw new Error('Message cannot be empty after sanitization');
+
+  const updated = await prisma.chatMessage.update({
+    where: { id: messageId },
+    data: {
+      content: sanitized,
+      isEdited: true,
+      editedAt: new Date(),
+    },
+    include: {
+      user: true,
+      replyTo: { include: { user: true } },
+      savedBy: { select: { id: true } },
+      reactions: { select: { emoji: true, userId: true } },
+    },
+  });
+
+  await cacheDel(CACHE_KEYS.messages(msg.roomId));
+  return messageToResponse(updated);
+}
+
+// ============================================================================
+// Reaction Toggle (add or remove)
+// ============================================================================
+
+export async function toggleReaction(userId: string, messageId: string, emoji: string) {
+  const msg = await prisma.chatMessage.findUnique({ where: { id: messageId } });
+  if (!msg || msg.isDeleted) throw new Error('Message not found');
+
+  // Check if already reacted with this emoji
+  const existing = await prisma.messageReaction.findUnique({
+    where: { userId_messageId_emoji: { userId, messageId, emoji } },
+  });
+
+  if (existing) {
+    // Remove reaction
+    await prisma.messageReaction.delete({ where: { id: existing.id } });
+  } else {
+    // Add reaction (max 20 reactions per message from same user)
+    const userReactionCount = await prisma.messageReaction.count({
+      where: { userId, messageId },
+    });
+    if (userReactionCount >= 20) throw new Error('Too many reactions on this message');
+
+    await prisma.messageReaction.create({
+      data: { userId, messageId, emoji },
+    });
+  }
+
+  // Invalidate cache
+  await cacheDel(CACHE_KEYS.messages(msg.roomId));
+
+  // Return updated reaction counts
+  const reactions = await prisma.messageReaction.findMany({
+    where: { messageId },
+    select: { emoji: true, userId: true },
+  });
+
+  const reactionMap = new Map<string, string[]>();
+  for (const r of reactions) {
+    const list = reactionMap.get(r.emoji) || [];
+    list.push(r.userId);
+    reactionMap.set(r.emoji, list);
+  }
+
+  return {
+    messageId,
+    reactions: Array.from(reactionMap.entries()).map(([em, uIds]) => ({
+      emoji: em,
+      count: uIds.length,
+      userIds: uIds,
+      reacted: uIds.includes(userId),
+    })),
+    action: existing ? 'removed' : 'added',
+  };
+}
+
+// ============================================================================
+// Admin Functions
+// ============================================================================
+
+/**
+ * Check if a user has admin or moderator role (global or room-level).
+ */
+export async function isAdminOrModerator(userId: string, roomId?: string): Promise<boolean> {
+  const user = await prisma.chatUser.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (!user) return false;
+  if (user.role === 'admin') return true;
+  if (user.role === 'moderator') return true;
+
+  // Check room-level moderator role
+  if (roomId) {
+    const membership = await prisma.chatRoomMember.findUnique({
+      where: { userId_roomId: { userId, roomId } },
+      select: { role: true },
+    });
+    return membership?.role === 'moderator';
+  }
+
+  return false;
+}
+
+/**
+ * Ban a user (admin/moderator only).
+ */
+export async function banUser(
+  adminUserId: string,
+  targetUserId: string,
+  reason?: string,
+  durationHours?: number
+) {
+  const isAdmin = await isAdminOrModerator(adminUserId);
+  if (!isAdmin) throw new Error('Admin or moderator privileges required');
+
+  // Cannot ban other admins
+  const target = await prisma.chatUser.findUnique({
+    where: { id: targetUserId },
+    select: { role: true, displayName: true },
+  });
+  if (!target) throw new Error('User not found');
+  if (target.role === 'admin') throw new Error('Cannot ban an admin');
+
+  const bannedUntil = durationHours && durationHours > 0
+    ? new Date(Date.now() + durationHours * 60 * 60 * 1000)
+    : null; // null = permanent
+
+  await prisma.chatUser.update({
+    where: { id: targetUserId },
+    data: {
+      isBanned: true,
+      banReason: reason || null,
+      bannedUntil,
+      isOnline: false,
+    },
+  });
+
+  return {
+    targetUserId,
+    displayName: target.displayName,
+    banned: true,
+    reason: reason || null,
+    bannedUntil: bannedUntil?.toISOString() || 'permanent',
+  };
+}
+
+/**
+ * Unban a user (admin only).
+ */
+export async function unbanUser(adminUserId: string, targetUserId: string) {
+  const isAdmin = await isAdminOrModerator(adminUserId);
+  if (!isAdmin) throw new Error('Admin or moderator privileges required');
+
+  await prisma.chatUser.update({
+    where: { id: targetUserId },
+    data: { isBanned: false, banReason: null, bannedUntil: null },
+  });
+
+  return { targetUserId, banned: false };
+}
+
+/**
+ * Admin delete a message (moderator can delete in rooms they moderate).
+ */
+export async function adminDeleteMessage(adminUserId: string, messageId: string, reason?: string) {
+  const msg = await prisma.chatMessage.findUnique({ where: { id: messageId } });
+  if (!msg) throw new Error('Message not found');
+
+  const isAdmin = await isAdminOrModerator(adminUserId, msg.roomId);
+  if (!isAdmin) throw new Error('Admin or moderator privileges required');
+
+  const updated = await prisma.chatMessage.update({
+    where: { id: messageId },
+    data: {
+      isDeleted: true,
+      content: reason ? `[Removed by moderator: ${reason}]` : '[Removed by moderator]',
+    },
+  });
+
+  await cacheDel(CACHE_KEYS.messages(msg.roomId));
+  return { messageId, deleted: true, roomId: msg.roomId };
+}
+
+/**
+ * Pin/unpin a message (moderator+).
+ */
+export async function togglePinMessage(adminUserId: string, messageId: string) {
+  const msg = await prisma.chatMessage.findUnique({ where: { id: messageId } });
+  if (!msg) throw new Error('Message not found');
+  if (msg.isDeleted) throw new Error('Cannot pin a deleted message');
+
+  const isAdmin = await isAdminOrModerator(adminUserId, msg.roomId);
+  if (!isAdmin) throw new Error('Admin or moderator privileges required');
+
+  // If already pinned, unpin. Otherwise pin.
+  const updated = await prisma.chatMessage.update({
+    where: { id: messageId },
+    data: {
+      isPinned: !msg.isPinned,
+      pinnedById: msg.isPinned ? null : adminUserId,
+    },
+  });
+
+  await cacheDel(CACHE_KEYS.messages(msg.roomId));
+  return { messageId, isPinned: updated.isPinned, roomId: msg.roomId };
+}
+
+/**
+ * Get pinned messages for a room.
+ */
+export async function getPinnedMessages(roomId: string) {
+  const pinned = await prisma.chatMessage.findMany({
+    where: { roomId, isPinned: true, isDeleted: false },
+    orderBy: { createdAt: 'desc' },
+    take: 50,
+    include: {
+      user: true,
+      replyTo: { include: { user: true } },
+      savedBy: { select: { id: true } },
+      reactions: { select: { emoji: true, userId: true } },
+    },
+  });
+
+  return pinned.map((m) => messageToResponse(m));
+}
+
+/**
+ * Search messages within a room.
+ */
+export async function searchMessages(roomId: string, query: string, limit = 20) {
+  const safeLimit = Math.min(limit, 50);
+
+  const messages = await prisma.chatMessage.findMany({
+    where: {
+      roomId,
+      isDeleted: false,
+      content: { contains: query, mode: 'insensitive' },
+      OR: [
+        { expiresAt: { gt: new Date() } },
+        { savedBy: { some: {} } },
+      ],
+    },
+    orderBy: { createdAt: 'desc' },
+    take: safeLimit,
+    include: {
+      user: true,
+      replyTo: { include: { user: true } },
+      savedBy: { select: { id: true } },
+      reactions: { select: { emoji: true, userId: true } },
+    },
+  });
+
+  return {
+    query,
+    results: messages.map((m) => messageToResponse(m)),
+    total: messages.length,
+  };
+}
+
+/**
+ * Set a user's role (admin only — cannot set someone to admin unless you're admin).
+ */
+export async function setUserRole(adminUserId: string, targetUserId: string, role: 'member' | 'moderator' | 'admin') {
+  const admin = await prisma.chatUser.findUnique({
+    where: { id: adminUserId },
+    select: { role: true },
+  });
+  if (!admin || admin.role !== 'admin') throw new Error('Only admins can set roles');
+
+  await prisma.chatUser.update({
+    where: { id: targetUserId },
+    data: { role },
+  });
+
+  return { targetUserId, role };
 }

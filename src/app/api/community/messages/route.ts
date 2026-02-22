@@ -7,7 +7,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { sendMessage, getMessages, deleteMessage, verifySessionToken } from '@/lib/api/chat-handlers';
+import { sendMessage, getMessages, deleteMessage, editMessage, verifySessionToken } from '@/lib/api/chat-handlers';
 import { sendMessageSchema, editMessageSchema } from '@/lib/validation/chat-schemas';
 import { rateLimit, getClientIdentifier } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
@@ -111,5 +111,42 @@ export async function DELETE(request: NextRequest) {
       { error: isAuthError ? 'Message not found or unauthorized' : 'Failed to delete message' },
       { status: isAuthError ? 403 : 500 }
     );
+  }
+}
+
+export async function PATCH(request: NextRequest) {
+  try {
+    const ip = getClientIdentifier(request);
+    const rl = rateLimit(`chat-edit:${ip}`, { limit: 20, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many edit requests' }, { status: 429 });
+    }
+
+    const body = await request.json();
+    const parsed = editMessageSchema.safeParse(body);
+
+    if (!parsed.success) {
+      return NextResponse.json(
+        { error: 'Validation failed', details: parsed.error.flatten().fieldErrors },
+        { status: 400 }
+      );
+    }
+
+    // Verify session token
+    const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
+    if (!sessionToken || !(await verifySessionToken(parsed.data.userId, sessionToken))) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const message = await editMessage(parsed.data.messageId, parsed.data.userId, parsed.data.content);
+    return NextResponse.json({ message });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Failed to edit message';
+    logApiError('PATCH /api/community/messages', error instanceof Error ? error : new Error(String(error)));
+    const status = msg.includes('only edit your own') || msg.includes('unauthorized') ? 403
+      : msg.includes('15 minutes') ? 400
+      : msg.includes('not found') ? 404
+      : 500;
+    return NextResponse.json({ error: msg }, { status });
   }
 }

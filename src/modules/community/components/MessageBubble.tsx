@@ -7,7 +7,7 @@
 import { useState, useCallback, useRef, useEffect, memo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
-import type { ChatMessage, ChatUser } from '../hooks/useChat';
+import type { ChatMessage, ChatUser, MessageReaction } from '../hooks/useChat';
 
 const QUICK_REACTIONS = ['🙏', '❤️', '👍', '✨', '😊'];
 
@@ -19,6 +19,8 @@ interface MessageBubbleProps {
   onDelete: (messageId: string) => void;
   onSave?: (messageId: string) => void;
   onUnsave?: (messageId: string) => void;
+  onEdit?: (messageId: string, content: string) => void;
+  onToggleReaction?: (messageId: string, emoji: string) => void;
 }
 
 export const MessageBubble = memo(function MessageBubble({
@@ -29,20 +31,33 @@ export const MessageBubble = memo(function MessageBubble({
   onDelete,
   onSave,
   onUnsave,
+  onEdit,
+  onToggleReaction,
 }: MessageBubbleProps) {
   const [showActions, setShowActions] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
-  const [reactions, setReactions] = useState<Record<string, number>>({});
-  const [myReaction, setMyReaction] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editContent, setEditContent] = useState(message.content);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const actionsRef = useRef<HTMLDivElement>(null);
+  const editInputRef = useRef<HTMLTextAreaElement>(null);
   const isOwn = currentUser?.id === message.userId;
   const isPunjabi = language === 'pa';
   const isOptimistic = (message as any)._optimistic;
 
+  // Can edit within 15 minutes of creation
+  const canEdit = isOwn && !isOptimistic && (() => {
+    const createdAt = new Date(message.createdAt).getTime();
+    const fifteenMin = 15 * 60 * 1000;
+    return Date.now() - createdAt < fifteenMin;
+  })();
+
   const displayName = isPunjabi && message.user.displayNameGurmukhi
     ? message.user.displayNameGurmukhi
     : message.user.displayName;
+
+  // Server reactions are already aggregated as { emoji, count, userIds, reacted }
+  const serverReactions = message.reactions || [];
 
   // Close actions when clicking outside
   useEffect(() => {
@@ -68,26 +83,37 @@ export const MessageBubble = memo(function MessageBubble({
     };
   }, []);
 
-  const toggleReaction = useCallback((emoji: string) => {
-    setReactions(prev => {
-      const next = { ...prev };
-      if (myReaction === emoji) {
-        next[emoji] = (next[emoji] || 1) - 1;
-        if (next[emoji] <= 0) delete next[emoji];
-        setMyReaction(null);
-      } else {
-        if (myReaction) {
-          next[myReaction] = (next[myReaction] || 1) - 1;
-          if (next[myReaction] <= 0) delete next[myReaction];
-        }
-        next[emoji] = (next[emoji] || 0) + 1;
-        setMyReaction(emoji);
-      }
-      return next;
-    });
+  // Focus edit textarea when entering edit mode
+  useEffect(() => {
+    if (isEditing && editInputRef.current) {
+      editInputRef.current.focus();
+      editInputRef.current.setSelectionRange(editContent.length, editContent.length);
+    }
+  }, [isEditing]);
+
+  const handleReaction = useCallback((emoji: string) => {
+    onToggleReaction?.(message.id, emoji);
     setShowReactions(false);
     setShowActions(false);
-  }, [myReaction]);
+  }, [message.id, onToggleReaction]);
+
+  const handleEditSubmit = useCallback(() => {
+    const trimmed = editContent.trim();
+    if (trimmed && trimmed !== message.content) {
+      onEdit?.(message.id, trimmed);
+    }
+    setIsEditing(false);
+  }, [editContent, message.id, message.content, onEdit]);
+
+  const handleEditKeyDown = useCallback((e: React.KeyboardEvent) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      handleEditSubmit();
+    } else if (e.key === 'Escape') {
+      setIsEditing(false);
+      setEditContent(message.content);
+    }
+  }, [handleEditSubmit, message.content]);
 
   const formatTime = (dateStr: string) => {
     const date = new Date(dateStr);
@@ -228,7 +254,46 @@ export const MessageBubble = memo(function MessageBubble({
           </div>
         )}
 
+        {/* Pin indicator */}
+        {message.isPinned && (
+          <div className={cn('flex items-center gap-1 mb-1', isOwn && 'justify-end')}>
+            <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-0.5">
+              📌 {isPunjabi ? 'ਪਿੰਨ ਕੀਤਾ' : 'Pinned'}
+            </span>
+          </div>
+        )}
+
         {/* Message Body */}
+        {isEditing ? (
+          <div className="inline-block w-full">
+            <textarea
+              ref={editInputRef}
+              value={editContent}
+              onChange={(e) => setEditContent(e.target.value)}
+              onKeyDown={handleEditKeyDown}
+              className="w-full px-4 py-2.5 text-sm leading-relaxed rounded-2xl border-2 border-amber-400 bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 resize-none focus:outline-none focus:ring-2 focus:ring-amber-400/50"
+              rows={Math.min(editContent.split('\n').length + 1, 5)}
+              maxLength={2000}
+            />
+            <div className="flex items-center gap-2 mt-1">
+              <button
+                onClick={handleEditSubmit}
+                className="text-xs px-3 py-1 rounded-full bg-amber-500 text-white hover:bg-amber-600 transition-colors"
+              >
+                {isPunjabi ? 'ਸੇਵ' : 'Save'}
+              </button>
+              <button
+                onClick={() => { setIsEditing(false); setEditContent(message.content); }}
+                className="text-xs px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+              >
+                {isPunjabi ? 'ਰੱਦ' : 'Cancel'}
+              </button>
+              <span className="text-[10px] text-gray-400">
+                Enter ↵ {isPunjabi ? 'ਸੇਵ ਕਰੋ' : 'save'} · Esc {isPunjabi ? 'ਰੱਦ ਕਰੋ' : 'cancel'}
+              </span>
+            </div>
+          </div>
+        ) : (
         <div
           className={cn(
             'inline-block px-4 py-2.5 text-sm leading-relaxed break-words whitespace-pre-wrap',
@@ -239,6 +304,7 @@ export const MessageBubble = memo(function MessageBubble({
         >
           {message.content}
         </div>
+        )}
 
         {/* Compact Floating Action Toolbar */}
         {showActions && !isOptimistic && (
@@ -304,6 +370,18 @@ export const MessageBubble = memo(function MessageBubble({
                   </svg>
                 </button>
               )}
+              {/* Edit (own messages within 15 min) */}
+              {canEdit && (
+                <button
+                  onClick={() => { setIsEditing(true); setEditContent(message.content); setShowActions(false); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
+                  title={isPunjabi ? 'ਸੋਧੋ' : 'Edit'}
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </button>
+              )}
             </div>
 
             {/* Emoji Picker Popover */}
@@ -313,36 +391,39 @@ export const MessageBubble = memo(function MessageBubble({
                 isOwn ? 'left-0' : 'right-0'
               )}>
                 <div className="flex items-center gap-1">
-                  {QUICK_REACTIONS.map((emoji) => (
-                    <button
-                      key={emoji}
-                      onClick={() => toggleReaction(emoji)}
-                      className={cn(
-                        'w-9 h-9 flex items-center justify-center rounded-lg text-lg transition-all hover:scale-110',
-                        myReaction === emoji
-                          ? 'bg-amber-100 dark:bg-amber-900/30 ring-1 ring-amber-300 dark:ring-amber-700'
-                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
-                      )}
-                    >
-                      {emoji}
-                    </button>
-                  ))}
+                  {QUICK_REACTIONS.map((emoji) => {
+                    const existing = serverReactions.find((r) => r.emoji === emoji);
+                    return (
+                      <button
+                        key={emoji}
+                        onClick={() => handleReaction(emoji)}
+                        className={cn(
+                          'w-9 h-9 flex items-center justify-center rounded-lg text-lg transition-all hover:scale-110',
+                          existing?.reacted
+                            ? 'bg-amber-100 dark:bg-amber-900/30 ring-1 ring-amber-300 dark:ring-amber-700'
+                            : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                        )}
+                      >
+                        {emoji}
+                      </button>
+                    );
+                  })}
                 </div>
               </div>
             )}
           </div>
         )}
 
-        {/* Reaction badges (persist after selection) */}
-        {Object.keys(reactions).length > 0 && (
+        {/* Reaction badges (server-persisted) */}
+        {serverReactions.length > 0 && (
           <div className={cn('flex flex-wrap gap-1 mt-1', isOwn && 'justify-end')}>
-            {Object.entries(reactions).map(([emoji, count]) => (
+            {serverReactions.map(({ emoji, count, reacted }) => (
               <button
                 key={emoji}
-                onClick={() => toggleReaction(emoji)}
+                onClick={() => handleReaction(emoji)}
                 className={cn(
                   'inline-flex items-center gap-0.5 px-2 py-1 rounded-full text-xs transition-all border',
-                  myReaction === emoji
+                  reacted
                     ? 'bg-amber-50 border-amber-300 dark:bg-amber-900/20 dark:border-amber-700'
                     : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
                 )}

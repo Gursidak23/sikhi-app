@@ -22,10 +22,21 @@ export interface ChatUser {
   id: string;
   displayName: string;
   displayNameGurmukhi?: string | null;
+  email?: string | null;
+  bio?: string | null;
+  role?: string;
   avatarColor: string;
   isOnline?: boolean;
+  isBanned?: boolean;
   lastSeenAt?: string;
   sessionToken?: string; // Auth token from server, stored in localStorage
+}
+
+export interface MessageReaction {
+  emoji: string;
+  count: number;
+  userIds: string[];
+  reacted: boolean; // Whether the current user reacted
 }
 
 export interface ChatMessage {
@@ -35,10 +46,13 @@ export interface ChatMessage {
   roomId: string;
   isEdited: boolean;
   isDeleted: boolean;
+  isPinned: boolean;
   expiresAt: string;
   isSaved: boolean;
+  reactions: MessageReaction[];
   createdAt: string;
   updatedAt: string;
+  editedAt?: string | null;
   user: Pick<ChatUser, 'id' | 'displayName' | 'displayNameGurmukhi' | 'avatarColor'>;
   replyTo?: {
     id: string;
@@ -174,13 +188,13 @@ export function useChat() {
   }, [unreadCounts]);
 
   // ---- Register / Create User ----
-  const registerUser = useCallback(async (displayName: string, displayNameGurmukhi?: string, avatarColor?: string) => {
+  const registerUser = useCallback(async (displayName: string, displayNameGurmukhi?: string, avatarColor?: string, email?: string) => {
     try {
       setError(null);
       const res = await fetch('/api/community/user', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ displayName, displayNameGurmukhi, avatarColor }),
+        body: JSON.stringify({ displayName, displayNameGurmukhi, avatarColor, email }),
       });
 
       if (!res.ok) {
@@ -350,8 +364,10 @@ export function useChat() {
       roomId: activeRoom.id,
       isEdited: false,
       isDeleted: false,
+      isPinned: false,
       expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
       isSaved: false,
+      reactions: [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       user: {
@@ -843,6 +859,145 @@ export function useChat() {
     return [];
   }, [user]);
 
+  // ---- Edit Message ----
+  const editMessage = useCallback(async (messageId: string, newContent: string) => {
+    if (!user?.sessionToken) return;
+    try {
+      const res = await fetch('/api/community/messages', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-Token': user.sessionToken,
+        },
+        body: JSON.stringify({ messageId, userId: user.id, content: newContent }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to edit message');
+      }
+
+      const { message } = await res.json();
+      // Update local messages
+      setMessages((prev) => prev.map((m) => (m.id === messageId ? { ...message, _optimistic: false } : m)));
+      return message;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
+  }, [user]);
+
+  // ---- Toggle Reaction ----
+  const toggleReaction = useCallback(async (messageId: string, emoji: string) => {
+    if (!user?.sessionToken) return;
+    try {
+      const res = await fetch('/api/community/messages/react', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-Token': user.sessionToken,
+        },
+        body: JSON.stringify({ messageId, userId: user.id, emoji }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Failed to toggle reaction');
+      }
+
+      const result = await res.json();
+      // Update local message reactions
+      setMessages((prev) =>
+        prev.map((m) =>
+          m.id === messageId ? { ...m, reactions: result.reactions } : m
+        )
+      );
+      return result;
+    } catch (err: any) {
+      setError(err.message);
+    }
+  }, [user]);
+
+  // ---- Search Messages ----
+  const searchMessages = useCallback(async (query: string) => {
+    if (!activeRoom) return { results: [], total: 0 };
+    try {
+      const res = await fetch(
+        `/api/community/messages/search?roomId=${activeRoom.id}&q=${encodeURIComponent(query)}`
+      );
+      if (!res.ok) throw new Error('Search failed');
+      return await res.json();
+    } catch {
+      return { results: [], total: 0 };
+    }
+  }, [activeRoom]);
+
+  // ---- Get Pinned Messages ----
+  const getPinnedMessages = useCallback(async () => {
+    if (!activeRoom) return [];
+    try {
+      const res = await fetch(
+        `/api/community/messages/search?roomId=${activeRoom.id}&pinned=true`
+      );
+      if (!res.ok) return [];
+      const data = await res.json();
+      return data.pinned || [];
+    } catch {
+      return [];
+    }
+  }, [activeRoom]);
+
+  // ---- Update Profile ----
+  const updateProfile = useCallback(async (data: { displayName?: string; displayNameGurmukhi?: string; email?: string; bio?: string; avatarColor?: string }) => {
+    if (!user?.sessionToken) return;
+    try {
+      const res = await fetch('/api/community/user', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+          'X-Session-Token': user.sessionToken,
+        },
+        body: JSON.stringify({ userId: user.id, ...data }),
+      });
+
+      if (!res.ok) {
+        const result = await res.json();
+        throw new Error(result.error || 'Failed to update profile');
+      }
+
+      const { user: updatedUser } = await res.json();
+      const merged = { ...user, ...updatedUser };
+      setUser(merged);
+      localStorage.setItem(CHAT_USER_KEY, JSON.stringify(merged));
+      return merged;
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
+  }, [user]);
+
+  // ---- Admin Actions ----
+  const adminAction = useCallback(async (action: string, payload: Record<string, unknown>) => {
+    if (!user?.sessionToken) return;
+    try {
+      const res = await fetch('/api/community/admin', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action, userId: user.id, sessionToken: user.sessionToken, ...payload }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Admin action failed');
+      }
+
+      return await res.json();
+    } catch (err: any) {
+      setError(err.message);
+      throw err;
+    }
+  }, [user]);
+
   return {
     // State
     user,
@@ -867,6 +1022,12 @@ export function useChat() {
     selectRoom,
     sendMessage,
     deleteMessage: deleteMsg,
+    editMessage,
+    toggleReaction,
+    searchMessages,
+    getPinnedMessages,
+    updateProfile,
+    adminAction,
     loadMore,
     setReplyingTo,
     logout,
