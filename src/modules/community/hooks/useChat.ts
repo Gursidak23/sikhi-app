@@ -508,6 +508,23 @@ export function useChat() {
           const count = data.members.filter((m: ChatUser) => m.isOnline).length;
           onlineCountRef.current = count;
           setOnlineCount(count);
+
+          // Update active room member count to keep header accurate
+          setActiveRoom((prev) => {
+            if (!prev) return prev;
+            const newCount = data.members.length;
+            if (prev._count.members === newCount) return prev;
+            return { ...prev, _count: { ...prev._count, members: newCount } };
+          });
+
+          // Also update rooms list so sidebar stays in sync
+          setRooms((prevRooms) =>
+            prevRooms.map((r) =>
+              r.id === activeRoom.id && r._count.members !== data.members.length
+                ? { ...r, _count: { ...r._count, members: data.members.length } }
+                : r
+            )
+          );
         }
 
         if (data.serverTime) {
@@ -603,8 +620,12 @@ export function useChat() {
     };
   }, [user]);
 
-  // ---- Load rooms on mount ----
+  // ---- Load rooms when user is set (mount + after re-login) ----
   useEffect(() => {
+    if (!user) {
+      setIsLoading(false);
+      return;
+    }
     fetchRooms().then((rooms) => {
       setIsLoading(false);
       if (rooms.length > 0 && !activeRoom) {
@@ -613,7 +634,7 @@ export function useChat() {
       }
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [user]);
 
   // ---- Manual reconnect ----
   const reconnect = useCallback(() => {
@@ -629,13 +650,32 @@ export function useChat() {
   // ---- Logout ----
   const logout = useCallback(() => {
     if (user) {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
       fetch('/api/community/user', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ userId: user.id, isOnline: false }),
       }).catch(() => {});
     }
+    // Stop polling by clearing active room first
+    if (pollTimeoutRef.current) {
+      clearTimeout(pollTimeoutRef.current);
+      pollTimeoutRef.current = null;
+    }
+    // Reset all state
     setUser(null);
+    setActiveRoom(null);
+    setMessages([]);
+    setMembers([]);
+    setRooms([]);
+    setOnlineCount(0);
+    setReplyingTo(null);
+    setTypingUsers([]);
+    setUnreadCounts({});
+    setConnectionStatus('connected');
+    messageIdsRef.current.clear();
+    failedPollsRef.current = 0;
     localStorage.removeItem(CHAT_USER_KEY);
     localStorage.removeItem(UNREAD_KEY);
   }, [user]);
