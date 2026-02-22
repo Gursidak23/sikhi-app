@@ -7,13 +7,14 @@
 // Japji Sahib, Rehras Sahib, Kirtan Sohila, etc.
 // ============================================================================
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { ReadingProgress } from '@/components/common/ReadingProgress';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
 import { FontSizeControls } from '@/components/common/FontSizeControls';
+import { NitnemStreakTracker, markBaniComplete } from '@/components/common/NitnemStreakTracker';
 import { fetchBani } from '@/lib/api/banidb-client';
 import { NITNEM_BANIS_CONFIG } from '@/lib/constants/raag-ranges';
 import type { Language } from '@/types';
@@ -60,6 +61,9 @@ export default function NitnemPage() {
   const [error, setError] = useState<string | null>(null);
   const [showTranslation, setShowTranslation] = useState(true);
   const [showTransliteration, setShowTransliteration] = useState(false);
+  const [showStreak, setShowStreak] = useState(true);
+  const contentEndRef = useRef<HTMLDivElement>(null);
+  const hasMarkedRef = useRef<string | null>(null);
 
   const loadBani = useCallback(async (baniId: number) => {
     setLoading(true);
@@ -93,7 +97,25 @@ export default function NitnemPage() {
   const handleBack = () => {
     setSelectedBani(null);
     setBaniContent([]);
+    hasMarkedRef.current = null;
   };
+
+  // Auto-mark bani as complete when user reaches the bottom
+  useEffect(() => {
+    if (!selectedBani || baniContent.length === 0 || !contentEndRef.current) return;
+    if (hasMarkedRef.current === selectedBani) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && hasMarkedRef.current !== selectedBani) {
+          hasMarkedRef.current = selectedBani;
+          markBaniComplete(selectedBani);
+        }
+      },
+      { threshold: 0.5 }
+    );
+    observer.observe(contentEndRef.current);
+    return () => observer.disconnect();
+  }, [selectedBani, baniContent]);
 
   const currentBani = NITNEM_BANIS.find(b => b.id === selectedBani);
 
@@ -139,6 +161,20 @@ export default function NitnemPage() {
                   {language === 'pa' ? 'ਰੋਜ਼ਾਨਾ ਬਾਣੀਆਂ' : 'Daily Prayers'}
                 </p>
                 <div className="mt-4 w-24 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto" />
+              </div>
+
+              {/* Nitnem Streak Tracker */}
+              <div className="mb-10">
+                <button
+                  onClick={() => setShowStreak(!showStreak)}
+                  className="w-full flex items-center justify-between py-2 text-amber-800 dark:text-amber-300 hover:text-amber-600 transition-colors"
+                >
+                  <span className={cn('font-semibold', language === 'pa' && 'font-gurmukhi')}>
+                    {language === 'pa' ? '🔥 ਨਿਤਨੇਮ ਲੜੀ ਟ੍ਰੈਕਰ' : '🔥 Streak Tracker'}
+                  </span>
+                  <span className="text-sm">{showStreak ? '▲' : '▼'}</span>
+                </button>
+                {showStreak && <NitnemStreakTracker language={language} />}
               </div>
 
               {/* Time-based sections */}
@@ -377,7 +413,7 @@ export default function NitnemPage() {
                   )}
 
                   {/* Footer */}
-                  <div className="mt-8 text-center">
+                  <div className="mt-8 text-center" ref={contentEndRef}>
                     <p className="text-lg text-amber-800 dark:text-amber-400 font-gurmukhi">
                       ਭੁੱਲ ਚੁੱਕ ਮਾਫ਼ ਕਰਨਾ 🙏
                     </p>

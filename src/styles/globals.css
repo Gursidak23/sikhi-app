@@ -58,6 +58,49 @@
 }
 
 /* ============================================================================
+   AMRIT VELA MODE - Deep Meditative Theme (1AM-6AM)
+   ============================================================================ */
+.amrit-vela {
+  --sikhi-cream: #0a0e1a;
+  --sikhi-white: #070b14;
+  --gradient-hero: linear-gradient(180deg, #0a0e1a 0%, #0f1a3a 50%, #1a2550 100%);
+}
+
+.amrit-vela body,
+.amrit-vela .min-h-screen {
+  background: linear-gradient(180deg, #0a0e1a 0%, #0f1528 50%, #0a0e1a 100%) !important;
+  color: #c4cee8;
+}
+
+.amrit-vela .sikhi-nav {
+  background: rgba(10, 14, 26, 0.95) !important;
+  border-bottom: 1px solid rgba(100, 130, 200, 0.15);
+}
+
+.amrit-vela .sikhi-footer {
+  background: #070b14 !important;
+}
+
+.amrit-vela .saroop-page {
+  background: linear-gradient(135deg, #0f1528 0%, #131b35 50%, #0f1528 100%) !important;
+  border-color: rgba(100, 130, 200, 0.2) !important;
+}
+
+.amrit-vela .saroop-inner-frame {
+  border-color: rgba(100, 130, 200, 0.15) !important;
+}
+
+.amrit-vela .gurbani-traditional {
+  color: #e8d9a0 !important;
+  text-shadow: 0 0 20px rgba(218, 165, 32, 0.15);
+}
+
+.amrit-vela .ik-onkar {
+  color: #daa520 !important;
+  text-shadow: 0 0 30px rgba(218, 165, 32, 0.3);
+}
+
+/* ============================================================================
    BASE STYLES
    ============================================================================ */
 
