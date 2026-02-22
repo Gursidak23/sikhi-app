@@ -113,7 +113,7 @@ export function ChatInput({
             <button
               key={emoji}
               onClick={() => insertEmoji(emoji)}
-              className="p-1.5 rounded-lg text-base hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:scale-110 transition-all"
+              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-base hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:scale-110 transition-all"
             >
               {emoji}
             </button>

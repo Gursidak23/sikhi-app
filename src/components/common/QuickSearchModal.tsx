@@ -215,25 +215,44 @@ export function QuickSearchModal({ language }: QuickSearchModalProps) {
 
   if (!isOpen) {
     return (
-      <button
-        onClick={() => setIsOpen(true)}
-        className={cn(
-          'hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm',
-          'bg-neutral-100 dark:bg-neutral-800',
-          'text-neutral-500 dark:text-neutral-400',
-          'hover:bg-neutral-200 dark:hover:bg-neutral-700',
-          'border border-neutral-200 dark:border-neutral-700',
-          'transition-colors'
-        )}
-      >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-        </svg>
-        <span>{language === 'pa' ? 'ਖੋਜੋ' : 'Search'}</span>
-        <kbd className="ml-2 text-xs bg-neutral-200 dark:bg-neutral-700 px-1.5 py-0.5 rounded">
-          ⌘K
-        </kbd>
-      </button>
+      <>
+        {/* Mobile: Icon-only search button */}
+        <button
+          onClick={() => setIsOpen(true)}
+          className={cn(
+            'md:hidden flex items-center justify-center p-2.5 min-w-[44px] min-h-[44px] rounded-lg',
+            'text-neutral-500 dark:text-neutral-400',
+            'hover:bg-neutral-100 dark:hover:bg-neutral-800',
+            'transition-colors'
+          )}
+          aria-label={language === 'pa' ? 'ਖੋਜੋ' : 'Search'}
+        >
+          <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+        </button>
+
+        {/* Desktop: Full search button with label */}
+        <button
+          onClick={() => setIsOpen(true)}
+          className={cn(
+            'hidden md:flex items-center gap-2 px-3 py-1.5 rounded-lg text-sm',
+            'bg-neutral-100 dark:bg-neutral-800',
+            'text-neutral-500 dark:text-neutral-400',
+            'hover:bg-neutral-200 dark:hover:bg-neutral-700',
+            'border border-neutral-200 dark:border-neutral-700',
+            'transition-colors'
+          )}
+        >
+          <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+          </svg>
+          <span>{language === 'pa' ? 'ਖੋਜੋ' : 'Search'}</span>
+          <kbd className="ml-2 text-xs bg-neutral-200 dark:bg-neutral-700 px-1.5 py-0.5 rounded">
+            ⌘K
+          </kbd>
+        </button>
+      </>
     );
   }
 

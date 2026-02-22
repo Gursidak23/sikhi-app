@@ -57,7 +57,7 @@ export function GurmukhiKeyboard({
             setShowVowelSigns(false);
           }}
           className={cn(
-            'px-3 py-1 rounded-lg text-sm font-gurmukhi transition-colors',
+            'px-3 py-2 min-h-[44px] rounded-lg text-sm font-gurmukhi transition-colors',
             !showNumbers && !showVowelSigns
               ? 'bg-neela-600 text-white'
               : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
@@ -71,7 +71,7 @@ export function GurmukhiKeyboard({
             setShowNumbers(false);
           }}
           className={cn(
-            'px-3 py-1 rounded-lg text-sm font-gurmukhi transition-colors',
+            'px-3 py-2 min-h-[44px] rounded-lg text-sm font-gurmukhi transition-colors',
             showVowelSigns
               ? 'bg-neela-600 text-white'
               : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
@@ -85,7 +85,7 @@ export function GurmukhiKeyboard({
             setShowVowelSigns(false);
           }}
           className={cn(
-            'px-3 py-1 rounded-lg text-sm font-gurmukhi transition-colors',
+            'px-3 py-2 min-h-[44px] rounded-lg text-sm font-gurmukhi transition-colors',
             showNumbers
               ? 'bg-neela-600 text-white'
               : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
@@ -99,13 +99,13 @@ export function GurmukhiKeyboard({
       {!showNumbers && !showVowelSigns && (
         <div className="space-y-2">
           {GURMUKHI_ROWS.map((row, rowIndex) => (
-            <div key={rowIndex} className="flex justify-center gap-1">
+            <div key={rowIndex} className="flex justify-center gap-0.5 sm:gap-1">
               {row.map((char) => (
                 <button
                   key={char}
                   onClick={() => onKeyPress(char)}
                   className={cn(
-                    'w-8 h-10 sm:w-10 sm:h-12 rounded-lg font-gurmukhi text-lg sm:text-xl',
+                    'flex-1 min-w-0 h-10 sm:w-10 sm:flex-none sm:h-12 rounded-lg font-gurmukhi text-base sm:text-xl',
                     'bg-white dark:bg-neutral-700 text-neutral-900 dark:text-neutral-100',
                     'hover:bg-neela-100 dark:hover:bg-neela-800',
                     'active:scale-95 transition-all shadow-sm',

@@ -869,7 +869,7 @@ export default function ItihaasPage() {
 
         {/* Contemporary History Warning Toast */}
         {showContemporaryWarning && activeTab === 'timeline' && SAMPLE_ERAS.some(e => e.isOngoing) && (
-          <div className="fixed bottom-4 right-4 max-w-sm z-50">
+          <div className="fixed bottom-4 left-4 right-4 sm:left-auto sm:right-4 max-w-sm z-50">
             <div className="bg-amber-50 border-2 border-amber-300 rounded-lg shadow-xl p-4">
               <div className="flex justify-between items-start gap-3">
                 <div className="flex items-start gap-2">
@@ -885,7 +885,7 @@ export default function ItihaasPage() {
                 </div>
                 <button
                   onClick={() => setShowContemporaryWarning(false)}
-                  className="text-amber-600 hover:text-amber-800 p-1"
+                  className="text-amber-600 hover:text-amber-800 p-2 min-w-[44px] min-h-[44px] flex items-center justify-center flex-shrink-0"
                 >
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />

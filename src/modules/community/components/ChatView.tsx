@@ -111,7 +111,7 @@ export function ChatView({ language }: ChatViewProps) {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowMobileSidebar(false)}
           />
-          <div className="absolute left-0 top-0 bottom-0 w-80 animate-in slide-in-from-left shadow-2xl">
+          <div className="absolute left-0 top-0 bottom-0 w-[85vw] max-w-80 animate-in slide-in-from-left shadow-2xl">
             <RoomSidebar
               rooms={rooms}
               activeRoom={activeRoom}
@@ -142,7 +142,7 @@ export function ChatView({ language }: ChatViewProps) {
           <div className="flex items-center gap-3 min-w-0">
             <button
               onClick={() => setShowMobileSidebar(true)}
-              className="md:hidden p-2 rounded-xl hover:bg-amber-50 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
+              className="md:hidden p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl hover:bg-amber-50 dark:hover:bg-gray-800 transition-colors text-gray-600 dark:text-gray-400"
               aria-label="Open rooms"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -214,7 +214,7 @@ export function ChatView({ language }: ChatViewProps) {
             <button
               onClick={() => setShowMembers(!showMembers)}
               className={cn(
-                'p-2 rounded-xl transition-all',
+                'p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all',
                 showMembers
                   ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 shadow-sm'
                   : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600'
@@ -230,7 +230,7 @@ export function ChatView({ language }: ChatViewProps) {
             <div className="relative">
               <button
                 onClick={() => setShowUserMenu(!showUserMenu)}
-                className="flex items-center gap-2 p-1.5 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                className="flex items-center gap-2 p-2 min-w-[44px] min-h-[44px] rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label="User menu"
               >
                 <div
@@ -471,11 +471,11 @@ export function ChatView({ language }: ChatViewProps) {
             className="absolute inset-0 bg-black/50 backdrop-blur-sm"
             onClick={() => setShowMembers(false)}
           />
-          <div className="absolute right-0 top-0 bottom-0 w-80 animate-in slide-in-from-right shadow-2xl">
+          <div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-80 animate-in slide-in-from-right shadow-2xl">
             <div className="h-full relative">
               <button
                 onClick={() => setShowMembers(false)}
-                className="absolute top-3 right-3 z-10 p-1.5 rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-500"
+                className="absolute top-3 right-3 z-10 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-500"
                 aria-label="Close members"
               >
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

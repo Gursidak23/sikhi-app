@@ -116,7 +116,7 @@ export default function NitnemPage() {
           {selectedBani && (
             <button
               onClick={handleBack}
-              className="mb-4 flex items-center gap-2 text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 transition-colors"
+              className="mb-4 flex items-center gap-2 py-2 min-h-[44px] text-amber-700 dark:text-amber-400 hover:text-amber-900 dark:hover:text-amber-300 transition-colors"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
