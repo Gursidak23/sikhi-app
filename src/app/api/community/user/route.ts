@@ -8,10 +8,21 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { createOrGetUser, updateUserPresence, verifySessionToken } from '@/lib/api/chat-handlers';
 import { createChatUserSchema, updatePresenceSchema } from '@/lib/validation/chat-schemas';
+import { rateLimit, getClientIdentifier } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
 
 export async function POST(request: NextRequest) {
   try {
+    // Rate limit user registration: 5 per minute per IP
+    const ip = getClientIdentifier(request);
+    const rl = rateLimit(`chat-register:${ip}`, { limit: 5, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: 'Too many registration attempts. Please wait.' },
+        { status: 429, headers: { 'Retry-After': Math.ceil((rl.resetTime - Date.now()) / 1000).toString() } }
+      );
+    }
+
     const body = await request.json();
     const parsed = createChatUserSchema.safeParse(body);
 
@@ -25,7 +36,8 @@ export async function POST(request: NextRequest) {
     const user = await createOrGetUser(
       parsed.data.displayName,
       parsed.data.displayNameGurmukhi,
-      parsed.data.avatarColor
+      parsed.data.avatarColor,
+      parsed.data.existingUserId
     );
 
     return NextResponse.json({ user }, { status: 201 });
@@ -50,10 +62,10 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    // Verify session token for presence update
+    // Verify session token for presence update (REQUIRED, not optional)
     const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
-    if (sessionToken && !verifySessionToken(parsed.data.userId, sessionToken)) {
-      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    if (!sessionToken || !(await verifySessionToken(parsed.data.userId, sessionToken))) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     const user = await updateUserPresence(parsed.data.userId, parsed.data.isOnline);

@@ -5,11 +5,25 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { pollNewMessages, getOnlineUsers } from '@/lib/api/chat-handlers';
+import { pollNewMessages, getRoomMembers } from '@/lib/api/chat-handlers';
+import { rateLimit, getClientIdentifier } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
+
+/** Max lookback for polling: 5 minutes. Prevents fetching entire room history. */
+const MAX_POLL_LOOKBACK_MS = 5 * 60 * 1000;
 
 export async function GET(request: NextRequest) {
   try {
+    // Rate limit polling: 120 per minute per IP (2/sec — generous for adaptive polling)
+    const ip = getClientIdentifier(request);
+    const rl = rateLimit(`chat-poll:${ip}`, { limit: 120, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json(
+        { error: 'Polling too fast. Please slow down.' },
+        { status: 429, headers: { 'Retry-After': '2' } }
+      );
+    }
+
     const { searchParams } = request.nextUrl;
     const roomId = searchParams.get('roomId');
     const since = searchParams.get('since');
@@ -21,7 +35,7 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const sinceDate = new Date(since);
+    let sinceDate = new Date(since);
     if (isNaN(sinceDate.getTime())) {
       return NextResponse.json(
         { error: 'Invalid since parameter. Use ISO 8601 format.' },
@@ -29,9 +43,15 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    // Clamp: don't allow lookback older than MAX_POLL_LOOKBACK_MS
+    const minSince = new Date(Date.now() - MAX_POLL_LOOKBACK_MS);
+    if (sinceDate < minSince) {
+      sinceDate = minSince;
+    }
+
     const [messages, members] = await Promise.all([
       pollNewMessages(roomId, sinceDate),
-      getOnlineUsers(roomId),
+      getRoomMembers(roomId),
     ]);
 
     return NextResponse.json({

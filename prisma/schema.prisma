@@ -593,6 +593,7 @@ model ChatUser {
   avatarColor     String        @default("#F59E0B") // Amber default
   isOnline        Boolean       @default(false)
   lastSeenAt      DateTime      @default(now())
+  sessionTokenHash String?      // SHA-256 hash of session token — survives cold starts
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
   messages        ChatMessage[]
@@ -653,6 +654,7 @@ model ChatMessage {
   updatedAt       DateTime  @updatedAt
   
   @@index([roomId, createdAt])
+  @@index([roomId, isDeleted, createdAt])
   @@index([userId])
   @@index([replyToId])
 }

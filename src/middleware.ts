@@ -1,6 +1,6 @@
 /**
  * Next.js Middleware
- * Handles CORS preflight, security, and request tracing
+ * Handles CORS preflight, security headers, and request tracing
  */
 
 import { NextResponse } from 'next/server';
@@ -38,6 +38,40 @@ function addCorsHeaders(response: NextResponse, origin: string | null) {
   return response;
 }
 
+/** Add security headers to all responses */
+function addSecurityHeaders(response: NextResponse) {
+  // Prevent clickjacking — only allow same-origin framing
+  response.headers.set('X-Frame-Options', 'SAMEORIGIN');
+  // Prevent MIME-type sniffing
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  // XSS protection (legacy browsers)
+  response.headers.set('X-XSS-Protection', '1; mode=block');
+  // Control referrer information leakage
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  // Restrict browser features
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=(), payment=()');
+  // HSTS — force HTTPS (1 year, include subdomains)
+  if (process.env.NODE_ENV === 'production') {
+    response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
+  }
+  // Content Security Policy
+  response.headers.set(
+    'Content-Security-Policy',
+    [
+      "default-src 'self'",
+      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
+      "style-src 'self' 'unsafe-inline'",
+      "img-src 'self' data: blob: https:",
+      "font-src 'self' data:",
+      "connect-src 'self' https://api.banidb.com",
+      "frame-ancestors 'self'",
+      "base-uri 'self'",
+      "form-action 'self'",
+    ].join('; ')
+  );
+  return response;
+}
+
 export function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const origin = request.headers.get('origin');
@@ -49,6 +83,9 @@ export function middleware(request: NextRequest) {
   }
 
   const response = NextResponse.next();
+
+  // Add security headers to ALL responses
+  addSecurityHeaders(response);
 
   // Add CORS headers to API responses
   if (pathname.startsWith('/api/')) {

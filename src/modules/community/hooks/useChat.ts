@@ -106,14 +106,12 @@ export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [members, setMembers] = useState<ChatUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hasMore, setHasMore] = useState(false);
   const [nextCursor, setNextCursor] = useState<string | undefined>();
   const [replyingTo, setReplyingTo] = useState<ChatMessage | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected');
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
-  const [typingUsers, setTypingUsers] = useState<string[]>([]);
   const [onlineCount, setOnlineCount] = useState(0);
 
   // Refs for polling management
@@ -122,7 +120,6 @@ export function useChat() {
   const lastActivityRef = useRef<number>(Date.now());
   const onlineCountRef = useRef(0);
   const messageIdsRef = useRef<Set<string>>(new Set());
-  const typingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isTabVisibleRef = useRef<boolean>(true);
   const failedPollsRef = useRef<number>(0);
   const mountedRef = useRef<boolean>(true);
@@ -135,14 +132,6 @@ export function useChat() {
     if (onlineCountRef.current > 1 && idleTime < 10000) return POLL_MULTI_USER;
     if (idleTime < 10000) return POLL_ACTIVE;
     return POLL_IDLE;
-  }, []);
-
-  // ---- Send typing indicator ----
-  const sendTypingIndicator = useCallback(() => {
-    if (typingTimeoutRef.current) clearTimeout(typingTimeoutRef.current);
-    typingTimeoutRef.current = setTimeout(() => {
-      typingTimeoutRef.current = null;
-    }, 3000);
   }, []);
 
   // ---- Track user activity ----
@@ -216,7 +205,7 @@ export function useChat() {
     }
   }, []);
 
-  // ---- Session auto-recovery: re-register with existing user info ----
+  // ---- Session auto-recovery: re-authenticate with existing user ID ----
   const recoverSession = useCallback(async (): Promise<ChatUser | null> => {
     if (!user) return null;
     try {
@@ -227,6 +216,7 @@ export function useChat() {
           displayName: user.displayName,
           displayNameGurmukhi: user.displayNameGurmukhi || undefined,
           avatarColor: user.avatarColor,
+          existingUserId: user.id, // Reuse existing user — don't create duplicate
         }),
       });
       if (!res.ok) return null;
@@ -275,7 +265,6 @@ export function useChat() {
     setIsLoading(true);
     setError(null);
     setReplyingTo(null);
-    setTypingUsers([]);
     // Reset tracked message IDs for the new room
     messageIdsRef.current.clear();
     markActive();
@@ -647,23 +636,26 @@ export function useChat() {
     if (!user) return;
 
     const setOnline = () => {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
       fetch('/api/community/user', {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ userId: user.id, isOnline: true }),
       }).catch(() => {});
     };
 
     const setOffline = () => {
-      if (navigator.sendBeacon) {
-        navigator.sendBeacon(
-          '/api/community/user',
-          new Blob(
-            [JSON.stringify({ userId: user.id, isOnline: false })],
-            { type: 'application/json' }
-          )
-        );
-      }
+      // Use fetch with keepalive for authenticated offline status
+      fetch('/api/community/user', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          ...(user.sessionToken ? { 'X-Session-Token': user.sessionToken } : {}),
+        },
+        body: JSON.stringify({ userId: user.id, isOnline: false }),
+        keepalive: true,
+      }).catch(() => {});
     };
 
     setOnline();
@@ -742,6 +734,7 @@ export function useChat() {
         method: 'PUT',
         headers,
         body: JSON.stringify({ userId: user.id, isOnline: false }),
+        keepalive: true,
       }).catch(() => {});
     }
     // Stop polling by clearing active room first
@@ -757,7 +750,6 @@ export function useChat() {
     setRooms([]);
     setOnlineCount(0);
     setReplyingTo(null);
-    setTypingUsers([]);
     setUnreadCounts({});
     setConnectionStatus('connected');
     messageIdsRef.current.clear();
@@ -777,14 +769,12 @@ export function useChat() {
     messages,
     members,
     isLoading,
-    isSending,
     error,
     hasMore,
     replyingTo,
     connectionStatus,
     unreadCounts,
     totalUnread,
-    typingUsers,
 
     onlineCount,
 
@@ -800,6 +790,5 @@ export function useChat() {
     setError,
     reconnect,
     markActive,
-    sendTypingIndicator,
   };
 }
