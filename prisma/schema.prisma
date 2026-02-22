@@ -585,13 +585,19 @@ model ScholarlyReviewRequest {
 // COMMUNITY CHAT MODULE
 // ============================================================================
 
-/// Chat users - lightweight identity for community participation
+/// Chat users - identity for community participation
 model ChatUser {
   id              String        @id @default(cuid())
   displayName     String
   displayNameGurmukhi String?
+  email           String?       @unique // Optional email for admin contact & account recovery
+  bio             String?       @db.VarChar(300) // Short bio / about
+  role            String        @default("member") // member | moderator | admin
   avatarColor     String        @default("#F59E0B") // Amber default
   isOnline        Boolean       @default(false)
+  isBanned        Boolean       @default(false)
+  banReason       String?
+  bannedUntil     DateTime?     // null = permanent, date = temp ban
   lastSeenAt      DateTime      @default(now())
   sessionTokenHash String?      // SHA-256 hash of session token — survives cold starts
   createdAt       DateTime      @default(now())
@@ -599,9 +605,12 @@ model ChatUser {
   messages        ChatMessage[]
   roomMemberships ChatRoomMember[]
   savedMessages   SavedMessage[]
+  reactions       MessageReaction[]
   
   @@index([isOnline])
   @@index([lastSeenAt])
+  @@index([email])
+  @@index([role])
 }
 
 /// Chat rooms / channels for community discussions
@@ -631,6 +640,7 @@ model ChatRoomMember {
   user            ChatUser  @relation(fields: [userId], references: [id], onDelete: Cascade)
   roomId          String
   room            ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  role            String    @default("member") // member | moderator — room-level role
   joinedAt        DateTime  @default(now())
   
   @@unique([userId, roomId])
@@ -651,16 +661,36 @@ model ChatMessage {
   replies         ChatMessage[] @relation("MessageReplies")
   isEdited        Boolean   @default(false)
   isDeleted       Boolean   @default(false)
+  isPinned        Boolean   @default(false)
+  pinnedById      String?   // userId of who pinned
+  editedAt        DateTime? // When last edited
   expiresAt       DateTime               // Auto-delete after this time (default: 12h from creation)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
   savedBy         SavedMessage[]
+  reactions       MessageReaction[]
   
   @@index([roomId, createdAt])
   @@index([roomId, isDeleted, createdAt])
+  @@index([roomId, isPinned])
   @@index([userId])
   @@index([replyToId])
   @@index([expiresAt])
+}
+
+/// Message reactions (persisted, shared across users)
+model MessageReaction {
+  id              String      @id @default(cuid())
+  emoji           String      // e.g. "🙏", "❤️", "👍"
+  userId          String
+  user            ChatUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageId       String
+  message         ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  createdAt       DateTime    @default(now())
+  
+  @@unique([userId, messageId, emoji]) // One reaction per emoji per user per message
+  @@index([messageId])
+  @@index([userId])
 }
 
 /// Saved messages — persist beyond ephemeral expiry (Snapchat-style "save")

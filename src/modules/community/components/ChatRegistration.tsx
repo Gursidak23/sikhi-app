@@ -16,13 +16,14 @@ const AVATAR_COLORS = [
 ];
 
 interface ChatRegistrationProps {
-  onRegister: (displayName: string, displayNameGurmukhi?: string, avatarColor?: string) => Promise<any>;
+  onRegister: (displayName: string, displayNameGurmukhi?: string, avatarColor?: string, email?: string) => Promise<any>;
   language: Language;
 }
 
 export function ChatRegistration({ onRegister, language }: ChatRegistrationProps) {
   const [displayName, setDisplayName] = useState('');
   const [gurmukhiName, setGurmukhiName] = useState('');
+  const [email, setEmail] = useState('');
   const [selectedColor, setSelectedColor] = useState(AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
@@ -46,7 +47,7 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
     setError('');
 
     try {
-      await onRegister(displayName.trim(), gurmukhiName.trim() || undefined, selectedColor);
+      await onRegister(displayName.trim(), gurmukhiName.trim() || undefined, selectedColor, email.trim() || undefined);
     } catch (err: any) {
       setError(err.message || (isPunjabi ? 'ਗਲਤੀ ਹੋਈ' : 'Something went wrong'));
     } finally {
@@ -159,6 +160,28 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
                         placeholder="ਗੁਰਮੁਖੀ ਵਿੱਚ ਨਾਮ..."
                         maxLength={30}
                         className="w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl font-gurmukhi text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-400 transition-all text-base"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      {isPunjabi ? 'ਈਮੇਲ' : 'Email'}
+                      <span className="text-gray-400 ml-2 text-xs font-normal">(optional — for account recovery & admin contact)</span>
+                    </label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <svg className="w-5 h-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                        </svg>
+                      </div>
+                      <input
+                        type="email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        placeholder={isPunjabi ? 'ਈਮੇਲ ਦਰਜ ਕਰੋ...' : 'your@email.com'}
+                        maxLength={254}
+                        className="w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-400 transition-all text-base"
                       />
                     </div>
                   </div>
