@@ -55,10 +55,12 @@ export function ChatView({ language }: ChatViewProps) {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const userMenuBtnRef = useRef<HTMLButtonElement>(null);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
   const [showNewMsgButton, setShowNewMsgButton] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
+  const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const prevMessageCountRef = useRef(0);
   const isPunjabi = language === 'pa';
 
@@ -176,7 +178,7 @@ export function ChatView({ language }: ChatViewProps) {
                       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
                       </svg>
-                      {activeRoom._count.members}
+                      {members.length || activeRoom._count.members}
                     </span>
                   </p>
                 </div>
@@ -229,7 +231,17 @@ export function ChatView({ language }: ChatViewProps) {
             {/* User Menu */}
             <div className="relative">
               <button
-                onClick={() => setShowUserMenu(!showUserMenu)}
+                ref={userMenuBtnRef}
+                onClick={() => {
+                  if (!showUserMenu && userMenuBtnRef.current) {
+                    const rect = userMenuBtnRef.current.getBoundingClientRect();
+                    setMenuPos({
+                      top: rect.bottom + 4,
+                      right: window.innerWidth - rect.right,
+                    });
+                  }
+                  setShowUserMenu(!showUserMenu);
+                }}
                 className="flex items-center justify-center p-1.5 min-w-[44px] min-h-[44px] rounded-xl hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
                 aria-label="User menu"
               >
@@ -240,10 +252,13 @@ export function ChatView({ language }: ChatViewProps) {
                   {user.displayName.slice(0, 2).toUpperCase()}
                 </div>
               </button>
-              {showUserMenu && (
+              {showUserMenu && menuPos && (
                 <>
                   <div className="fixed inset-0 z-[60]" onClick={() => setShowUserMenu(false)} />
-                  <div className="absolute right-0 top-full mt-1 w-48 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-1 z-[70] animate-in fade-in zoom-in-95 duration-150">
+                  <div
+                    className="fixed w-48 bg-white dark:bg-gray-800 rounded-xl shadow-2xl border border-gray-200 dark:border-gray-700 py-1 z-[70] animate-in fade-in zoom-in-95 duration-150"
+                    style={{ top: menuPos.top, right: menuPos.right }}
+                  >
                     <div className="px-3 py-2.5 border-b border-gray-100 dark:border-gray-700">
                       <p className={cn(
                         'text-sm font-semibold text-gray-900 dark:text-white truncate',
