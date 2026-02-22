@@ -1,10 +1,10 @@
 /**
- * Chat Message Bubble Component - Enhanced with reactions and optimistic state
+ * Chat Message Bubble Component - Clean design with compact action toolbar
  */
 
 'use client';
 
-import { useState, useCallback, useRef } from 'react';
+import { useState, useCallback, useRef, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 import type { ChatMessage, ChatUser } from '../hooks/useChat';
@@ -27,9 +27,11 @@ export function MessageBubble({
   onDelete,
 }: MessageBubbleProps) {
   const [showActions, setShowActions] = useState(false);
+  const [showReactions, setShowReactions] = useState(false);
   const [reactions, setReactions] = useState<Record<string, number>>({});
   const [myReaction, setMyReaction] = useState<string | null>(null);
   const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const actionsRef = useRef<HTMLDivElement>(null);
   const isOwn = currentUser?.id === message.userId;
   const isPunjabi = language === 'pa';
   const isOptimistic = (message as any)._optimistic;
@@ -38,26 +40,42 @@ export function MessageBubble({
     ? message.user.displayNameGurmukhi
     : message.user.displayName;
 
+  // Close actions when clicking outside
+  useEffect(() => {
+    if (!showActions) return;
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      if (actionsRef.current && !actionsRef.current.contains(e.target as Node)) {
+        setShowActions(false);
+        setShowReactions(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+    };
+  }, [showActions]);
+
   const toggleReaction = useCallback((emoji: string) => {
     setReactions(prev => {
       const next = { ...prev };
       if (myReaction === emoji) {
-        // Un-react
         next[emoji] = (next[emoji] || 1) - 1;
         if (next[emoji] <= 0) delete next[emoji];
         setMyReaction(null);
       } else {
-        // Remove old reaction
         if (myReaction) {
           next[myReaction] = (next[myReaction] || 1) - 1;
           if (next[myReaction] <= 0) delete next[myReaction];
         }
-        // Add new reaction
         next[emoji] = (next[emoji] || 0) + 1;
         setMyReaction(emoji);
       }
       return next;
     });
+    setShowReactions(false);
+    setShowActions(false);
   }, [myReaction]);
 
   const formatTime = (dateStr: string) => {
@@ -103,13 +121,13 @@ export function MessageBubble({
   return (
     <div
       className={cn(
-        'group flex gap-3 px-4 py-1.5 transition-colors',
+        'group relative flex gap-3 px-4 py-1.5 transition-colors',
         isOwn ? 'flex-row-reverse' : '',
         !isOptimistic && 'hover:bg-gray-50/80 dark:hover:bg-gray-800/30',
         isOptimistic && 'opacity-70'
       )}
-      onMouseEnter={() => setShowActions(true)}
-      onMouseLeave={() => setShowActions(false)}
+      onMouseEnter={() => !isOptimistic && setShowActions(true)}
+      onMouseLeave={() => { setShowActions(false); setShowReactions(false); }}
       onTouchStart={() => {
         longPressTimerRef.current = setTimeout(() => setShowActions(true), 500);
       }}
@@ -127,13 +145,12 @@ export function MessageBubble({
           isOptimistic && 'animate-pulse'
         )}
         style={{ backgroundColor: message.user.avatarColor }}
-        title={message.user.displayName}
       >
         {getInitials(message.user.displayName)}
       </div>
 
       {/* Message Content */}
-      <div className={cn('max-w-[75%] min-w-0', isOwn && 'text-right')}>
+      <div className={cn('max-w-[75%] min-w-0 relative', isOwn && 'text-right')}>
         {/* Header */}
         <div className={cn(
           'flex items-center gap-2 mb-1',
@@ -187,65 +204,78 @@ export function MessageBubble({
           {message.content}
         </div>
 
-        {/* Action Buttons */}
+        {/* Compact Floating Action Toolbar */}
         {showActions && !isOptimistic && (
-          <div className={cn(
-            'flex items-center gap-0.5 mt-1',
-            isOwn && 'flex-row-reverse'
-          )}>
-            {/* Quick Reactions */}
-            <div className="flex items-center gap-0.5 mr-1">
-              {QUICK_REACTIONS.map((emoji) => (
-                <button
-                  key={emoji}
-                  onClick={() => toggleReaction(emoji)}
-                  className={cn(
-                    'p-1.5 sm:p-1 min-w-[36px] min-h-[36px] sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-md text-sm transition-all hover:scale-125',
-                    myReaction === emoji
-                      ? 'bg-amber-100 dark:bg-amber-900/30'
-                      : 'hover:bg-gray-100 dark:hover:bg-gray-800'
-                  )}
-                  title={"Reactions are temporary and only visible to you"}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-            <div className="w-px h-4 bg-gray-200 dark:bg-gray-700 mx-0.5" />
-            <button
-              onClick={() => onReply(message)}
-              className="p-2 min-w-[40px] min-h-[40px] sm:p-1.5 sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg text-gray-400 hover:text-amber-500 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-all"
-              title={isPunjabi ? 'ਜਵਾਬ' : 'Reply'}
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
-              </svg>
-            </button>
-            {isOwn && (
+          <div
+            ref={actionsRef}
+            className={cn(
+              'absolute z-30 -top-3',
+              isOwn ? 'left-0' : 'right-0'
+            )}
+          >
+            <div className="flex items-center gap-0.5 bg-white dark:bg-gray-800 rounded-full shadow-lg border border-gray-200 dark:border-gray-700 px-1 py-0.5">
+              {/* React button — toggles emoji picker */}
               <button
-                onClick={() => onDelete(message.id)}
-                className="p-2 min-w-[40px] min-h-[40px] sm:p-1.5 sm:min-w-0 sm:min-h-0 flex items-center justify-center rounded-lg text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-all"
-                title={isPunjabi ? 'ਮਿਟਾਓ' : 'Delete'}
+                onClick={() => setShowReactions(!showReactions)}
+                className={cn(
+                  'w-8 h-8 flex items-center justify-center rounded-full text-sm transition-colors',
+                  showReactions
+                    ? 'bg-amber-100 dark:bg-amber-900/30'
+                    : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                )}
               >
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                😊
+              </button>
+              {/* Reply */}
+              <button
+                onClick={() => { onReply(message); setShowActions(false); }}
+                className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                 </svg>
               </button>
+              {/* Delete (own messages only) */}
+              {isOwn && (
+                <button
+                  onClick={() => { onDelete(message.id); setShowActions(false); }}
+                  className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                </button>
+              )}
+            </div>
+
+            {/* Emoji Picker Popover */}
+            {showReactions && (
+              <div className={cn(
+                'absolute top-full mt-1 bg-white dark:bg-gray-800 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700 p-1.5',
+                isOwn ? 'left-0' : 'right-0'
+              )}>
+                <div className="flex items-center gap-1">
+                  {QUICK_REACTIONS.map((emoji) => (
+                    <button
+                      key={emoji}
+                      onClick={() => toggleReaction(emoji)}
+                      className={cn(
+                        'w-9 h-9 flex items-center justify-center rounded-lg text-lg transition-all hover:scale-110',
+                        myReaction === emoji
+                          ? 'bg-amber-100 dark:bg-amber-900/30 ring-1 ring-amber-300 dark:ring-amber-700'
+                          : 'hover:bg-gray-100 dark:hover:bg-gray-700'
+                      )}
+                    >
+                      {emoji}
+                    </button>
+                  ))}
+                </div>
+              </div>
             )}
-            {/* Dismiss button for mobile */}
-            <button
-              onClick={() => setShowActions(false)}
-              className="md:hidden p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all ml-0.5"
-              aria-label="Close actions"
-            >
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
           </div>
         )}
 
-        {/* Reaction badges */}
+        {/* Reaction badges (persist after selection) */}
         {Object.keys(reactions).length > 0 && (
           <div className={cn('flex flex-wrap gap-1 mt-1', isOwn && 'justify-end')}>
             {Object.entries(reactions).map(([emoji, count]) => (
@@ -253,7 +283,7 @@ export function MessageBubble({
                 key={emoji}
                 onClick={() => toggleReaction(emoji)}
                 className={cn(
-                  'inline-flex items-center gap-0.5 px-1.5 py-0.5 rounded-full text-xs transition-all border',
+                  'inline-flex items-center gap-0.5 px-2 py-1 rounded-full text-xs transition-all border',
                   myReaction === emoji
                     ? 'bg-amber-50 border-amber-300 dark:bg-amber-900/20 dark:border-amber-700'
                     : 'bg-gray-50 border-gray-200 dark:bg-gray-800 dark:border-gray-700 hover:bg-gray-100 dark:hover:bg-gray-700'
