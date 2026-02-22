@@ -4,12 +4,91 @@
  * All chat state is persisted to the database using the ChatUser, ChatRoom,
  * ChatMessage, and ChatRoomMember Prisma models.
  *
+ * Storage strategy: auto-prune to keep DB lightweight.
+ *   - Max 200 messages per room (oldest deleted automatically)
+ *   - Inactive users cleaned up after 7 days
+ *   - Soft-deleted messages hard-deleted after 24 hours
+ *   Total max footprint: ~5 rooms × 200 msgs ≈ 1,000 rows ≈ 500KB
+ *
  * Session tokens provide lightweight authentication — the token is generated
  * on user creation and must accompany all mutating requests.
  */
 
 import { prisma } from '@/lib/db/prisma';
 import { randomBytes, createHash } from 'crypto';
+
+// ============================================================================
+// Auto-Pruning — keeps DB small
+// ============================================================================
+
+/** Max messages kept per room before oldest are hard-deleted */
+const MAX_MESSAGES_PER_ROOM = 200;
+
+/** Hard-delete messages beyond the cap for a given room */
+async function pruneRoomMessages(roomId: string) {
+  try {
+    const count = await prisma.chatMessage.count({ where: { roomId } });
+    if (count <= MAX_MESSAGES_PER_ROOM) return;
+
+    // Find the cutoff: the Nth newest message's createdAt
+    const keepBoundary = await prisma.chatMessage.findMany({
+      where: { roomId },
+      orderBy: { createdAt: 'desc' },
+      skip: MAX_MESSAGES_PER_ROOM,
+      take: 1,
+      select: { createdAt: true },
+    });
+
+    if (keepBoundary.length > 0) {
+      await prisma.chatMessage.deleteMany({
+        where: {
+          roomId,
+          createdAt: { lte: keepBoundary[0].createdAt },
+        },
+      });
+    }
+  } catch {
+    // Non-critical — will retry on next message send
+  }
+}
+
+/** Periodic cleanup: hard-delete soft-deleted messages older than 24h,
+ *  and remove users inactive for 7+ days (and their memberships). */
+let lastCleanup = 0;
+async function maybeRunCleanup() {
+  const now = Date.now();
+  // Run at most once every 10 minutes
+  if (now - lastCleanup < 10 * 60 * 1000) return;
+  lastCleanup = now;
+
+  try {
+    // Hard-delete soft-deleted messages older than 24 hours
+    await prisma.chatMessage.deleteMany({
+      where: {
+        isDeleted: true,
+        updatedAt: { lt: new Date(now - 24 * 60 * 60 * 1000) },
+      },
+    });
+
+    // Mark users offline if not seen in 2 minutes
+    await prisma.chatUser.updateMany({
+      where: {
+        isOnline: true,
+        lastSeenAt: { lt: new Date(now - 2 * 60 * 1000) },
+      },
+      data: { isOnline: false },
+    });
+
+    // Delete users inactive for 7+ days (cascades to memberships & messages)
+    await prisma.chatUser.deleteMany({
+      where: {
+        lastSeenAt: { lt: new Date(now - 7 * 24 * 60 * 60 * 1000) },
+      },
+    });
+  } catch {
+    // Non-critical background cleanup
+  }
+}
 
 // ============================================================================
 // Session Token Management
@@ -436,6 +515,13 @@ export async function sendMessage(data: {
     where: { id: data.userId },
     data: { lastSeenAt: new Date(), isOnline: true },
   }).catch(() => {});
+
+  // Auto-prune: keep DB small by removing old messages beyond cap
+  // Runs async — doesn't block the response
+  pruneRoomMessages(data.roomId).catch(() => {});
+
+  // Periodic background cleanup (stale users, soft-deleted messages)
+  maybeRunCleanup().catch(() => {});
 
   return messageToResponse(message);
 }
