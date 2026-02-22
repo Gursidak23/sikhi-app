@@ -96,13 +96,7 @@ function getPunjabiMeaning(verse: BaniDBVerse): { text: string; source: string }
 
 export default function GurbaniPage() {
   const [language, setLanguage] = useState<Language>('pa');
-  const [hasAcknowledged, setHasAcknowledged] = useState(() => {
-    // Persist disclaimer acknowledgement
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('sikhi-gurbani-acknowledged') === 'true';
-    }
-    return false;
-  });
+  const [hasAcknowledged, setHasAcknowledged] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [angData, setAngData] = useState<BaniDBAngResponse | null>(null);
@@ -112,23 +106,29 @@ export default function GurbaniPage() {
   const [showMeanings, setShowMeanings] = useState(false);
 
   // Initialize Ang from URL or localStorage (reading position)
-  const [currentAng, setCurrentAng] = useState(() => {
+  const [currentAng, setCurrentAng] = useState(1);
+
+  // Load persisted state from localStorage on mount
+  useEffect(() => {
     if (typeof window !== 'undefined') {
+      // Load disclaimer acknowledgement
+      if (localStorage.getItem('sikhi-gurbani-acknowledged') === 'true') {
+        setHasAcknowledged(true);
+      }
+      // Load Ang from URL or saved position
       const urlParams = new URLSearchParams(window.location.search);
       const urlAng = urlParams.get('ang');
       if (urlAng) {
         const parsed = parseInt(urlAng, 10);
-        if (parsed >= 1 && parsed <= 1430) return parsed;
+        if (parsed >= 1 && parsed <= 1430) { setCurrentAng(parsed); return; }
       }
-      // Fall back to saved reading position
       const saved = localStorage.getItem('sikhi-last-ang');
       if (saved) {
         const parsed = parseInt(saved, 10);
-        if (parsed >= 1 && parsed <= 1430) return parsed;
+        if (parsed >= 1 && parsed <= 1430) setCurrentAng(parsed);
       }
     }
-    return 1;
-  });
+  }, []);
 
   // Sync Ang to URL and localStorage
   useEffect(() => {

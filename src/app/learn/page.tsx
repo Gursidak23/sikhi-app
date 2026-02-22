@@ -96,15 +96,21 @@ export default function LearnPage() {
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizScore, setQuizScore] = useState(0);
   const [quizAnswer, setQuizAnswer] = useState<string | null>(null);
-  const [learnedLetters, setLearnedLetters] = useState<Set<string>>(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('sikhi-learned-letters');
-      return saved ? new Set(JSON.parse(saved)) : new Set();
-    }
-    return new Set();
-  });
+  const [learnedLetters, setLearnedLetters] = useState<Set<string>>(new Set());
 
   const isPunjabi = language === 'pa';
+
+  // Load learned letters from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sikhi-learned-letters');
+      if (saved) {
+        try {
+          setLearnedLetters(new Set(JSON.parse(saved)));
+        } catch { /* ignore */ }
+      }
+    }
+  }, []);
 
   // Save learned letters
   useEffect(() => {

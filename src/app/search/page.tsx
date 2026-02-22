@@ -208,10 +208,20 @@ export default function SearchPage() {
                   {popularSearches.map((ps) => (
                     <button
                       key={ps.query}
-                      onClick={() => {
+                      onClick={async () => {
                         setQuery(ps.query);
                         setSearchType(2);
-                        setTimeout(() => handleSearch(1), 100);
+                        setLoading(true);
+                        setSearched(true);
+                        setCurrentPage(1);
+                        try {
+                          const data = await searchGurbani(ps.query, 2, 1);
+                          setResults(data);
+                        } catch {
+                          setResults(null);
+                        } finally {
+                          setLoading(false);
+                        }
                       }}
                       className="px-4 py-2 rounded-full bg-neela-50 dark:bg-neela-900/20 text-neela-700 dark:text-neela-300 border border-neela-200 dark:border-neela-700/50 hover:bg-neela-100 dark:hover:bg-neela-900/40 transition-colors text-sm font-gurmukhi"
                     >

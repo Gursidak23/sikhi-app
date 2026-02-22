@@ -66,11 +66,11 @@ export default function HukamnamaPage() {
         throw new Error('No Hukamnama');
       }
     } catch {
-      setError(isPunjabi ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' : 'Could not load Hukamnama');
+      setError('Could not load Hukamnama');
     } finally {
       setLoading(false);
     }
-  }, [isPunjabi]);
+  }, []);
 
   useEffect(() => { fetchHukamnama(); }, [fetchHukamnama]);
 
@@ -141,7 +141,7 @@ export default function HukamnamaPage() {
 
             {error && (
               <div className="text-center py-16 bg-red-50 dark:bg-red-900/20 rounded-2xl">
-                <p className="text-red-700 dark:text-red-300 text-lg">{error}</p>
+                <p className="text-red-700 dark:text-red-300 text-lg">{isPunjabi ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' : error}</p>
                 <button onClick={fetchHukamnama} className="mt-4 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors">
                   {isPunjabi ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : 'Try Again'}
                 </button>
