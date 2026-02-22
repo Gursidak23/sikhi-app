@@ -35,6 +35,8 @@ export interface ChatMessage {
   roomId: string;
   isEdited: boolean;
   isDeleted: boolean;
+  expiresAt: string;
+  isSaved: boolean;
   createdAt: string;
   updatedAt: string;
   user: Pick<ChatUser, 'id' | 'displayName' | 'displayNameGurmukhi' | 'avatarColor'>;
@@ -113,6 +115,11 @@ export function useChat() {
   const [connectionStatus, setConnectionStatus] = useState<ConnectionStatus>('connected');
   const [unreadCounts, setUnreadCounts] = useState<Record<string, number>>({});
   const [onlineCount, setOnlineCount] = useState(0);
+  const [typingNames, setTypingNames] = useState<string[]>([]);
+  const [savedMessages, setSavedMessages] = useState<any[]>([]);
+
+  // Refs for typing indicator
+  const isTypingRef = useRef(false);
 
   // Refs for polling management
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -343,6 +350,8 @@ export function useChat() {
       roomId: activeRoom.id,
       isEdited: false,
       isDeleted: false,
+      expiresAt: new Date(Date.now() + 12 * 60 * 60 * 1000).toISOString(),
+      isSaved: false,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       user: {
@@ -467,9 +476,16 @@ export function useChat() {
       if (!mountedRef.current) return;
 
       try {
-        const res = await fetch(
-          `/api/community/messages/poll?roomId=${activeRoom.id}&since=${encodeURIComponent(lastPollTimeRef.current)}`
-        );
+        // Build poll URL with typing indicator params
+        let pollUrl = `/api/community/messages/poll?roomId=${activeRoom.id}&since=${encodeURIComponent(lastPollTimeRef.current)}`;
+        if (user?.id) {
+          pollUrl += `&userId=${user.id}`;
+          pollUrl += `&typing=${isTypingRef.current ? '1' : '0'}`;
+          if (isTypingRef.current && user.displayName) {
+            pollUrl += `&typingName=${encodeURIComponent(user.displayName)}`;
+          }
+        }
+        const res = await fetch(pollUrl);
 
         if (!res.ok) {
           failedPollsRef.current++;
@@ -574,6 +590,10 @@ export function useChat() {
                 : r
             )
           );
+        }
+
+        if (data.typing) {
+          setTypingNames(data.typing);
         }
 
         if (data.serverTime) {
@@ -761,6 +781,68 @@ export function useChat() {
   // ---- Total unread count ----
   const totalUnread = Object.values(unreadCounts).reduce((sum, n) => sum + n, 0);
 
+  // ---- Typing indicator ----
+  const setIsTyping = useCallback((typing: boolean) => {
+    isTypingRef.current = typing;
+  }, []);
+
+  // ---- Save / Unsave messages ----
+  const saveMsg = useCallback(async (messageId: string) => {
+    if (!user) return;
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
+      const res = await fetch('/api/community/messages/save', {
+        method: 'POST',
+        headers,
+        body: JSON.stringify({ userId: user.id, messageId }),
+      });
+      if (res.ok) {
+        // Update local state to reflect saved status
+        setMessages((prev) =>
+          prev.map((m) => m.id === messageId ? { ...m, isSaved: true } : m)
+        );
+      }
+    } catch {
+      // Non-critical
+    }
+  }, [user]);
+
+  const unsaveMsg = useCallback(async (messageId: string) => {
+    if (!user) return;
+    try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
+      const res = await fetch('/api/community/messages/save', {
+        method: 'DELETE',
+        headers,
+        body: JSON.stringify({ userId: user.id, messageId }),
+      });
+      if (res.ok) {
+        setMessages((prev) =>
+          prev.map((m) => m.id === messageId ? { ...m, isSaved: false } : m)
+        );
+      }
+    } catch {
+      // Non-critical
+    }
+  }, [user]);
+
+  const fetchSavedMessages = useCallback(async () => {
+    if (!user) return [];
+    try {
+      const res = await fetch(`/api/community/messages/save?userId=${user.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setSavedMessages(data.saved);
+        return data.saved;
+      }
+    } catch {
+      // Non-critical
+    }
+    return [];
+  }, [user]);
+
   return {
     // State
     user,
@@ -775,8 +857,9 @@ export function useChat() {
     connectionStatus,
     unreadCounts,
     totalUnread,
-
     onlineCount,
+    typingNames,
+    savedMessages,
 
     // Actions
     registerUser,
@@ -790,5 +873,9 @@ export function useChat() {
     setError,
     reconnect,
     markActive,
+    setIsTyping,
+    saveMessage: saveMsg,
+    unsaveMessage: unsaveMsg,
+    fetchSavedMessages,
   };
 }

@@ -38,6 +38,7 @@ export function ChatView({ language }: ChatViewProps) {
     connectionStatus,
     unreadCounts,
     onlineCount,
+    typingNames,
     registerUser,
     selectRoom,
     sendMessage,
@@ -48,6 +49,9 @@ export function ChatView({ language }: ChatViewProps) {
     setError,
     reconnect,
     markActive,
+    setIsTyping,
+    saveMessage,
+    unsaveMessage,
   } = useChat();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -58,8 +62,12 @@ export function ChatView({ language }: ChatViewProps) {
   const [showNewMsgButton, setShowNewMsgButton] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
+  const [hydrated, setHydrated] = useState(false);
   const prevMessageCountRef = useRef(0);
   const isPunjabi = language === 'pa';
+
+  // Mark component as hydrated after first mount (prevents flash of wrong state)
+  useEffect(() => { setHydrated(true); }, []);
 
   // Smart auto-scroll: scroll if near bottom, else show "New messages" button
   useEffect(() => {
@@ -97,6 +105,26 @@ export function ChatView({ language }: ChatViewProps) {
   const getMessageDate = (dateStr: string) => new Date(dateStr).toDateString();
 
   // If user is not registered, show registration form
+  // Wait for hydration to avoid flashing the registration form when user is in localStorage
+  if (!hydrated) {
+    return (
+      <div className="flex items-center justify-center h-[calc(100vh-14rem)] rounded-2xl border border-amber-200/30 dark:border-gray-700/50 bg-white dark:bg-gray-900">
+        <div className="text-center">
+          <div className="relative w-12 h-12 mx-auto mb-4">
+            <div className="absolute inset-0 border-2 border-amber-200 dark:border-amber-800 rounded-full" />
+            <div className="absolute inset-0 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
+          </div>
+          <p className={cn(
+            'text-sm text-gray-400',
+            isPunjabi && 'font-gurmukhi'
+          )}>
+            {isPunjabi ? 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : 'Loading...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
   if (!user) {
     return <ChatRegistration onRegister={registerUser} language={language} />;
   }
@@ -413,6 +441,8 @@ export function ChatView({ language }: ChatViewProps) {
                       language={language}
                       onReply={setReplyingTo}
                       onDelete={deleteMessage}
+                      onSave={saveMessage}
+                      onUnsave={unsaveMessage}
                     />
                   </div>
                 );
@@ -436,6 +466,31 @@ export function ChatView({ language }: ChatViewProps) {
           )}
         </div>
 
+        {/* Typing Indicator */}
+        {typingNames.length > 0 && (
+          <div className="px-4 py-1.5 text-xs text-gray-400 dark:text-gray-500 flex items-center gap-2 border-t border-gray-100 dark:border-gray-800/50">
+            <span className="flex gap-0.5">
+              <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
+              <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
+              <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
+            </span>
+            <span className={cn(isPunjabi && 'font-gurmukhi')}>
+              {typingNames.length === 1
+                ? `${typingNames[0]} ${isPunjabi ? 'ਲਿਖ ਰਿਹਾ ਹੈ...' : 'is typing...'}`
+                : typingNames.length === 2
+                  ? `${typingNames[0]} ${isPunjabi ? 'ਤੇ' : '&'} ${typingNames[1]} ${isPunjabi ? 'ਲਿਖ ਰਹੇ ਹਨ...' : 'are typing...'}`
+                  : `${typingNames.length} ${isPunjabi ? 'ਲੋਕ ਲਿਖ ਰਹੇ ਹਨ...' : 'people are typing...'}`}
+            </span>
+          </div>
+        )}
+
+        {/* Ephemeral notice */}
+        <div className="px-4 py-1 text-[10px] text-gray-400/60 text-center border-t border-gray-100/50 dark:border-gray-800/30">
+          {isPunjabi
+            ? '⏱ ਸੁਨੇਹੇ 12 ਘੰਟਿਆਂ ਬਾਅਦ ਆਪਣੇ ਆਪ ਮਿਟ ਜਾਂਦੇ ਹਨ • 🔖 ਸੇਵ ਕਰੋ ਰੱਖਣ ਲਈ'
+            : '⏱ Messages auto-delete after 12h • 🔖 Save to keep'}
+        </div>
+
         {/* Chat Input */}
         <ChatInput
           onSend={sendMessage}
@@ -443,7 +498,7 @@ export function ChatView({ language }: ChatViewProps) {
           onCancelReply={() => setReplyingTo(null)}
           language={language}
           disabled={!activeRoom}
-          onActivity={() => { markActive(); }}
+          onActivity={() => { markActive(); setIsTyping(true); setTimeout(() => setIsTyping(false), 3000); }}
         />
       </div>
 

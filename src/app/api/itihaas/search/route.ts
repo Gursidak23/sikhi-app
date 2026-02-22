@@ -43,6 +43,13 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    if (query.length > 200) {
+      return NextResponse.json(
+        { error: 'Query too long', message: 'Search query must not exceed 200 characters' },
+        { status: 400 }
+      );
+    }
+
     const results = await searchHistory(query);
 
     return NextResponse.json({
@@ -52,7 +59,10 @@ export async function GET(request: NextRequest) {
       totalFigures: results.figures.length,
       sourceNote: 'Select an item to view full details with source citations.',
     }, {
-      headers: rateLimitHeaders(rateLimitResult),
+      headers: {
+        ...rateLimitHeaders(rateLimitResult),
+        'Cache-Control': 'public, s-maxage=300, stale-while-revalidate=600',
+      },
     });
   } catch (error) {
     logApiError('/api/itihaas/search', error instanceof Error ? error : new Error(String(error)), 500);

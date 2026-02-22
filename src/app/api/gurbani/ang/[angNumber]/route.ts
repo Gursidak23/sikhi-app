@@ -1,16 +1,25 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAngContent } from '@/lib/api/gurbani-handlers';
+import { rateLimit, getClientIdentifier } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
 
 /**
  * GET /api/gurbani/ang/[angNumber]
  * Retrieves Gurbani content for a specific Ang (page) of Sri Guru Granth Sahib Ji
+ * Gurbani is sacred, centuries-old scripture — safe to cache aggressively.
  */
 export async function GET(
   request: NextRequest,
   { params }: { params: { angNumber: string } }
 ) {
   try {
+    // Rate limit
+    const ip = getClientIdentifier(request);
+    const rl = rateLimit(`gurbani-ang:${ip}`, { limit: 120, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
     const angNumber = parseInt(params.angNumber, 10);
 
     if (isNaN(angNumber) || angNumber < 1 || angNumber > 1430) {
@@ -25,11 +34,10 @@ export async function GET(
 
     const content = await getAngContent(angNumber);
 
-    // Set cache headers - but with revalidation
-    // We don't cache Gurbani content aggressively
+    // Gurbani is immutable sacred text — cache aggressively
     return NextResponse.json(content, {
       headers: {
-        'Cache-Control': 'no-store, must-revalidate',
+        'Cache-Control': 'public, s-maxage=86400, stale-while-revalidate=604800',
       },
     });
   } catch (error) {

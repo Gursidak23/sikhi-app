@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFigureById, getGuruSahibaan } from '@/lib/api/history-handlers';
+import { rateLimit, getClientIdentifier, rateLimitHeaders } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
 
 // Force dynamic rendering for routes that use searchParams
@@ -14,17 +15,37 @@ export const dynamic = 'force-dynamic';
  */
 export async function GET(request: NextRequest) {
   try {
+    // Rate limiting
+    const clientId = getClientIdentifier(request);
+    const rateLimitResult = rateLimit(clientId, { limit: 60, windowSeconds: 60 });
+    if (!rateLimitResult.success) {
+      return NextResponse.json(
+        { error: 'Rate limit exceeded', retryAfter: Math.ceil((rateLimitResult.resetTime - Date.now()) / 1000) },
+        { status: 429, headers: rateLimitHeaders(rateLimitResult) }
+      );
+    }
+
+    const rlHeaders = rateLimitHeaders(rateLimitResult);
     const searchParams = request.nextUrl.searchParams;
     const figureId = searchParams.get('id');
     const guruList = searchParams.get('guru-sahibaan');
 
     if (figureId) {
+      // Validate ID
+      if (figureId.length > 100) {
+        return NextResponse.json({ error: 'Invalid figure ID' }, { status: 400 });
+      }
       // Get specific figure
       const figure = await getFigureById(figureId);
       return NextResponse.json({
         figure,
         sourceNote:
           'Biography information is sourced from the listed citations.',
+      }, {
+        headers: {
+          ...rlHeaders,
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        },
       });
     }
 
@@ -35,6 +56,11 @@ export async function GET(request: NextRequest) {
         guruSahibaan: gurus,
         total: gurus.length,
         note: 'The Ten Guru Sahibaan who led the Sikh faith from 1469 to 1708.',
+      }, {
+        headers: {
+          ...rlHeaders,
+          'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+        },
       });
     }
 
@@ -43,6 +69,11 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       guruSahibaan: gurus,
       note: 'Use ?id={figureId} to get a specific figure, or ?guru-sahibaan for this list.',
+    }, {
+      headers: {
+        ...rlHeaders,
+        'Cache-Control': 'public, s-maxage=3600, stale-while-revalidate=86400',
+      },
     });
   } catch (error) {
     if (error instanceof Error && error.message === 'Figure not found') {

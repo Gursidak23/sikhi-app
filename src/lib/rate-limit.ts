@@ -12,6 +12,7 @@ interface RateLimitEntry {
 }
 
 const rateLimitStore = new Map<string, RateLimitEntry>();
+const MAX_RATE_LIMIT_ENTRIES = 10000; // Prevent unbounded memory growth
 
 // Clean up old entries every 5 minutes
 if (typeof setInterval !== 'undefined') {
@@ -56,6 +57,16 @@ export function rateLimit(
 
   // If no existing entry or window has passed, create new entry
   if (!existing || now > existing.resetTime) {
+    // Enforce max size to prevent unbounded growth from many IPs
+    if (rateLimitStore.size >= MAX_RATE_LIMIT_ENTRIES) {
+      // Evict oldest entries
+      const keys = rateLimitStore.keys();
+      for (let i = 0; i < 1000; i++) {
+        const { value: k } = keys.next();
+        if (k) rateLimitStore.delete(k);
+        else break;
+      }
+    }
     const resetTime = now + windowMs;
     rateLimitStore.set(key, { count: 1, resetTime });
     return {

@@ -20,11 +20,12 @@ export async function GET() {
     return NextResponse.json({
       status: 'healthy',
       timestamp: new Date().toISOString(),
-      uptime: process.uptime(),
       database: {
         status: 'connected',
         latencyMs: dbLatency,
       },
+    }, {
+      headers: { 'Cache-Control': 'no-store, no-cache' },
     });
   } catch (error) {
     logApiError('/api/health', error instanceof Error ? error : new Error(String(error)), 503);

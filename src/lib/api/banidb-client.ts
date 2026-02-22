@@ -143,21 +143,60 @@ export interface BaniDBSearchResponse {
   verses: BaniDBVerse[];
 }
 
-// In-memory cache for instant navigation
+// In-memory LRU cache for instant navigation (max 150 entries)
+const MAX_CACHE_SIZE = 150;
 const angCache = new Map<number, { data: BaniDBAngResponse; timestamp: number }>();
 const CACHE_TTL = 1000 * 60 * 30; // 30 minutes
+const STALE_THRESHOLD = 1000 * 60 * 5; // 5 minutes — don't background-refresh if newer
+
+/** Inflight request dedup — prevents duplicate network requests for same Ang */
+const inflightRequests = new Map<number, Promise<BaniDBAngResponse | null>>();
+
+/** LRU: move key to end (most recent) */
+function touchCache(angNumber: number): void {
+  const entry = angCache.get(angNumber);
+  if (entry) {
+    angCache.delete(angNumber);
+    angCache.set(angNumber, entry);
+  }
+}
+
+/** LRU eviction: remove oldest entries when over limit */
+function evictIfNeeded(): void {
+  while (angCache.size > MAX_CACHE_SIZE) {
+    const oldest = angCache.keys().next().value;
+    if (oldest !== undefined) angCache.delete(oldest);
+    else break;
+  }
+}
+
+// Cached dynamic imports (avoid re-importing every call)
+let offlineStorageModule: Awaited<ReturnType<typeof getOfflineStorageInner>> | null = null;
+let resilientFetchFn: ((input: RequestInfo | URL, init?: RequestInit) => Promise<Response>) | null | undefined = undefined;
+
+async function getOfflineStorageInner() {
+  if (typeof window === 'undefined') return null;
+  return import('@/lib/offline/indexeddb');
+}
 
 // Lazy imports for offline storage (avoid SSR issues)
 async function getOfflineStorage() {
   if (typeof window === 'undefined') return null;
-  const { saveAng, getAng, saveBani, getBani, saveHukamnama, getHukamnama, saveSearchResults, getSearchResults } = await import('@/lib/offline/indexeddb');
-  return { saveAng, getAng, saveBani, getBani, saveHukamnama, getHukamnama, saveSearchResults, getSearchResults };
+  if (offlineStorageModule) return offlineStorageModule;
+  offlineStorageModule = await getOfflineStorageInner();
+  return offlineStorageModule;
 }
 
 async function getResilientFetch() {
   if (typeof window === 'undefined') return null;
-  const { resilientFetch } = await import('@/lib/offline/resilient-fetch');
-  return resilientFetch;
+  if (resilientFetchFn !== undefined) return resilientFetchFn;
+  try {
+    const mod = await import('@/lib/offline/resilient-fetch');
+    resilientFetchFn = mod.resilientFetch as typeof fetch;
+  } catch {
+    resilientFetchFn = null;
+  }
+  return resilientFetchFn;
 }
 
 /**
@@ -173,6 +212,27 @@ export async function fetchAng(angNumber: number, sourceId: string = 'G'): Promi
   // Layer 1: In-memory cache (instant)
   const cached = angCache.get(angNumber);
   if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+    touchCache(angNumber);
+    return cached.data;
+  }
+
+  // Dedup: if already fetching this Ang, return the same promise
+  const inflight = inflightRequests.get(angNumber);
+  if (inflight) return inflight;
+
+  const fetchPromise = fetchAngInternal(angNumber, sourceId);
+  inflightRequests.set(angNumber, fetchPromise);
+  try {
+    return await fetchPromise;
+  } finally {
+    inflightRequests.delete(angNumber);
+  }
+}
+
+async function fetchAngInternal(angNumber: number, sourceId: string): Promise<BaniDBAngResponse | null> {
+  // Layer 1: In-memory cache (instant)
+  const cached = angCache.get(angNumber);
+  if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
     return cached.data;
   }
 
@@ -183,8 +243,9 @@ export async function fetchAng(angNumber: number, sourceId: string = 'G'): Promi
     if (idbCached) {
       const data = idbCached as BaniDBAngResponse;
       angCache.set(angNumber, { data, timestamp: Date.now() });
+      evictIfNeeded();
       
-      // Background refresh from network (stale-while-revalidate)
+      // Background refresh only if data is stale (older than 5 min)
       refreshAngInBackground(angNumber, sourceId).catch(() => {});
       return data;
     }
@@ -201,6 +262,7 @@ export async function fetchAng(angNumber: number, sourceId: string = 'G'): Promi
     if (response.ok) {
       const data = await response.json();
       angCache.set(angNumber, { data, timestamp: Date.now() });
+      evictIfNeeded();
       // Persist to IndexedDB for offline use
       storage?.saveAng(angNumber, data).catch(() => {});
       return data as BaniDBAngResponse;
@@ -211,6 +273,7 @@ export async function fetchAng(angNumber: number, sourceId: string = 'G'): Promi
     if (fallbackResponse.ok) {
       const data = await fallbackResponse.json();
       angCache.set(angNumber, { data, timestamp: Date.now() });
+      evictIfNeeded();
       storage?.saveAng(angNumber, data).catch(() => {});
       return data as BaniDBAngResponse;
     }
@@ -229,13 +292,18 @@ export async function fetchAng(angNumber: number, sourceId: string = 'G'): Promi
   }
 }
 
-/** Background refresh — update IndexedDB without blocking the UI */
+/** Background refresh — update caches without blocking the UI. Skips if data is fresh. */
 async function refreshAngInBackground(angNumber: number, sourceId: string): Promise<void> {
+  // Skip if data is recent enough
+  const existing = angCache.get(angNumber);
+  if (existing && Date.now() - existing.timestamp < STALE_THRESHOLD) return;
+
   try {
     const response = await fetch(`/api/gurbani/cached/${angNumber}?source=${sourceId}`);
     if (response.ok) {
       const data = await response.json();
       angCache.set(angNumber, { data, timestamp: Date.now() });
+      evictIfNeeded();
       const storage = await getOfflineStorage();
       storage?.saveAng(angNumber, data);
     }
@@ -324,6 +392,32 @@ export async function searchGurbani(
 
     const rfetch = await getResilientFetch();
     const doFetch = rfetch || fetch;
+
+    // Layer 1: Use our own API search proxy (avoids CORS)
+    try {
+      const proxyResponse = await doFetch(
+        `/api/gurbani/search?q=${encodeURIComponent(query)}&searchtype=${searchType}&page=${page}`
+      );
+      if (proxyResponse.ok) {
+        const data = await proxyResponse.json();
+        // Wrap results in BaniDB format if needed
+        if (data.results && !data.verses) {
+          // App API returns { results } format — normalise to BaniDB shape
+          const normalised: BaniDBSearchResponse = {
+            resultsInfo: { totalResults: data.resultCount || data.results.length, pageResults: data.results.length, pages: { page, resultsPerPage: 20, totalPages: 1 } },
+            verses: data.results,
+          };
+          storage?.saveSearchResults(cacheKey, normalised).catch(() => {});
+          return normalised;
+        }
+        storage?.saveSearchResults(cacheKey, data).catch(() => {});
+        return data as BaniDBSearchResponse;
+      }
+    } catch {
+      // Proxy failed, try direct BaniDB
+    }
+
+    // Layer 2: Direct BaniDB (fallback)
     const response = await doFetch(
       `${BANIDB_API_BASE}/search/${encodeURIComponent(query)}?searchtype=${searchType}&page=${page}`
     );
@@ -460,11 +554,28 @@ async function refreshBaniInBackground(baniId: number): Promise<void> {
 
 /**
  * Get random Shabad (with resilient fetch)
+ * 
+ * 2-layer strategy:
+ * 1. App API route (server-side proxy — no CORS issues)
+ * 2. Direct BaniDB (fallback)
  */
 export async function fetchRandomShabad(sourceId: string = 'G'): Promise<BaniDBShabadResponse | null> {
   try {
     const rfetch = await getResilientFetch();
     const doFetch = rfetch || fetch;
+
+    // Layer 1: Use our own API proxy (avoids CORS & adds resilience)
+    try {
+      const proxyResponse = await doFetch(`/api/gurbani/random?source=${sourceId}`);
+      if (proxyResponse.ok) {
+        const data = await proxyResponse.json();
+        return data as BaniDBShabadResponse;
+      }
+    } catch {
+      // Proxy failed, try direct
+    }
+
+    // Layer 2: Direct BaniDB (fallback)
     const response = await doFetch(`${BANIDB_API_BASE}/random/${sourceId}`);
     
     if (!response.ok) {

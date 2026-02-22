@@ -6,8 +6,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 
-/** Allowed origins for API requests */
-function getAllowedOrigins(): string[] {
+/** Allowed origins — computed once at module level */
+const ALLOWED_ORIGINS: string[] = (() => {
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000';
   const vercelUrl = process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '';
   const origins = [
@@ -17,17 +17,18 @@ function getAllowedOrigins(): string[] {
   ];
   if (vercelUrl) origins.push(vercelUrl);
   return origins.map((u) => u.replace(/\/$/, '')).filter(Boolean);
-}
+})();
+
+/** Bot detection regex — compiled once */
+const BOT_REGEX = /bot|crawl|spider|scrape/i;
 
 function isOriginAllowed(origin: string | null): boolean {
-  // Reject null/missing origins — blocks file://, sandboxed iframes, etc.
   if (!origin) return false;
-  const allowed = getAllowedOrigins();
-  return allowed.some((o) => origin === o);
+  return ALLOWED_ORIGINS.some((o) => origin === o);
 }
 
 function addCorsHeaders(response: NextResponse, origin: string | null) {
-  const allowedOrigin = origin && isOriginAllowed(origin) ? origin : getAllowedOrigins()[0];
+  const allowedOrigin = origin && isOriginAllowed(origin) ? origin : ALLOWED_ORIGINS[0];
   response.headers.set('Access-Control-Allow-Origin', allowedOrigin);
   response.headers.set('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
   response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization, X-Requested-With, X-Session-Token');
@@ -92,13 +93,15 @@ export function middleware(request: NextRequest) {
     addCorsHeaders(response, origin);
   }
 
-  // Add request ID for tracing
-  response.headers.set('X-Request-Id', crypto.randomUUID());
+  // Add request ID for tracing (API routes only — skip for static pages)
+  if (pathname.startsWith('/api/')) {
+    response.headers.set('X-Request-Id', crypto.randomUUID());
+  }
 
   // Block known bots from API (except health check)
   if (pathname.startsWith('/api/') && !pathname.startsWith('/api/health')) {
     const userAgent = request.headers.get('user-agent') || '';
-    if (/bot|crawl|spider|scrape/i.test(userAgent)) {
+    if (BOT_REGEX.test(userAgent)) {
       return addCorsHeaders(
         NextResponse.json({ error: 'Bot access to API is not permitted' }, { status: 403 }),
         origin

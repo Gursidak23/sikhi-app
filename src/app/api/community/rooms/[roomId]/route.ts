@@ -8,6 +8,7 @@ export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { getRoomById, joinRoom, leaveRoom, getRoomMembers, verifySessionToken } from '@/lib/api/chat-handlers';
+import { rateLimit, getClientIdentifier } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
 
 export async function GET(
@@ -20,12 +21,22 @@ export async function GET(
       return NextResponse.json({ error: 'Invalid room ID' }, { status: 400 });
     }
 
-    const room = await getRoomById(roomId);
+    // Rate limit
+    const ip = getClientIdentifier(request);
+    const rl = rateLimit(`chat-room-detail:${ip}`, { limit: 60, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
+    // Parallelize independent queries
+    const [room, members] = await Promise.all([
+      getRoomById(roomId),
+      getRoomMembers(roomId),
+    ]);
     if (!room) {
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    const members = await getRoomMembers(roomId);
     return NextResponse.json({ room, members });
   } catch (error) {
     logApiError('GET /api/community/rooms/[roomId]', error instanceof Error ? error : new Error(String(error)));

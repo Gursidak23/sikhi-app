@@ -598,6 +598,7 @@ model ChatUser {
   updatedAt       DateTime      @updatedAt
   messages        ChatMessage[]
   roomMemberships ChatRoomMember[]
+  savedMessages   SavedMessage[]
   
   @@index([isOnline])
   @@index([lastSeenAt])
@@ -637,7 +638,7 @@ model ChatRoomMember {
   @@index([roomId])
 }
 
-/// Individual chat messages
+/// Individual chat messages (ephemeral — auto-deleted after expiresAt)
 model ChatMessage {
   id              String    @id @default(cuid())
   content         String
@@ -650,11 +651,29 @@ model ChatMessage {
   replies         ChatMessage[] @relation("MessageReplies")
   isEdited        Boolean   @default(false)
   isDeleted       Boolean   @default(false)
+  expiresAt       DateTime               // Auto-delete after this time (default: 12h from creation)
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
+  savedBy         SavedMessage[]
   
   @@index([roomId, createdAt])
   @@index([roomId, isDeleted, createdAt])
   @@index([userId])
   @@index([replyToId])
+  @@index([expiresAt])
+}
+
+/// Saved messages — persist beyond ephemeral expiry (Snapchat-style "save")
+model SavedMessage {
+  id              String      @id @default(cuid())
+  userId          String
+  user            ChatUser    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  messageId       String
+  message         ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  savedContent    String      // Snapshot of content at save time (survives original deletion)
+  savedAt         DateTime    @default(now())
+  
+  @@unique([userId, messageId])
+  @@index([userId])
+  @@index([messageId])
 }
