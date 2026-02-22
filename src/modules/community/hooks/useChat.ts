@@ -680,19 +680,45 @@ export function useChat() {
     };
   }, [user]);
 
-  // ---- Load rooms when user is set (mount + after re-login) ----
+  // ---- Load rooms immediately on mount (don't wait for user) ----
+  const roomsLoadedRef = useRef(false);
+  useEffect(() => {
+    fetchRooms().then((fetchedRooms) => {
+      roomsLoadedRef.current = true;
+      // If user is already loaded from localStorage, select default room
+      if (fetchedRooms.length > 0) {
+        const stored = localStorage.getItem(CHAT_USER_KEY);
+        if (stored) {
+          const defaultRoom = fetchedRooms.find((r: ChatRoom) => r.isDefault) || fetchedRooms[0];
+          selectRoom(defaultRoom);
+        }
+      }
+      setIsLoading(false);
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  // ---- When user is set (after registration or localStorage load), select room if rooms already loaded ----
   useEffect(() => {
     if (!user) {
       setIsLoading(false);
       return;
     }
-    fetchRooms().then((rooms) => {
-      setIsLoading(false);
-      if (rooms.length > 0 && !activeRoom) {
-        const defaultRoom = rooms.find((r: ChatRoom) => r.isDefault) || rooms[0];
-        selectRoom(defaultRoom);
-      }
-    });
+    // If rooms already loaded, select default room if none active
+    if (roomsLoadedRef.current && rooms.length > 0 && !activeRoom) {
+      const defaultRoom = rooms.find((r: ChatRoom) => r.isDefault) || rooms[0];
+      selectRoom(defaultRoom);
+    } else if (!roomsLoadedRef.current) {
+      // Rooms not loaded yet (unlikely), fetch them
+      fetchRooms().then((fetchedRooms) => {
+        roomsLoadedRef.current = true;
+        setIsLoading(false);
+        if (fetchedRooms.length > 0 && !activeRoom) {
+          const defaultRoom = fetchedRooms.find((r: ChatRoom) => r.isDefault) || fetchedRooms[0];
+          selectRoom(defaultRoom);
+        }
+      });
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 

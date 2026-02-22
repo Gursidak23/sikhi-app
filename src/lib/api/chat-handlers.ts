@@ -226,17 +226,19 @@ let defaultRoomsEnsured = false;
 
 /**
  * Ensure default rooms exist in the database (upsert by name).
- * Runs once per server instance then skips.
+ * Runs once per server instance then skips. Uses $transaction for speed.
  */
 export async function ensureDefaultRooms() {
   if (defaultRoomsEnsured) return;
-  for (const room of DEFAULT_ROOMS) {
-    await prisma.chatRoom.upsert({
-      where: { name: room.name },
-      update: {},
-      create: room,
-    });
-  }
+  await prisma.$transaction(
+    DEFAULT_ROOMS.map((room) =>
+      prisma.chatRoom.upsert({
+        where: { name: room.name },
+        update: {},
+        create: room,
+      })
+    )
+  );
   defaultRoomsEnsured = true;
 }
 
@@ -318,17 +320,22 @@ export async function createOrGetUser(
   const { raw, hashed } = generateSessionToken();
   sessionTokens.set(user.id, hashed);
 
-  // Auto-join default rooms
+  // Auto-join default rooms (parallel for speed)
   const defaultRooms = await prisma.chatRoom.findMany({
     where: { isDefault: true, isActive: true },
+    select: { id: true },
   });
 
-  for (const room of defaultRooms) {
-    await prisma.chatRoomMember.upsert({
-      where: { userId_roomId: { userId: user.id, roomId: room.id } },
-      update: {},
-      create: { userId: user.id, roomId: room.id },
-    });
+  if (defaultRooms.length > 0) {
+    await prisma.$transaction(
+      defaultRooms.map((room) =>
+        prisma.chatRoomMember.upsert({
+          where: { userId_roomId: { userId: user.id, roomId: room.id } },
+          update: {},
+          create: { userId: user.id, roomId: room.id },
+        })
+      )
+    );
   }
 
   return {
