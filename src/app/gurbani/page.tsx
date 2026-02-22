@@ -17,6 +17,7 @@ import { ReadingProgress } from '@/components/common/ReadingProgress';
 import { PageTurnWrapper } from '@/components/common/PageTurnWrapper';
 import { AngNavigator, RaagNavigator, QuickJump, AngSearch } from '@/modules/gurbani/components/AngNavigator';
 import { GurbaniSearch } from '@/modules/gurbani/components/GurbaniSearch';
+import { AngBrowser, recordAngVisit } from '@/components/common/AngBrowser';
 import type { Language } from '@/types';
 import { fetchAng, prefetchAdjacentAngs, type BaniDBVerse, type BaniDBAngResponse } from '@/lib/api/banidb-client';
 import { SGGS_RAAG_RANGES, getRaagForAng } from '@/lib/constants/raag-ranges';
@@ -171,6 +172,8 @@ export default function GurbaniPage() {
       const data = await fetchAng(ang);
       if (data && data.page && data.page.length > 0) {
         setAngData(data);
+        // Record visit for reading history
+        recordAngVisit(ang);
         // Prefetch adjacent Angs for instant navigation
         prefetchAdjacentAngs(ang);
       } else {
@@ -275,6 +278,13 @@ export default function GurbaniPage() {
                   <QuickJump
                     onJump={(ang) => handleAngChange(ang)}
                     language={language}
+                  />
+
+                  {/* Enhanced Ang Browser */}
+                  <AngBrowser
+                    language={language}
+                    currentAng={currentAng}
+                    onNavigate={(ang) => handleAngChange(ang)}
                   />
                 </div>
               </aside>

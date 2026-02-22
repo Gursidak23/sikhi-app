@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/common/ThemeProvider';
 import { BookmarkProvider } from '@/components/common/BookmarkSystem';
 import { FontSizeProvider } from '@/components/common/FontSizeControls';
 import { ServiceWorkerRegistrar } from '@/components/common/ServiceWorkerRegistrar';
+import { AmritVelaProvider } from '@/components/common/AmritVelaMode';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -105,13 +106,15 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-neutral-50 dark:bg-neutral-950 antialiased font-sans transition-colors">
         <ThemeProvider>
-          <BookmarkProvider>
-            <FontSizeProvider>
-              <SkipLink />
-              <ServiceWorkerRegistrar />
-              {children}
-            </FontSizeProvider>
-          </BookmarkProvider>
+          <AmritVelaProvider>
+            <BookmarkProvider>
+              <FontSizeProvider>
+                <SkipLink />
+                <ServiceWorkerRegistrar />
+                {children}
+              </FontSizeProvider>
+            </BookmarkProvider>
+          </AmritVelaProvider>
         </ThemeProvider>
       </body>
     </html>

@@ -85,6 +85,7 @@ export function MainNavigation({
   const isItihaasSection = pathname?.includes('/itihaas');
   const isCommunitySection = pathname?.includes('/community');
   const isNitnemSection = pathname?.includes('/nitnem');
+  const isExploreSection = ['/search', '/hukamnama', '/learn', '/kirtan', '/calendar', '/shabad'].some(p => pathname?.startsWith(p));
 
   const navItems = [
     {
@@ -134,6 +135,14 @@ export function MainNavigation({
     },
   ];
 
+  const exploreItems = [
+    { href: '/search', labelPa: 'ਖੋਜ', labelEn: 'Search', labelHi: 'खोज', icon: '🔍', activeColor: 'blue' as const },
+    { href: '/hukamnama', labelPa: 'ਹੁਕਮਨਾਮਾ', labelEn: 'Hukamnama', labelHi: 'हुकमनामा', icon: '📜', activeColor: 'amber' as const },
+    { href: '/learn', labelPa: 'ਸਿੱਖੋ', labelEn: 'Learn', labelHi: 'सीखें', icon: '🎓', activeColor: 'purple' as const },
+    { href: '/kirtan', labelPa: 'ਕੀਰਤਨ', labelEn: 'Kirtan', labelHi: 'कीर्तन', icon: '🎵', activeColor: 'blue' as const },
+    { href: '/calendar', labelPa: 'ਕੈਲੰਡਰ', labelEn: 'Calendar', labelHi: 'कैलेंडर', icon: '📅', activeColor: 'amber' as const },
+  ];
+
   const getLabel = (item: typeof navItems[0]) => {
     if (currentLanguage === 'pa') return item.labelPa;
     if (currentLanguage === 'hi') return item.labelHi;
@@ -146,7 +155,23 @@ export function MainNavigation({
     orange: 'bg-orange-50 text-orange-800 dark:bg-orange-900/30 dark:text-orange-300 ring-1 ring-orange-200 dark:ring-orange-800',
     green: 'bg-emerald-50 text-emerald-800 dark:bg-emerald-900/30 dark:text-emerald-300 ring-1 ring-emerald-200 dark:ring-emerald-800',
     amber: 'bg-amber-50 text-amber-800 dark:bg-amber-900/30 dark:text-amber-300 ring-1 ring-amber-200 dark:ring-amber-800',
+    purple: 'bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 ring-1 ring-purple-200 dark:ring-purple-800',
   };
+
+  const [showExplore, setShowExplore] = useState(false);
+  const exploreRef = useRef<HTMLDivElement>(null);
+
+  // Close explore dropdown on click outside
+  useEffect(() => {
+    if (!showExplore) return;
+    const handler = (e: MouseEvent) => {
+      if (exploreRef.current && !exploreRef.current.contains(e.target as Node)) {
+        setShowExplore(false);
+      }
+    };
+    document.addEventListener('mousedown', handler);
+    return () => document.removeEventListener('mousedown', handler);
+  }, [showExplore]);
 
   return (
     <header className="sikhi-nav sticky top-0 z-50 backdrop-blur-md bg-white/90 dark:bg-neutral-900/90">
@@ -201,6 +226,50 @@ export function MainNavigation({
                 </Link>
               );
             })}
+            
+            {/* Explore Dropdown */}
+            <div className="relative" ref={exploreRef}>
+              <button
+                onClick={() => setShowExplore(!showExplore)}
+                className={cn(
+                  'sikhi-nav-link px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1',
+                  currentLanguage === 'pa' && 'font-gurmukhi text-base',
+                  isExploreSection
+                    ? 'bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 ring-1 ring-purple-200 dark:ring-purple-800'
+                    : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800',
+                )}
+              >
+                <span className="opacity-70 text-sm">✨</span>
+                {currentLanguage === 'pa' ? 'ਹੋਰ' : 'Explore'}
+                <svg className={cn('w-3.5 h-3.5 transition-transform', showExplore && 'rotate-180')} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                </svg>
+              </button>
+              {showExplore && (
+                <div className="absolute top-full right-0 mt-1 w-52 bg-white dark:bg-neutral-800 rounded-xl shadow-xl border border-neutral-200 dark:border-neutral-700 py-2 z-50 animate-in fade-in slide-in-from-top-2 duration-150">
+                  {exploreItems.map((item) => {
+                    const isActive = pathname?.startsWith(item.href);
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setShowExplore(false)}
+                        className={cn(
+                          'flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors',
+                          currentLanguage === 'pa' && 'font-gurmukhi text-base',
+                          isActive
+                            ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300'
+                            : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
+                        )}
+                      >
+                        <span>{item.icon}</span>
+                        <span>{currentLanguage === 'pa' ? item.labelPa : currentLanguage === 'hi' ? item.labelHi : item.labelEn}</span>
+                      </Link>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
           </nav>
 
           {/* Desktop: All controls | Mobile: Only language + hamburger */}
@@ -312,6 +381,35 @@ export function MainNavigation({
                   </Link>
                 );
               })}
+              
+              {/* Explore Section Divider */}
+              <div className="pt-3 pb-1 px-4">
+                <p className={cn('text-xs uppercase tracking-wider text-neutral-400 dark:text-neutral-500 font-semibold', currentLanguage === 'pa' && 'font-gurmukhi text-sm tracking-normal normal-case')}>
+                  {currentLanguage === 'pa' ? '✨ ਹੋਰ ਖੋਜੋ' : '✨ Explore'}
+                </p>
+              </div>
+              {exploreItems.map((item) => {
+                const isActive = pathname?.startsWith(item.href);
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className={cn(
+                      'flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all',
+                      currentLanguage === 'pa' && 'font-gurmukhi text-lg',
+                      isActive
+                        ? activeStyles[item.activeColor]
+                        : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50'
+                    )}
+                  >
+                    <span className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-sm">
+                      {item.icon}
+                    </span>
+                    <span className="flex-1">{currentLanguage === 'pa' ? item.labelPa : currentLanguage === 'hi' ? item.labelHi : item.labelEn}</span>
+                  </Link>
+                );
+              })}
             </div>
             
             {/* Mobile Quick Actions */}
@@ -378,7 +476,7 @@ export function MainNavigation({
       </div>
 
       {/* Section Indicator Bar */}
-      {(isGurbaniSection || isItihaasSection || isCommunitySection || isNitnemSection) && (
+      {(isGurbaniSection || isItihaasSection || isCommunitySection || isNitnemSection || isExploreSection) && (
         <div
           className={cn(
             'h-0.5 transition-all duration-300',
@@ -386,7 +484,9 @@ export function MainNavigation({
               ? 'bg-gradient-to-r from-blue-400 via-blue-500 to-blue-600'
               : isCommunitySection
                 ? 'bg-gradient-to-r from-emerald-400 via-emerald-500 to-emerald-600'
-                : 'bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600'
+                : isExploreSection
+                  ? 'bg-gradient-to-r from-purple-400 via-amber-500 to-purple-600'
+                  : 'bg-gradient-to-r from-orange-400 via-orange-500 to-orange-600'
           )}
           aria-hidden="true"
         />
@@ -488,6 +588,11 @@ export function Footer({ language = 'pa' }: FooterProps) {
               {[
                 { href: '/gurbani', icon: '📖', pa: 'ਗੁਰਬਾਣੀ', en: 'Gurbani' },
                 { href: '/nitnem', icon: '🙏', pa: 'ਨਿਤਨੇਮ', en: 'Nitnem' },
+                { href: '/hukamnama', icon: '📜', pa: 'ਹੁਕਮਨਾਮਾ', en: 'Hukamnama' },
+                { href: '/search', icon: '🔍', pa: 'ਖੋਜ', en: 'Search' },
+                { href: '/learn', icon: '🎓', pa: 'ਸਿੱਖੋ', en: 'Learn Gurmukhi' },
+                { href: '/kirtan', icon: '🎵', pa: 'ਕੀਰਤਨ', en: 'Kirtan' },
+                { href: '/calendar', icon: '📅', pa: 'ਕੈਲੰਡਰ', en: 'Calendar' },
                 { href: '/itihaas', icon: '📜', pa: 'ਇਤਿਹਾਸ', en: 'History' },
                 { href: '/community', icon: '🤝', pa: 'ਸੰਗਤ', en: 'Community' },
                 { href: '/about', icon: 'ℹ️', pa: 'ਬਾਰੇ', en: 'About' },
