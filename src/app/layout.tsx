@@ -104,7 +104,7 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.svg" sizes="any" />
       </head>
-      <body className="min-h-screen bg-neutral-50 dark:bg-neutral-950 antialiased font-sans transition-colors">
+      <body className="min-h-screen bg-neutral-50 antialiased font-sans transition-colors">
         <ThemeProvider>
           <AmritVelaProvider>
             <BookmarkProvider>

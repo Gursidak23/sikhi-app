@@ -21,57 +21,38 @@ interface ThemeContextType {
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
 
 export function ThemeProvider({ children }: { children: React.ReactNode }) {
-  const [theme, setThemeState] = useState<Theme>('system');
+  const [theme, setThemeState] = useState<Theme>('light');
   const [resolvedTheme, setResolvedTheme] = useState<'light' | 'dark'>('light');
   const [mounted, setMounted] = useState(false);
 
-  // Get system preference
-  const getSystemTheme = (): 'light' | 'dark' => {
-    if (typeof window === 'undefined') return 'light';
-    return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
-  };
-
-  // Initialize theme from localStorage or system
+  // Initialize — always light (Amrit Vela handles dark when active)
   useEffect(() => {
-    const stored = localStorage.getItem('sikhi-theme') as Theme | null;
-    if (stored && ['light', 'dark', 'system'].includes(stored)) {
-      setThemeState(stored);
-    }
+    // Clear any stale dark-mode preference from previous sessions
+    localStorage.removeItem('sikhi-theme');
     setMounted(true);
   }, []);
 
-  // Update resolved theme and apply to document
+  // Apply light theme — don't touch 'dark' class (Amrit Vela manages it)
   useEffect(() => {
-    const resolved = theme === 'system' ? getSystemTheme() : theme;
-    setResolvedTheme(resolved);
-    
-    // Apply theme to document
-    document.documentElement.classList.remove('light', 'dark');
-    document.documentElement.classList.add(resolved);
-    document.documentElement.setAttribute('data-theme', resolved);
-  }, [theme]);
-
-  // Listen for system theme changes
-  useEffect(() => {
-    if (theme !== 'system') return;
-    
-    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
-    const handleChange = () => {
-      setResolvedTheme(getSystemTheme());
-    };
-    
-    mediaQuery.addEventListener('change', handleChange);
-    return () => mediaQuery.removeEventListener('change', handleChange);
-  }, [theme]);
+    if (!mounted) return;
+    // Only manage 'light' class; never add 'dark' — AmritVelaProvider does that
+    const isAmritVela = document.documentElement.classList.contains('amrit-vela');
+    if (!isAmritVela) {
+      document.documentElement.classList.remove('dark');
+      document.documentElement.classList.add('light');
+      document.documentElement.setAttribute('data-theme', 'light');
+      setResolvedTheme('light');
+    } else {
+      setResolvedTheme('dark');
+    }
+  }, [mounted]);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
-    localStorage.setItem('sikhi-theme', newTheme);
   };
 
   const toggleTheme = () => {
-    const nextTheme = resolvedTheme === 'light' ? 'dark' : 'light';
-    setTheme(nextTheme);
+    // No-op — dark mode is only controlled by Amrit Vela
   };
 
   // Prevent flash of wrong theme

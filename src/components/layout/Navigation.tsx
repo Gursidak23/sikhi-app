@@ -13,7 +13,6 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LanguageSwitcher, LanguageSwitcherMobile } from '@/components/common/LanguageSwitcher';
-import { ThemeToggle } from '@/components/common/ThemeProvider';
 import { NanakshahiCalendarFull, gregorianToNanakshahi, NANAKSHAHI_MONTHS } from '@/components/common/NanakshahiCalendar';
 import { BookmarksPanel, useBookmarks } from '@/components/common/BookmarkSystem';
 import type { Language } from '@/types';
@@ -274,11 +273,6 @@ export function MainNavigation({
 
           {/* Desktop: All controls | Mobile: Only language + hamburger */}
           <div className="flex items-center gap-1 sm:gap-1.5">
-            {/* Desktop only - Theme Toggle */}
-            <div className="hidden md:block">
-              <ThemeToggle />
-            </div>
-            
             {/* Desktop Language Switcher */}
             <LanguageSwitcher
               currentLanguage={currentLanguage}
@@ -414,14 +408,14 @@ export function MainNavigation({
             
             {/* Mobile Quick Actions */}
             <div className="mt-4 pt-4 border-t border-amber-200/30 dark:border-amber-800/30">
-              <div className="grid grid-cols-2 gap-3 px-2">
+              <div className="px-2">
                 {/* Mobile Bookmarks */}
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
                     setShowBookmarks(true);
                   }}
-                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400 transition-all active:scale-95 min-h-[72px]"
+                  className="flex items-center justify-center gap-2 w-full p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400 transition-all active:scale-95"
                 >
                   <div className="relative">
                     <svg className="w-5 h-5" fill={bookmarks.length > 0 ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -438,13 +432,7 @@ export function MainNavigation({
                   </span>
                 </button>
                 
-                {/* Mobile Theme Toggle */}
-                <div className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all min-h-[72px]">
-                  <ThemeToggle />
-                  <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
-                    {currentLanguage === 'pa' ? 'ਥੀਮ' : 'Theme'}
-                  </span>
-                </div>
+
               </div>
               
               {/* Nanakshahi Date Display - clickable to open calendar */}
