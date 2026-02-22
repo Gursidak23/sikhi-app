@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState, useCallback, useRef, useEffect } from 'react';
+import { useState, useCallback, useRef, useEffect, memo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 import type { ChatMessage, ChatUser } from '../hooks/useChat';
@@ -17,14 +17,18 @@ interface MessageBubbleProps {
   language: Language;
   onReply: (message: ChatMessage) => void;
   onDelete: (messageId: string) => void;
+  onSave?: (messageId: string) => void;
+  onUnsave?: (messageId: string) => void;
 }
 
-export function MessageBubble({
+export const MessageBubble = memo(function MessageBubble({
   message,
   currentUser,
   language,
   onReply,
   onDelete,
+  onSave,
+  onUnsave,
 }: MessageBubbleProps) {
   const [showActions, setShowActions] = useState(false);
   const [showReactions, setShowReactions] = useState(false);
@@ -56,6 +60,13 @@ export function MessageBubble({
       document.removeEventListener('touchstart', handleClickOutside);
     };
   }, [showActions]);
+
+  // Clean up long-press timer on unmount
+  useEffect(() => {
+    return () => {
+      if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+    };
+  }, []);
 
   const toggleReaction = useCallback((emoji: string) => {
     setReactions(prev => {
@@ -99,6 +110,21 @@ export function MessageBubble({
   const getInitials = (name: string) => {
     return name.slice(0, 2).toUpperCase();
   };
+
+  // Ephemeral timer: how long until this message disappears
+  const getExpiryLabel = () => {
+    if (!message.expiresAt || message.isSaved) return null;
+    const expiresAt = new Date(message.expiresAt).getTime();
+    const now = Date.now();
+    const remaining = expiresAt - now;
+    if (remaining <= 0) return isPunjabi ? 'ਮਿਆਦ ਪੁੱਗੀ' : 'Expired';
+    const hours = Math.floor(remaining / 3600000);
+    const mins = Math.floor((remaining % 3600000) / 60000);
+    if (hours > 0) return `${hours}h ${mins}m`;
+    return `${mins}m`;
+  };
+
+  const expiryLabel = getExpiryLabel();
 
   if (message.isDeleted) {
     return (
@@ -165,6 +191,16 @@ export function MessageBubble({
           <span className="text-[11px] text-gray-400 tabular-nums">
             {isOptimistic ? (isPunjabi ? 'ਭੇਜ ਰਿਹਾ...' : 'Sending...') : formatTime(message.createdAt)}
           </span>
+          {message.isSaved && (
+            <span className="text-[11px] text-amber-500" title={isPunjabi ? 'ਸੇਵ ਕੀਤਾ' : 'Saved'}>
+              🔖
+            </span>
+          )}
+          {expiryLabel && !message.isSaved && (
+            <span className="text-[10px] text-gray-400/70 tabular-nums flex items-center gap-0.5" title={isPunjabi ? 'ਮਿਆਦ ਪੁੱਗਣ ਤੱਕ' : 'Expires in'}>
+              ⏱ {expiryLabel}
+            </span>
+          )}
           {message.isEdited && (
             <span className="text-[11px] text-gray-400 italic">
               ({isPunjabi ? 'ਸੋਧਿਆ' : 'edited'})
@@ -235,6 +271,28 @@ export function MessageBubble({
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
                 </svg>
               </button>
+              {/* Save / Unsave */}
+              <button
+                onClick={() => {
+                  if (message.isSaved) {
+                    onUnsave?.(message.id);
+                  } else {
+                    onSave?.(message.id);
+                  }
+                  setShowActions(false);
+                }}
+                className={cn(
+                  'w-8 h-8 flex items-center justify-center rounded-full transition-colors',
+                  message.isSaved
+                    ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                    : 'text-gray-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20'
+                )}
+                title={message.isSaved ? (isPunjabi ? 'ਅਣਸੇਵ' : 'Unsave') : (isPunjabi ? 'ਸੇਵ' : 'Save')}
+              >
+                <svg className="w-4 h-4" fill={message.isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+                </svg>
+              </button>
               {/* Delete (own messages only) */}
               {isOwn && (
                 <button
@@ -298,7 +356,7 @@ export function MessageBubble({
       </div>
     </div>
   );
-}
+});
 
 // ============================================================================
 // System Message / Date Divider

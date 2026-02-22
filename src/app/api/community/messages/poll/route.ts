@@ -5,7 +5,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { pollNewMessages, getRoomMembers } from '@/lib/api/chat-handlers';
+import { pollNewMessages, getRoomMembers, getTypingUsers, setTyping, clearTyping } from '@/lib/api/chat-handlers';
 import { rateLimit, getClientIdentifier } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
 
@@ -54,9 +54,23 @@ export async function GET(request: NextRequest) {
       getRoomMembers(roomId),
     ]);
 
+    // Get typing indicators (exclude requesting user)
+    const userId = searchParams.get('userId') || undefined;
+    const typing = getTypingUsers(roomId, userId);
+
+    // If client is sending typing status, set/clear it
+    const typingStatus = searchParams.get('typing');
+    const typingName = searchParams.get('typingName');
+    if (userId && typingStatus === '1' && typingName) {
+      setTyping(roomId, userId, typingName);
+    } else if (userId && typingStatus === '0') {
+      clearTyping(roomId, userId);
+    }
+
     return NextResponse.json({
       messages,
       members,
+      typing,
       serverTime: new Date().toISOString(),
     });
   } catch (error) {

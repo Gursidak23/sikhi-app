@@ -4,7 +4,7 @@
 // KIRTAN AUDIO LIBRARY PAGE
 // ============================================================================
 // Browse and listen to Shabads with audio, organized by Raag
-// Uses BaniDB random shabad endpoint for discovery
+// Uses fetchAng (with working server-side proxy) to load shabads
 // ============================================================================
 
 import { useState, useCallback, useEffect, useRef } from 'react';
@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
-import { fetchRandomShabad, searchGurbani, type BaniDBVerse, type BaniDBShabadResponse } from '@/lib/api/banidb-client';
+import { fetchAng, searchGurbani, type BaniDBVerse, type BaniDBAngResponse } from '@/lib/api/banidb-client';
 import { SGGS_RAAG_RANGES, getRaagForAng } from '@/lib/constants/raag-ranges';
 import type { Language } from '@/types';
 
@@ -21,11 +21,53 @@ interface ShabadItem {
   shabadId: number;
   pageNo: number;
   raag: string;
+  raagPa: string;
   writer: string;
   firstLine: string;
   firstLineUnicode: string;
   translation: string;
   verseCount: number;
+}
+
+/**
+ * Extract unique shabads from a BaniDB Ang response.
+ * Groups verses by shabadId and takes the first verse of each shabad.
+ */
+function extractShabadsFromAng(angData: BaniDBAngResponse): ShabadItem[] {
+  if (!angData?.page?.length) return [];
+  const shabadMap = new Map<number, BaniDBVerse>();
+  const countMap = new Map<number, number>();
+  for (const verse of angData.page) {
+    countMap.set(verse.shabadId, (countMap.get(verse.shabadId) || 0) + 1);
+    if (!shabadMap.has(verse.shabadId)) {
+      shabadMap.set(verse.shabadId, verse);
+    }
+  }
+  return Array.from(shabadMap.entries()).map(([shabadId, verse]) => {
+    const raag = getRaagForAng(verse.pageNo);
+    return {
+      shabadId,
+      pageNo: verse.pageNo,
+      raag: raag.en,
+      raagPa: raag.pa,
+      writer: verse.writer?.english || verse.writer?.unicode || '',
+      firstLine: verse.verse?.gurmukhi || '',
+      firstLineUnicode: verse.verse?.unicode || '',
+      translation: verse.translation?.en?.bdb || verse.translation?.en?.ms || '',
+      verseCount: countMap.get(shabadId) || 0,
+    };
+  });
+}
+
+/** Pick N random integers in [min, max] without repeats */
+function pickRandomAngs(min: number, max: number, count: number): number[] {
+  const range = max - min + 1;
+  const n = Math.min(count, range);
+  const picked = new Set<number>();
+  while (picked.size < n) {
+    picked.add(min + Math.floor(Math.random() * range));
+  }
+  return Array.from(picked);
 }
 
 export default function KirtanPage() {
@@ -39,40 +81,79 @@ export default function KirtanPage() {
   const [searching, setSearching] = useState(false);
 
   const isPunjabi = language === 'pa';
+  const loadIdRef = useRef(0); // prevent stale loads
 
-  // Load random shabads for discovery
-  const loadShabads = useCallback(async () => {
+  /**
+   * Load shabads by fetching random Angs.
+   * When a raag is selected, we pick Angs within that raag's range.
+   * When "all", we pick from the full SGGS range.
+   * Uses fetchAng which routes through our server-side cached proxy — reliable.
+   */
+  const loadShabads = useCallback(async (raagFilter: string) => {
+    const id = ++loadIdRef.current;
     setLoading(true);
+
     try {
-      const promises = Array.from({ length: 12 }, () => fetchRandomShabad());
-      const results = await Promise.all(promises);
-      
-      const items: ShabadItem[] = results
-        .filter((r): r is BaniDBShabadResponse => r !== null && r.verses?.length > 0)
-        .map((shabad) => {
-          const firstVerse = shabad.verses[0];
-          const raag = getRaagForAng(shabad.shabadInfo.pageNo);
-          return {
-            shabadId: shabad.shabadInfo.shabadId,
-            pageNo: shabad.shabadInfo.pageNo,
-            raag: raag.en,
-            writer: shabad.shabadInfo.writer?.english || shabad.shabadInfo.writer?.unicode || 'Unknown',
-            firstLine: firstVerse.verse?.gurmukhi || '',
-            firstLineUnicode: firstVerse.verse?.unicode || '',
-            translation: firstVerse.translation?.en?.bdb || firstVerse.translation?.en?.ms || '',
-            verseCount: shabad.count || shabad.verses.length,
-          };
-        });
-      
+      let angMin = 1;
+      let angMax = 1430;
+
+      // If a specific raag is selected, constrain to its Ang range
+      if (raagFilter !== 'all') {
+        const raagRange = SGGS_RAAG_RANGES.find(r => r.name.en === raagFilter);
+        if (raagRange) {
+          angMin = raagRange.angStart;
+          angMax = raagRange.angEnd;
+        }
+      }
+
+      // Pick 6 random Angs (each Ang has ~2-4 shabads, so 6 Angs ≈ 12-24 shabads)
+      const randomAngs = pickRandomAngs(angMin, angMax, 6);
+      const angResults = await Promise.all(randomAngs.map(ang => fetchAng(ang)));
+
+      if (id !== loadIdRef.current) return; // stale — user switched raag
+
+      // Extract shabads from all fetched Angs, deduplicate by shabadId
+      const seen = new Set<number>();
+      let items: ShabadItem[] = [];
+      for (const angData of angResults) {
+        if (!angData) continue;
+        for (const shabad of extractShabadsFromAng(angData)) {
+          if (!seen.has(shabad.shabadId)) {
+            seen.add(shabad.shabadId);
+            items.push(shabad);
+          }
+        }
+      }
+
+      // If we got very few results, try a few more Angs
+      if (items.length < 4) {
+        const moreAngs = pickRandomAngs(angMin, angMax, 4);
+        const moreResults = await Promise.all(moreAngs.map(ang => fetchAng(ang)));
+        if (id !== loadIdRef.current) return;
+        for (const angData of moreResults) {
+          if (!angData) continue;
+          for (const shabad of extractShabadsFromAng(angData)) {
+            if (!seen.has(shabad.shabadId)) {
+              seen.add(shabad.shabadId);
+              items.push(shabad);
+            }
+          }
+        }
+      }
+
+      // Sort by pageNo for a natural reading order
+      items.sort((a, b) => a.pageNo - b.pageNo);
+
       setShabads(items);
     } catch (err) {
       console.error('Error loading shabads:', err);
     } finally {
-      setLoading(false);
+      if (id === loadIdRef.current) setLoading(false);
     }
   }, []);
 
-  useEffect(() => { loadShabads(); }, [loadShabads]);
+  // Load on mount and when raag changes
+  useEffect(() => { loadShabads(selectedRaag); }, [selectedRaag, loadShabads]);
 
   // Search shabads
   const handleSearch = useCallback(async () => {
@@ -97,6 +178,7 @@ export default function KirtanPage() {
             shabadId,
             pageNo: verse.pageNo,
             raag: raag.en,
+            raagPa: raag.pa,
             writer: verse.writer?.english || verse.writer?.unicode || 'Unknown',
             firstLine: verse.verse?.gurmukhi || '',
             firstLineUnicode: verse.verse?.unicode || '',
@@ -113,13 +195,8 @@ export default function KirtanPage() {
     }
   }, [searchQuery]);
 
+  // When search is active, show search results; otherwise show loaded shabads
   const displayShabads = searchResults.length > 0 ? searchResults : shabads;
-  const filteredShabads = selectedRaag === 'all'
-    ? displayShabads
-    : displayShabads.filter(s => s.raag === selectedRaag);
-
-  // Get unique raags from loaded shabads
-  const availableRaags = Array.from(new Set(displayShabads.map(s => s.raag))).sort();
 
   // Featured raags for quick browse
   const featuredRaags = SGGS_RAAG_RANGES.filter(r => 
@@ -208,7 +285,7 @@ export default function KirtanPage() {
             {/* View Toggle + Refresh */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-neutral-500">
-                {filteredShabads.length} {isPunjabi ? 'ਸ਼ਬਦ' : 'shabads'}
+                {displayShabads.length} {isPunjabi ? 'ਸ਼ਬਦ' : 'shabads'}
               </p>
               <div className="flex gap-2">
                 <button
@@ -224,7 +301,7 @@ export default function KirtanPage() {
                   <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 6h16M4 10h16M4 14h16M4 18h16" /></svg>
                 </button>
                 <button
-                  onClick={loadShabads}
+                  onClick={() => loadShabads(selectedRaag)}
                   className="px-3 py-2 text-sm bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-100 transition-colors"
                 >
                   🔄 {isPunjabi ? 'ਹੋਰ ਲੋਡ' : 'Refresh'}
@@ -246,22 +323,28 @@ export default function KirtanPage() {
               </div>
             )}
 
-            {!loading && filteredShabads.length === 0 && (
+            {!loading && displayShabads.length === 0 && (
               <div className="text-center py-16 bg-neutral-50 dark:bg-neutral-800/50 rounded-2xl">
                 <div className="text-4xl mb-4">🔍</div>
-                <p className="text-neutral-600 dark:text-neutral-400">
+                <p className="text-neutral-600 dark:text-neutral-400 font-gurmukhi">
                   {isPunjabi ? 'ਕੋਈ ਸ਼ਬਦ ਨਹੀਂ ਮਿਲੇ' : 'No shabads found'}
                 </p>
+                <button
+                  onClick={() => loadShabads(selectedRaag)}
+                  className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm"
+                >
+                  {isPunjabi ? '🔄 ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : '🔄 Try Again'}
+                </button>
               </div>
             )}
 
-            {!loading && filteredShabads.length > 0 && (
+            {!loading && displayShabads.length > 0 && (
               <div className={cn(
                 viewMode === 'grid'
                   ? 'grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4'
                   : 'space-y-3'
               )}>
-                {filteredShabads.map((shabad) => (
+                {displayShabads.map((shabad) => (
                   viewMode === 'grid' ? (
                     /* Grid Card */
                     <Link

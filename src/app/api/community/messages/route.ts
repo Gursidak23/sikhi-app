@@ -12,12 +12,23 @@ import { sendMessageSchema, editMessageSchema } from '@/lib/validation/chat-sche
 import { rateLimit, getClientIdentifier } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
 
+// Hoist schema derivation to module scope — avoid recomputing on every DELETE
+const deleteMessageSchema = editMessageSchema.omit({ content: true });
+
 export async function GET(request: NextRequest) {
   try {
+    // Rate limit message fetching
+    const ip = getClientIdentifier(request);
+    const rl = rateLimit(`chat-msgs-get:${ip}`, { limit: 60, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
     const { searchParams } = request.nextUrl;
     const roomId = searchParams.get('roomId');
     const cursor = searchParams.get('cursor') || undefined;
-    const limit = Math.min(parseInt(searchParams.get('limit') || '50', 10), 100);
+    const rawLimit = parseInt(searchParams.get('limit') || '50', 10);
+    const limit = Math.min(Number.isNaN(rawLimit) ? 50 : rawLimit, 100);
 
     if (!roomId) {
       return NextResponse.json({ error: 'roomId is required' }, { status: 400 });
@@ -76,7 +87,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const body = await request.json();
-    const parsed = editMessageSchema.omit({ content: true }).safeParse(body);
+    const parsed = deleteMessageSchema.safeParse(body);
 
     if (!parsed.success) {
       return NextResponse.json({ error: 'messageId and userId are required' }, { status: 400 });

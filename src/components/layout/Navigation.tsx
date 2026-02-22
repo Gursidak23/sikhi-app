@@ -414,14 +414,14 @@ export function MainNavigation({
             
             {/* Mobile Quick Actions */}
             <div className="mt-4 pt-4 border-t border-amber-200/30 dark:border-amber-800/30">
-              <div className="grid grid-cols-3 gap-2 px-2">
+              <div className="grid grid-cols-2 gap-3 px-2">
                 {/* Mobile Bookmarks */}
                 <button
                   onClick={() => {
                     setMobileMenuOpen(false);
                     setShowBookmarks(true);
                   }}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400 transition-all active:scale-95"
+                  className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400 transition-all active:scale-95 min-h-[72px]"
                 >
                   <div className="relative">
                     <svg className="w-5 h-5" fill={bookmarks.length > 0 ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -438,25 +438,8 @@ export function MainNavigation({
                   </span>
                 </button>
                 
-                {/* Mobile Calendar */}
-                <button
-                  ref={calendarBtnMobileRef}
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    setShowCalendar(true);
-                  }}
-                  className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400 transition-all active:scale-95"
-                >
-                  <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                  </svg>
-                  <span className="text-xs font-medium">
-                    {currentLanguage === 'pa' ? 'ਕੈਲੰਡਰ' : 'Calendar'}
-                  </span>
-                </button>
-                
                 {/* Mobile Theme Toggle */}
-                <div className="flex flex-col items-center gap-1.5 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all">
+                <div className="flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl bg-gray-50 dark:bg-gray-800 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all min-h-[72px]">
                   <ThemeToggle />
                   <span className="text-xs font-medium text-gray-600 dark:text-gray-400">
                     {currentLanguage === 'pa' ? 'ਥੀਮ' : 'Theme'}
@@ -464,12 +447,20 @@ export function MainNavigation({
                 </div>
               </div>
               
-              {/* Nanakshahi Date Display */}
-              <div className="mt-3 mx-2 px-3 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 rounded-xl text-center shadow-sm shadow-amber-500/20">
+              {/* Nanakshahi Date Display - clickable to open calendar */}
+              <button
+                ref={calendarBtnMobileRef}
+                onClick={() => {
+                  setMobileMenuOpen(false);
+                  setShowCalendar(true);
+                }}
+                className="mt-3 mx-2 w-[calc(100%-1rem)] px-3 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 rounded-xl text-center shadow-sm shadow-amber-500/20 transition-all active:scale-[0.98]"
+                aria-label="Open Nanakshahi Calendar"
+              >
                 <span className="font-gurmukhi text-white text-sm">
                   📅 {nanakshahiDate.day} {NANAKSHAHI_MONTHS[nanakshahiDate.month].pa} {nanakshahiDate.year}
                 </span>
-              </div>
+              </button>
             </div>
           </nav>
         )}

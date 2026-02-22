@@ -2,13 +2,13 @@
  * Community Chat API Handlers — PostgreSQL via Prisma
  *
  * All chat state is persisted to the database using the ChatUser, ChatRoom,
- * ChatMessage, and ChatRoomMember Prisma models.
+ * ChatMessage, SavedMessage, and ChatRoomMember Prisma models.
  *
- * Storage strategy: auto-prune to keep DB lightweight.
- *   - Max 200 messages per room (oldest deleted automatically)
+ * Storage strategy: EPHEMERAL messages (Snapchat-style).
+ *   - Messages auto-expire after 12 hours
+ *   - Users can "save" messages to preserve them beyond expiry
  *   - Inactive users cleaned up after 7 days
- *   - Soft-deleted messages hard-deleted after 24 hours
- *   Total max footprint: ~5 rooms × 200 msgs ≈ 1,000 rows ≈ 500KB
+ *   - Max 200 messages per room (oldest deleted automatically)
  *
  * Session tokens provide lightweight authentication — the token is generated
  * on user creation and must accompany all mutating requests.
@@ -16,6 +16,10 @@
 
 import { prisma } from '@/lib/db/prisma';
 import { randomBytes, createHash } from 'crypto';
+import { cacheGet, cacheSet, cacheDel, CACHE_KEYS, CACHE_TTL } from '@/lib/db/redis';
+
+/** Default message lifetime in hours */
+const MESSAGE_LIFETIME_HOURS = 12;
 
 // ============================================================================
 // Auto-Pruning — keeps DB small
@@ -52,25 +56,39 @@ async function pruneRoomMessages(roomId: string) {
   }
 }
 
-/** Periodic cleanup: hard-delete soft-deleted messages older than 24h,
- *  and remove users inactive for 7+ days (and their memberships). */
+/** Periodic cleanup: delete expired messages, stale users, etc.
+ *  Runs at most once every 5 minutes. */
 let lastCleanup = 0;
 async function maybeRunCleanup() {
   const now = Date.now();
-  // Run at most once every 10 minutes
-  if (now - lastCleanup < 10 * 60 * 1000) return;
+  // Run at most once every 5 minutes
+  if (now - lastCleanup < 5 * 60 * 1000) return;
   lastCleanup = now;
 
   try {
-    // Hard-delete soft-deleted messages older than 24 hours
+    // 1. Delete expired messages (past expiresAt) that are NOT saved by anyone
+    const expiredMessages = await prisma.chatMessage.findMany({
+      where: {
+        expiresAt: { lt: new Date() },
+        savedBy: { none: {} },
+      },
+      select: { id: true },
+    });
+    if (expiredMessages.length > 0) {
+      await prisma.chatMessage.deleteMany({
+        where: { id: { in: expiredMessages.map((m) => m.id) } },
+      });
+    }
+
+    // 2. Hard-delete soft-deleted messages older than 1 hour
     await prisma.chatMessage.deleteMany({
       where: {
         isDeleted: true,
-        updatedAt: { lt: new Date(now - 24 * 60 * 60 * 1000) },
+        updatedAt: { lt: new Date(now - 60 * 60 * 1000) },
       },
     });
 
-    // Mark users offline if not seen in 2 minutes
+    // 3. Mark users offline if not seen in 2 minutes
     await prisma.chatUser.updateMany({
       where: {
         isOnline: true,
@@ -79,7 +97,7 @@ async function maybeRunCleanup() {
       data: { isOnline: false },
     });
 
-    // Delete users inactive for 7+ days (cascades to memberships & messages)
+    // 4. Delete users inactive for 7+ days (cascades to memberships & messages)
     await prisma.chatUser.deleteMany({
       where: {
         lastSeenAt: { lt: new Date(now - 7 * 24 * 60 * 60 * 1000) },
@@ -285,6 +303,51 @@ function userToResponse(u: {
   };
 }
 
+// ============================================================================
+// Typing Indicators — in-memory, no DB needed
+// ============================================================================
+
+/** roomId -> Map<userId, { displayName, expiresAt }> */
+const typingUsers = new Map<string, Map<string, { displayName: string; expiresAt: number }>>();
+
+const TYPING_EXPIRY_MS = 4000; // Typing indicator expires after 4s
+
+export function setTyping(roomId: string, userId: string, displayName: string) {
+  if (!typingUsers.has(roomId)) {
+    typingUsers.set(roomId, new Map());
+  }
+  typingUsers.get(roomId)!.set(userId, {
+    displayName,
+    expiresAt: Date.now() + TYPING_EXPIRY_MS,
+  });
+}
+
+export function clearTyping(roomId: string, userId: string) {
+  typingUsers.get(roomId)?.delete(userId);
+}
+
+export function getTypingUsers(roomId: string, excludeUserId?: string): string[] {
+  const room = typingUsers.get(roomId);
+  if (!room) return [];
+
+  const now = Date.now();
+  const names: string[] = [];
+  for (const [uid, data] of Array.from(room.entries())) {
+    if (data.expiresAt < now) {
+      room.delete(uid);
+      continue;
+    }
+    if (uid !== excludeUserId) {
+      names.push(data.displayName);
+    }
+  }
+  return names;
+}
+
+// ============================================================================
+// Response Builders (continued)
+// ============================================================================
+
 interface MessageWithRelations {
   id: string;
   content: string;
@@ -292,8 +355,10 @@ interface MessageWithRelations {
   roomId: string;
   isEdited: boolean;
   isDeleted: boolean;
+  expiresAt: Date | string;
   createdAt: Date | string;
   updatedAt: Date | string;
+  savedBy?: { id: string }[];
   user?: {
     id: string;
     displayName: string;
@@ -307,7 +372,7 @@ interface MessageWithRelations {
   } | null;
 }
 
-function messageToResponse(m: MessageWithRelations) {
+function messageToResponse(m: MessageWithRelations, requestUserId?: string) {
   const user = m.user || {} as { id?: string; displayName?: string; displayNameGurmukhi?: string | null; avatarColor?: string };
   let replyTo = null;
   if (m.replyTo) {
@@ -318,6 +383,10 @@ function messageToResponse(m: MessageWithRelations) {
     };
   }
 
+  const expiresAt = m.expiresAt instanceof Date ? m.expiresAt.toISOString() : m.expiresAt;
+  // Check if this message has been saved (by anyone or by requesting user)
+  const isSaved = m.savedBy ? m.savedBy.length > 0 : false;
+
   return {
     id: m.id,
     content: m.content,
@@ -325,6 +394,8 @@ function messageToResponse(m: MessageWithRelations) {
     roomId: m.roomId,
     isEdited: m.isEdited,
     isDeleted: m.isDeleted,
+    expiresAt,
+    isSaved,
     createdAt: m.createdAt instanceof Date ? m.createdAt.toISOString() : m.createdAt,
     updatedAt: m.updatedAt instanceof Date ? m.updatedAt.toISOString() : m.updatedAt,
     user: {
@@ -433,12 +504,22 @@ export async function updateUserPresence(userId: string, isOnline: boolean) {
  * Returns full member list; callers can filter by isOnline client-side.
  */
 export async function getRoomMembers(roomId: string) {
+  // Try Redis cache first
+  const cacheKey = CACHE_KEYS.members(roomId);
+  const cached = await cacheGet<ReturnType<typeof userToResponse>[]>(cacheKey);
+  if (cached) return cached;
+
   const members = await prisma.chatRoomMember.findMany({
     where: { roomId },
     include: { user: true },
   });
 
-  return members.map((m) => userToResponse(m.user));
+  const result = members.map((m) => userToResponse(m.user));
+
+  // Cache for 15s
+  await cacheSet(cacheKey, result, CACHE_TTL.members);
+
+  return result;
 }
 
 // ============================================================================
@@ -446,6 +527,11 @@ export async function getRoomMembers(roomId: string) {
 // ============================================================================
 
 export async function getRooms() {
+  // Try Redis cache first
+  const cacheKey = CACHE_KEYS.rooms();
+  const cached = await cacheGet<ReturnType<typeof roomToResponse>[]>(cacheKey);
+  if (cached) return cached;
+
   const rooms = await prisma.chatRoom.findMany({
     where: { isActive: true },
     include: {
@@ -454,7 +540,27 @@ export async function getRooms() {
     orderBy: [{ isDefault: 'desc' }, { name: 'asc' }],
   });
 
-  return rooms.map((r) => ({
+  const result = rooms.map((r) => roomToResponse(r));
+
+  // Cache for 60s
+  await cacheSet(cacheKey, result, CACHE_TTL.rooms);
+
+  return result;
+}
+
+/** Helper to format room response (used by getRooms + getRoomById) */
+function roomToResponse(r: {
+  id: string;
+  name: string;
+  nameGurmukhi: string | null;
+  description: string | null;
+  descriptionGurmukhi: string | null;
+  icon: string;
+  isDefault: boolean;
+  isActive: boolean;
+  _count: { members: number; messages: number };
+}) {
+  return {
     id: r.id,
     name: r.name,
     nameGurmukhi: r.nameGurmukhi,
@@ -467,10 +573,15 @@ export async function getRooms() {
       members: r._count.members,
       messages: r._count.messages,
     },
-  }));
+  };
 }
 
 export async function getRoomById(roomId: string) {
+  // Try Redis cache first
+  const cacheKey = CACHE_KEYS.room(roomId);
+  const cached = await cacheGet<ReturnType<typeof roomToResponse>>(cacheKey);
+  if (cached) return cached;
+
   const room = await prisma.chatRoom.findUnique({
     where: { id: roomId },
     include: {
@@ -480,20 +591,9 @@ export async function getRoomById(roomId: string) {
 
   if (!room) return null;
 
-  return {
-    id: room.id,
-    name: room.name,
-    nameGurmukhi: room.nameGurmukhi,
-    description: room.description,
-    descriptionGurmukhi: room.descriptionGurmukhi,
-    icon: room.icon,
-    isDefault: room.isDefault,
-    isActive: room.isActive,
-    _count: {
-      members: room._count.members,
-      messages: room._count.messages,
-    },
-  };
+  const result = roomToResponse(room);
+  await cacheSet(cacheKey, result, CACHE_TTL.room);
+  return result;
 }
 
 export async function createRoom(data: {
@@ -519,20 +619,12 @@ export async function createRoom(data: {
     },
   });
 
-  return {
-    id: room.id,
-    name: room.name,
-    nameGurmukhi: room.nameGurmukhi,
-    description: room.description,
-    descriptionGurmukhi: room.descriptionGurmukhi,
-    icon: room.icon,
-    isDefault: room.isDefault,
-    isActive: room.isActive,
-    _count: {
-      members: room._count.members,
-      messages: room._count.messages,
-    },
-  };
+  const result = roomToResponse(room);
+
+  // Invalidate rooms list cache
+  await cacheDel(CACHE_KEYS.rooms());
+
+  return result;
 }
 
 export async function joinRoom(userId: string, roomId: string) {
@@ -552,6 +644,9 @@ export async function joinRoom(userId: string, roomId: string) {
     create: { userId, roomId },
   });
 
+  // Invalidate members + rooms cache (member count changed)
+  await cacheDel(CACHE_KEYS.members(roomId), CACHE_KEYS.rooms(), CACHE_KEYS.room(roomId));
+
   return { userId, roomId };
 }
 
@@ -559,6 +654,10 @@ export async function leaveRoom(userId: string, roomId: string) {
   const result = await prisma.chatRoomMember.deleteMany({
     where: { userId, roomId },
   });
+
+  // Invalidate members + rooms cache
+  await cacheDel(CACHE_KEYS.members(roomId), CACHE_KEYS.rooms(), CACHE_KEYS.room(roomId));
+
   return { count: result.count };
 }
 
@@ -585,16 +684,20 @@ export async function sendMessage(data: {
     throw new Error('Message cannot be empty after sanitization');
   }
 
+  const expiresAt = new Date(Date.now() + MESSAGE_LIFETIME_HOURS * 60 * 60 * 1000);
+
   const message = await prisma.chatMessage.create({
     data: {
       content: sanitizedContent,
       userId: data.userId,
       roomId: data.roomId,
       replyToId: data.replyToId || null,
+      expiresAt,
     },
     include: {
       user: true,
       replyTo: { include: { user: true } },
+      savedBy: { select: { id: true } },
     },
   });
 
@@ -611,19 +714,32 @@ export async function sendMessage(data: {
   // Periodic background cleanup (stale users, soft-deleted messages)
   maybeRunCleanup().catch(() => {});
 
+  // Invalidate messages + rooms cache (message count changed)
+  await cacheDel(CACHE_KEYS.messages(data.roomId), CACHE_KEYS.rooms(), CACHE_KEYS.room(data.roomId));
+
   return messageToResponse(message);
 }
 
 export async function getMessages(roomId: string, cursor?: string, limit = 50) {
   const safeLimit = Math.min(limit, 100);
 
+  // Only show non-expired messages (or expired ones that are saved)
+  const baseWhere = {
+    roomId,
+    isDeleted: false,
+    OR: [
+      { expiresAt: { gt: new Date() } },
+      { savedBy: { some: {} } },
+    ],
+  };
+
+  // Paginated (cursor) requests bypass cache — only first page is cached
   if (cursor) {
     const cursorMsg = await prisma.chatMessage.findUnique({ where: { id: cursor } });
     if (cursorMsg) {
       const msgs = await prisma.chatMessage.findMany({
         where: {
-          roomId,
-          isDeleted: false,
+          ...baseWhere,
           createdAt: { lt: cursorMsg.createdAt },
         },
         orderBy: { createdAt: 'desc' },
@@ -631,6 +747,7 @@ export async function getMessages(roomId: string, cursor?: string, limit = 50) {
         include: {
           user: true,
           replyTo: { include: { user: true } },
+          savedBy: { select: { id: true } },
         },
       });
 
@@ -638,32 +755,43 @@ export async function getMessages(roomId: string, cursor?: string, limit = 50) {
       const hasMore = msgs.length === safeLimit;
 
       return {
-        messages: sorted.map(messageToResponse),
+        messages: sorted.map((m) => messageToResponse(m)),
         nextCursor: hasMore ? sorted[0]?.id : undefined,
         hasMore,
       };
     }
   }
 
-  // Default: fetch latest messages
+  // First page: try cache
+  const cacheKey = CACHE_KEYS.messages(roomId);
+  const cached = await cacheGet<{ messages: ReturnType<typeof messageToResponse>[]; nextCursor?: string; hasMore: boolean }>(cacheKey);
+  if (cached) return cached;
+
+  // Default: fetch latest non-expired messages
   const msgs = await prisma.chatMessage.findMany({
-    where: { roomId, isDeleted: false },
+    where: baseWhere,
     orderBy: { createdAt: 'desc' },
     take: safeLimit,
     include: {
       user: true,
       replyTo: { include: { user: true } },
+      savedBy: { select: { id: true } },
     },
   });
 
   const sorted = msgs.reverse();
   const hasMore = msgs.length === safeLimit;
 
-  return {
-    messages: sorted.map(messageToResponse),
+  const result = {
+    messages: sorted.map((m) => messageToResponse(m)),
     nextCursor: hasMore ? sorted[0]?.id : undefined,
     hasMore,
   };
+
+  // Cache first page for 5s
+  await cacheSet(cacheKey, result, CACHE_TTL.messages);
+
+  return result;
 }
 
 export async function pollNewMessages(roomId: string, since: Date) {
@@ -672,16 +800,21 @@ export async function pollNewMessages(roomId: string, since: Date) {
       roomId,
       isDeleted: false,
       createdAt: { gt: since },
+      OR: [
+        { expiresAt: { gt: new Date() } },
+        { savedBy: { some: {} } },
+      ],
     },
     orderBy: { createdAt: 'asc' },
     take: 100,
     include: {
       user: true,
       replyTo: { include: { user: true } },
+      savedBy: { select: { id: true } },
     },
   });
 
-  return msgs.map(messageToResponse);
+  return msgs.map((m) => messageToResponse(m));
 }
 
 export async function deleteMessage(messageId: string, userId: string) {
@@ -699,8 +832,12 @@ export async function deleteMessage(messageId: string, userId: string) {
     include: {
       user: true,
       replyTo: { include: { user: true } },
+      savedBy: { select: { id: true } },
     },
   });
+
+  // Invalidate messages cache for the room
+  await cacheDel(CACHE_KEYS.messages(msg.roomId));
 
   return messageToResponse(updated);
 }
@@ -717,4 +854,121 @@ const AVATAR_COLORS = [
 
 function getRandomColor(): string {
   return AVATAR_COLORS[Math.floor(Math.random() * AVATAR_COLORS.length)];
+}
+
+// ============================================================================
+// Save / Unsave Messages (Snapchat-style bookmark)
+// ============================================================================
+
+/**
+ * Save a message — preserves it beyond the 12h ephemeral window.
+ * Stores a content snapshot so it survives even if the original is deleted.
+ */
+export async function saveMessage(userId: string, messageId: string) {
+  const msg = await prisma.chatMessage.findUnique({
+    where: { id: messageId },
+    select: { content: true, isDeleted: true },
+  });
+  if (!msg || msg.isDeleted) {
+    throw new Error('Message not found');
+  }
+
+  const saved = await prisma.savedMessage.upsert({
+    where: { userId_messageId: { userId, messageId } },
+    update: {},
+    create: {
+      userId,
+      messageId,
+      savedContent: msg.content,
+    },
+  });
+
+  // Invalidate cache for the room so isSaved reflects
+  const fullMsg = await prisma.chatMessage.findUnique({
+    where: { id: messageId },
+    select: { roomId: true },
+  });
+  if (fullMsg) {
+    await cacheDel(CACHE_KEYS.messages(fullMsg.roomId));
+  }
+
+  return { id: saved.id, messageId, savedAt: saved.savedAt.toISOString() };
+}
+
+/**
+ * Unsave a message — removes the bookmark. If the message is expired,
+ * it becomes eligible for cleanup deletion.
+ */
+export async function unsaveMessage(userId: string, messageId: string) {
+  const result = await prisma.savedMessage.deleteMany({
+    where: { userId, messageId },
+  });
+
+  // Invalidate cache
+  const msg = await prisma.chatMessage.findUnique({
+    where: { id: messageId },
+    select: { roomId: true },
+  });
+  if (msg) {
+    await cacheDel(CACHE_KEYS.messages(msg.roomId));
+  }
+
+  return { count: result.count };
+}
+
+/**
+ * Get all saved messages for a user — across all rooms.
+ */
+export async function getSavedMessages(userId: string) {
+  const saved = await prisma.savedMessage.findMany({
+    where: { userId },
+    include: {
+      message: {
+        include: {
+          user: true,
+          room: { select: { id: true, name: true, nameGurmukhi: true, icon: true } },
+        },
+      },
+    },
+    orderBy: { savedAt: 'desc' },
+  });
+
+  return saved.map((s) => ({
+    id: s.id,
+    savedAt: s.savedAt.toISOString(),
+    savedContent: s.savedContent,
+    message: {
+      id: s.message.id,
+      content: s.message.isDeleted ? s.savedContent : s.message.content,
+      userId: s.message.userId,
+      roomId: s.message.roomId,
+      isDeleted: s.message.isDeleted,
+      expiresAt: s.message.expiresAt.toISOString(),
+      createdAt: s.message.createdAt.toISOString(),
+      user: {
+        id: s.message.user.id,
+        displayName: s.message.user.displayName,
+        displayNameGurmukhi: s.message.user.displayNameGurmukhi,
+        avatarColor: s.message.user.avatarColor,
+      },
+      room: s.message.room,
+    },
+  }));
+}
+
+/**
+ * Clear all chat records — messages, saved messages, members, rooms (except defaults).
+ * Used for maintenance / fresh start.
+ */
+export async function clearAllChats() {
+  await prisma.$transaction([
+    prisma.savedMessage.deleteMany({}),
+    prisma.chatMessage.deleteMany({}),
+    prisma.chatRoomMember.deleteMany({}),
+  ]);
+  
+  // Reset rooms flag so defaults get re-seeded
+  defaultRoomsEnsured = false;
+  
+  return { cleared: true };
 }

@@ -33,11 +33,11 @@ export async function GET(request: NextRequest) {
     const searchParams = request.nextUrl.searchParams;
     const query = searchParams.get('q');
 
-    if (!query || query.length < 3) {
+    if (!query || query.length < 3 || query.length > 200) {
       return NextResponse.json(
         {
           error: 'Invalid search query',
-          message: 'Search query must be at least 3 characters',
+          message: 'Search query must be between 3 and 200 characters',
         },
         { status: 400 }
       );
@@ -52,7 +52,10 @@ export async function GET(request: NextRequest) {
       disclaimer:
         'Search results show first line of Shabads. View full Shabad for complete context.',
     }, {
-      headers: rateLimitHeaders(rateLimitResult),
+      headers: {
+        ...rateLimitHeaders(rateLimitResult),
+        'Cache-Control': 'public, s-maxage=60, stale-while-revalidate=300',
+      },
     });
   } catch (error) {
     logApiError('/api/gurbani/search', error instanceof Error ? error : new Error(String(error)), 500);

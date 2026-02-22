@@ -11,11 +11,25 @@ import { createRoomSchema } from '@/lib/validation/chat-schemas';
 import { rateLimit, getClientIdentifier } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
 
-export async function GET() {
+let defaultRoomsEnsured = false;
+
+export async function GET(request: NextRequest) {
   try {
-    await ensureDefaultRooms();
+    // Rate limit room listing
+    const ip = getClientIdentifier(request);
+    const rl = rateLimit(`chat-rooms-list:${ip}`, { limit: 60, windowSeconds: 60 });
+    if (!rl.success) {
+      return NextResponse.json({ error: 'Too many requests' }, { status: 429 });
+    }
+
+    if (!defaultRoomsEnsured) {
+      await ensureDefaultRooms();
+      defaultRoomsEnsured = true;
+    }
     const rooms = await getRooms();
-    return NextResponse.json({ rooms });
+    return NextResponse.json({ rooms }, {
+      headers: { 'Cache-Control': 's-maxage=10, stale-while-revalidate=30' },
+    });
   } catch (error) {
     logApiError('GET /api/community/rooms', error instanceof Error ? error : new Error(String(error)));
     return NextResponse.json(
