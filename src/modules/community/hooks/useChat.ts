@@ -216,21 +216,57 @@ export function useChat() {
     }
   }, []);
 
+  // ---- Session auto-recovery: re-register with existing user info ----
+  const recoverSession = useCallback(async (): Promise<ChatUser | null> => {
+    if (!user) return null;
+    try {
+      const res = await fetch('/api/community/user', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          displayName: user.displayName,
+          displayNameGurmukhi: user.displayNameGurmukhi || undefined,
+          avatarColor: user.avatarColor,
+        }),
+      });
+      if (!res.ok) return null;
+      const { user: newUser } = await res.json();
+      setUser(newUser);
+      localStorage.setItem(CHAT_USER_KEY, JSON.stringify(newUser));
+      return newUser;
+    } catch {
+      return null;
+    }
+  }, [user]);
+
   // ---- Join Room ----
   const joinRoom = useCallback(async (roomId: string) => {
     if (!user) return;
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
-      await fetch(`/api/community/rooms/${roomId}`, {
+      const res = await fetch(`/api/community/rooms/${roomId}`, {
         method: 'POST',
         headers,
         body: JSON.stringify({ userId: user.id }),
       });
+      // Auto-recover session on 401
+      if (res.status === 401) {
+        const recovered = await recoverSession();
+        if (recovered) {
+          const retryHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (recovered.sessionToken) retryHeaders['X-Session-Token'] = recovered.sessionToken;
+          await fetch(`/api/community/rooms/${roomId}`, {
+            method: 'POST',
+            headers: retryHeaders,
+            body: JSON.stringify({ userId: recovered.id }),
+          });
+        }
+      }
     } catch (err: any) {
       console.error('Failed to join room:', err);
     }
-  }, [user]);
+  }, [user, recoverSession]);
 
   // ---- Select Room ----
   const selectRoom = useCallback(async (room: ChatRoom) => {
@@ -336,31 +372,57 @@ export function useChat() {
 
     setMessages((prev) => [...prev, optimisticMsg]);
     setReplyingTo(null);
-    setIsSending(true);
     setError(null);
 
     try {
+      let currentUser = user;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
-      if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
-      const res = await fetch('/api/community/messages', {
+      if (currentUser.sessionToken) headers['X-Session-Token'] = currentUser.sessionToken;
+      let res = await fetch('/api/community/messages', {
         method: 'POST',
         headers,
         body: JSON.stringify({
           content: trimmed,
-          userId: user.id,
+          userId: currentUser.id,
           roomId: activeRoom.id,
           replyToId: replyingTo?.id,
         }),
       });
 
+      // Session expired (serverless cold start) — auto-recover silently
       if (res.status === 401) {
-        // Session expired (server cold start) — force re-registration
-        setUser(null);
-        localStorage.removeItem(CHAT_USER_KEY);
-        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
-        setError('Session expired. Please register again.');
-        setIsSending(false);
-        return;
+        const recovered = await recoverSession();
+        if (recovered) {
+          currentUser = recovered;
+          const retryHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
+          if (recovered.sessionToken) retryHeaders['X-Session-Token'] = recovered.sessionToken;
+
+          // Re-join the room with new session
+          await fetch(`/api/community/rooms/${activeRoom.id}`, {
+            method: 'POST',
+            headers: retryHeaders,
+            body: JSON.stringify({ userId: recovered.id }),
+          }).catch(() => {});
+
+          res = await fetch('/api/community/messages', {
+            method: 'POST',
+            headers: retryHeaders,
+            body: JSON.stringify({
+              content: trimmed,
+              userId: recovered.id,
+              roomId: activeRoom.id,
+              replyToId: replyingTo?.id,
+            }),
+          });
+        }
+        if (res.status === 401) {
+          // Recovery also failed — force re-registration
+          setUser(null);
+          localStorage.removeItem(CHAT_USER_KEY);
+          setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+          setError('Session expired. Please register again.');
+          return;
+        }
       }
 
       if (!res.ok) {
@@ -380,10 +442,8 @@ export function useChat() {
       // Remove optimistic message on failure
       setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
       setError(err.message);
-    } finally {
-      setIsSending(false);
     }
-  }, [user, activeRoom, replyingTo, markActive]);
+  }, [user, activeRoom, replyingTo, markActive, recoverSession]);
 
   // ---- Delete Message ----
   const deleteMsg = useCallback(async (messageId: string) => {

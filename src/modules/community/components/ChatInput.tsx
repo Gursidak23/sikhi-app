@@ -51,13 +51,14 @@ export function ChatInput({
     }
   }, [message]);
 
-  const handleSend = async () => {
-    if (!message.trim() || isSending || disabled) return;
+  const handleSend = () => {
+    if (!message.trim() || disabled) return;
     const content = message;
     setMessage('');
     setShowEmojis(false);
     onActivity?.();
-    await onSend(content);
+    // Fire-and-forget: optimistic UI already shows the message instantly
+    onSend(content);
   };
 
   const insertEmoji = useCallback((emoji: string) => {
@@ -69,6 +70,7 @@ export function ChatInput({
   const handleKeyDown = (e: React.KeyboardEvent) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
+      e.stopPropagation();
       handleSend();
     }
   };

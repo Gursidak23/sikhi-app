@@ -222,10 +222,14 @@ const DEFAULT_ROOMS = [
   },
 ];
 
+let defaultRoomsEnsured = false;
+
 /**
  * Ensure default rooms exist in the database (upsert by name).
+ * Runs once per server instance then skips.
  */
 export async function ensureDefaultRooms() {
+  if (defaultRoomsEnsured) return;
   for (const room of DEFAULT_ROOMS) {
     await prisma.chatRoom.upsert({
       where: { name: room.name },
@@ -233,6 +237,7 @@ export async function ensureDefaultRooms() {
       create: room,
     });
   }
+  defaultRoomsEnsured = true;
 }
 
 // ============================================================================
