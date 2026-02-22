@@ -1,5 +1,5 @@
 import type { Metadata, Viewport } from 'next';
-import { Inter } from 'next/font/google';
+import { Inter, Noto_Sans_Gurmukhi, Noto_Sans_Devanagari } from 'next/font/google';
 import '../styles/globals.css';
 import { SkipLink } from '@/components/common/SkipLink';
 import { ThemeProvider } from '@/components/common/ThemeProvider';
@@ -10,6 +10,20 @@ import { ServiceWorkerRegistrar } from '@/components/common/ServiceWorkerRegistr
 const inter = Inter({ 
   subsets: ['latin'],
   variable: '--font-inter',
+  display: 'swap',
+});
+
+const notoSansGurmukhi = Noto_Sans_Gurmukhi({
+  subsets: ['gurmukhi'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-gurmukhi',
+  display: 'swap',
+});
+
+const notoSansDevanagari = Noto_Sans_Devanagari({
+  subsets: ['devanagari'],
+  weight: ['400', '500', '600', '700'],
+  variable: '--font-devanagari',
   display: 'swap',
 });
 
@@ -81,18 +95,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pa" dir="ltr" className={inter.variable}>
+    <html lang="pa" dir="ltr" className={`${inter.variable} ${notoSansGurmukhi.variable} ${notoSansDevanagari.variable}`}>
       <head>
-        {/* Gurmukhi fonts */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Gurmukhi:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
-        {/* Devanagari for Hindi */}
-        <link
-          href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;600;700&display=swap"
-          rel="stylesheet"
-        />
         {/* Apple Touch Icon */}
         <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
         {/* Favicon - Ik Onkar Symbol */}

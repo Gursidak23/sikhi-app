@@ -208,4 +208,24 @@ self.addEventListener('message', (event) => {
       })
     );
   }
+
+  // Handle Nitnem bani pre-caching (sent from service-worker.ts precacheNitnemBanis)
+  if (event.data.type === 'CACHE_BANI') {
+    const baniId = event.data.baniId;
+    if (baniId) {
+      event.waitUntil(
+        caches.open(BANI_CACHE).then(async (cache) => {
+          try {
+            const url = `https://api.banidb.com/v2/banis/${baniId}`;
+            const response = await fetch(url);
+            if (response.ok) {
+              await cache.put(url, response);
+            }
+          } catch {
+            // Network unavailable — skip silently
+          }
+        })
+      );
+    }
+  }
 });

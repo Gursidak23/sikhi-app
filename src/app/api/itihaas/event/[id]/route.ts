@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEventById } from '@/lib/api/history-handlers';
+import { logApiError } from '@/lib/error-tracking';
 
 /**
  * GET /api/itihaas/event/[id]
@@ -18,8 +19,6 @@ export async function GET(
         'This event is documented with citations from the listed sources. Multiple interpretations are shown separately.',
     });
   } catch (error) {
-    console.error('Error fetching Event:', error);
-
     if (error instanceof Error && error.message === 'Event not found') {
       return NextResponse.json(
         {
@@ -30,10 +29,11 @@ export async function GET(
       );
     }
 
+    logApiError('/api/itihaas/event', error instanceof Error ? error : new Error(String(error)), 500);
     return NextResponse.json(
       {
         error: 'Failed to fetch Event',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: 'An internal error occurred. Please try again later.',
       },
       { status: 500 }
     );

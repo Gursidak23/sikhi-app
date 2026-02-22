@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getFigureById, getGuruSahibaan } from '@/lib/api/history-handlers';
+import { logApiError } from '@/lib/error-tracking';
 
 // Force dynamic rendering for routes that use searchParams
 export const dynamic = 'force-dynamic';
@@ -44,8 +45,6 @@ export async function GET(request: NextRequest) {
       note: 'Use ?id={figureId} to get a specific figure, or ?guru-sahibaan for this list.',
     });
   } catch (error) {
-    console.error('Error fetching figure:', error);
-
     if (error instanceof Error && error.message === 'Figure not found') {
       return NextResponse.json(
         {
@@ -56,10 +55,11 @@ export async function GET(request: NextRequest) {
       );
     }
 
+    logApiError('/api/itihaas/figure', error instanceof Error ? error : new Error(String(error)), 500);
     return NextResponse.json(
       {
         error: 'Failed to fetch figure',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: 'An internal error occurred. Please try again later.',
       },
       { status: 500 }
     );

@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getRaags, getShabadsByRaag } from '@/lib/api/gurbani-handlers';
+import { logApiError } from '@/lib/error-tracking';
 
 // Force dynamic rendering for routes that use searchParams
 export const dynamic = 'force-dynamic';
@@ -32,11 +33,11 @@ export async function GET(request: NextRequest) {
         'The 31 Raags of Sri Guru Granth Sahib Ji, arranged in their traditional order.',
     });
   } catch (error) {
-    console.error('Error fetching Raag data:', error);
+    logApiError('/api/gurbani/raag', error instanceof Error ? error : new Error(String(error)), 500);
     return NextResponse.json(
       {
         error: 'Failed to fetch Raag data',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: 'An internal error occurred. Please try again later.',
       },
       { status: 500 }
     );

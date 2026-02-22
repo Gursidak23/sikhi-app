@@ -1,11 +1,12 @@
 /**
- * GET /api/community/messages/poll - Poll for new messages (in-memory)
+ * GET /api/community/messages/poll - Poll for new messages
  */
 
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { pollNewMessages, getOnlineUsers } from '@/lib/api/chat-handlers';
+import { logApiError } from '@/lib/error-tracking';
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,8 +39,8 @@ export async function GET(request: NextRequest) {
       members,
       serverTime: new Date().toISOString(),
     });
-  } catch (error: any) {
-    console.error('Error polling messages:', error?.message || error);
+  } catch (error) {
+    logApiError('GET /api/community/messages/poll', error instanceof Error ? error : new Error(String(error)));
     return NextResponse.json({ error: 'Failed to poll messages' }, { status: 500 });
   }
 }

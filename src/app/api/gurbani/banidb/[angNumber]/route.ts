@@ -6,6 +6,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
+import { logApiError } from '@/lib/error-tracking';
 
 const BANIDB_API_BASE = 'https://api.banidb.com/v2';
 
@@ -41,9 +42,9 @@ export async function GET(
     });
 
     if (!response.ok) {
-      console.error(`BaniDB API error: ${response.status} ${response.statusText}`);
+      logApiError('/api/gurbani/banidb', new Error(`BaniDB API error: ${response.status} ${response.statusText}`), response.status);
       return NextResponse.json(
-        { error: `Failed to fetch from BaniDB: ${response.statusText}` },
+        { error: 'Failed to fetch Gurbani data from upstream service' },
         { status: response.status }
       );
     }
@@ -56,7 +57,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error fetching from BaniDB:', error);
+    logApiError('/api/gurbani/banidb', error instanceof Error ? error : new Error(String(error)), 500);
     return NextResponse.json(
       { error: 'Failed to fetch Gurbani data' },
       { status: 500 }

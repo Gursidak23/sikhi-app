@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getTimeline } from '@/lib/api/history-handlers';
+import { logApiError } from '@/lib/error-tracking';
 
 // Force dynamic rendering for API routes
 export const dynamic = 'force-dynamic';
@@ -18,11 +19,11 @@ export async function GET(request: NextRequest) {
         'Every historical claim in this timeline is attributed to its source. Where sources conflict, interpretations are presented separately.',
     });
   } catch (error) {
-    console.error('Error fetching timeline:', error);
+    logApiError('/api/itihaas/timeline', error instanceof Error ? error : new Error(String(error)), 500);
     return NextResponse.json(
       {
         error: 'Failed to fetch timeline',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: 'An internal error occurred. Please try again later.',
       },
       { status: 500 }
     );

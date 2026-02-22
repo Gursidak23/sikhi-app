@@ -25,6 +25,7 @@ export interface ChatUser {
   avatarColor: string;
   isOnline?: boolean;
   lastSeenAt?: string;
+  sessionToken?: string; // Auth token from server, stored in localStorage
 }
 
 export interface ChatMessage {
@@ -219,9 +220,11 @@ export function useChat() {
   const joinRoom = useCallback(async (roomId: string) => {
     if (!user) return;
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
       await fetch(`/api/community/rooms/${roomId}`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ userId: user.id }),
       });
     } catch (err: any) {
@@ -337,9 +340,11 @@ export function useChat() {
     setError(null);
 
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
       const res = await fetch('/api/community/messages', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           content: trimmed,
           userId: user.id,
@@ -347,6 +352,16 @@ export function useChat() {
           replyToId: replyingTo?.id,
         }),
       });
+
+      if (res.status === 401) {
+        // Session expired (server cold start) — force re-registration
+        setUser(null);
+        localStorage.removeItem(CHAT_USER_KEY);
+        setMessages((prev) => prev.filter((m) => m.id !== optimisticId));
+        setError('Session expired. Please register again.');
+        setIsSending(false);
+        return;
+      }
 
       if (!res.ok) {
         const data = await res.json();
@@ -374,9 +389,11 @@ export function useChat() {
   const deleteMsg = useCallback(async (messageId: string) => {
     if (!user) return;
     try {
+      const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+      if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
       const res = await fetch('/api/community/messages', {
         method: 'DELETE',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({ messageId, userId: user.id }),
       });
       if (res.ok) {

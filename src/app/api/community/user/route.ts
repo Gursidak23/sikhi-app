@@ -1,13 +1,14 @@
 /**
- * POST /api/community/user - Create a chat user (in-memory)
+ * POST /api/community/user - Create a chat user (persisted to DB)
  * PUT /api/community/user - Update user presence (online/offline)
  */
 
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { createOrGetUser, updateUserPresence } from '@/lib/api/chat-handlers';
+import { createOrGetUser, updateUserPresence, verifySessionToken } from '@/lib/api/chat-handlers';
 import { createChatUserSchema, updatePresenceSchema } from '@/lib/validation/chat-schemas';
+import { logApiError } from '@/lib/error-tracking';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,10 +29,10 @@ export async function POST(request: NextRequest) {
     );
 
     return NextResponse.json({ user }, { status: 201 });
-  } catch (error: any) {
-    console.error('Error creating user:', error?.message || error);
+  } catch (error) {
+    logApiError('POST /api/community/user', error instanceof Error ? error : new Error(String(error)));
     return NextResponse.json(
-      { error: error?.message || 'Failed to create user' },
+      { error: 'Failed to create user' },
       { status: 500 }
     );
   }
@@ -49,10 +50,16 @@ export async function PUT(request: NextRequest) {
       );
     }
 
+    // Verify session token for presence update
+    const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
+    if (sessionToken && !verifySessionToken(parsed.data.userId, sessionToken)) {
+      return NextResponse.json({ error: 'Invalid session' }, { status: 401 });
+    }
+
     const user = await updateUserPresence(parsed.data.userId, parsed.data.isOnline);
     return NextResponse.json({ user });
   } catch (error) {
-    console.error('Error updating presence:', error);
+    logApiError('PUT /api/community/user', error instanceof Error ? error : new Error(String(error)));
     return NextResponse.json(
       { error: 'Failed to update presence' },
       { status: 500 }

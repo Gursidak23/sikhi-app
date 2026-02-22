@@ -55,11 +55,11 @@ export async function GET(request: NextRequest) {
       headers: rateLimitHeaders(rateLimitResult),
     });
   } catch (error) {
-    logApiError('/api/gurbani/search', error as Error, 500);
+    logApiError('/api/gurbani/search', error instanceof Error ? error : new Error(String(error)), 500);
     return NextResponse.json(
       {
         error: 'Search failed',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: 'An internal error occurred. Please try again later.',
       },
       { status: 500 }
     );

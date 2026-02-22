@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getEraWithEvents } from '@/lib/api/history-handlers';
+import { logApiError } from '@/lib/error-tracking';
 
 /**
  * GET /api/itihaas/era/[id]
@@ -14,8 +15,6 @@ export async function GET(
 
     return NextResponse.json(era);
   } catch (error) {
-    console.error('Error fetching Era:', error);
-
     if (error instanceof Error && error.message === 'Era not found') {
       return NextResponse.json(
         {
@@ -26,10 +25,11 @@ export async function GET(
       );
     }
 
+    logApiError('/api/itihaas/era', error instanceof Error ? error : new Error(String(error)), 500);
     return NextResponse.json(
       {
         error: 'Failed to fetch Era',
-        message: error instanceof Error ? error.message : 'Unknown error',
+        message: 'An internal error occurred. Please try again later.',
       },
       { status: 500 }
     );

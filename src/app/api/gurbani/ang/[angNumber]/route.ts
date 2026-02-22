@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getAngContent } from '@/lib/api/gurbani-handlers';
+import { logApiError } from '@/lib/error-tracking';
 
 /**
  * GET /api/gurbani/ang/[angNumber]
@@ -32,7 +33,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    console.error('Error fetching Ang content:', error);
+    logApiError('/api/gurbani/ang', error instanceof Error ? error : new Error(String(error)), 500);
     return NextResponse.json(
       {
         error: 'Failed to fetch Ang content',
