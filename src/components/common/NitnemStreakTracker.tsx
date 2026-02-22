@@ -101,7 +101,7 @@ function calculateStreak(logs: DayLog[]): { current: number; longest: number; to
 }
 
 // Required daily banis (5 Amritvela + Rehras + Kirtan Sohila)
-const REQUIRED_DAILY = ['japji-sahib', 'jaap-sahib', 'tav-prasad-savaiye', 'chaupai-sahib', 'anand-sahib', 'rehras-sahib', 'kirtan-sohila'];
+const REQUIRED_DAILY = ['japji', 'jaap', 'tav-prasad-savaiye', 'chaupai', 'anand', 'rehras', 'kirtan-sohila'];
 
 interface NitnemStreakTrackerProps {
   language: Language;
@@ -325,11 +325,11 @@ export function markBaniComplete(baniId: string) {
 }
 
 const BANI_LABELS: Record<string, { pa: string; en: string }> = {
-  'japji-sahib': { pa: 'ਜਪੁਜੀ', en: 'Japji' },
-  'jaap-sahib': { pa: 'ਜਾਪ', en: 'Jaap' },
+  'japji': { pa: 'ਜਪੁਜੀ', en: 'Japji' },
+  'jaap': { pa: 'ਜਾਪ', en: 'Jaap' },
   'tav-prasad-savaiye': { pa: 'ਸਵੱਯੇ', en: 'Savaiye' },
-  'chaupai-sahib': { pa: 'ਚੌਪਈ', en: 'Chaupai' },
-  'anand-sahib': { pa: 'ਅਨੰਦ', en: 'Anand' },
-  'rehras-sahib': { pa: 'ਰਹਿਰਾਸ', en: 'Rehras' },
+  'chaupai': { pa: 'ਚੌਪਈ', en: 'Chaupai' },
+  'anand': { pa: 'ਅਨੰਦ', en: 'Anand' },
+  'rehras': { pa: 'ਰਹਿਰਾਸ', en: 'Rehras' },
   'kirtan-sohila': { pa: 'ਸੋਹਿਲਾ', en: 'Sohila' },
 };

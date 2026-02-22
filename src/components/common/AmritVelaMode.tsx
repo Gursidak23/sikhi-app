@@ -54,13 +54,16 @@ function getTimeUntilAmritVela(): string {
 
 export function AmritVelaProvider({ children }: { children: ReactNode }) {
   const [isAmritVela, setIsAmritVela] = useState(false);
-  const [enabled, setEnabled] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return localStorage.getItem('sikhi-amritvela-mode') !== 'false';
-    }
-    return true;
-  });
+  const [enabled, setEnabled] = useState(true);
   const [timeUntilAmritVela, setTimeUntilAmritVela] = useState('');
+
+  // Load preference from localStorage on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('sikhi-amritvela-mode');
+      if (saved === 'false') setEnabled(false);
+    }
+  }, []);
 
   useEffect(() => {
     const update = () => {

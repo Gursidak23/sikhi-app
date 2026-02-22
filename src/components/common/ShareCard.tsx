@@ -45,6 +45,11 @@ export function ShareCard({
   const [selectedTheme, setSelectedTheme] = useState(0);
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [canShare, setCanShare] = useState(false);
+
+  useEffect(() => {
+    setCanShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function');
+  }, []);
 
   const theme = CARD_THEMES[selectedTheme];
 
@@ -271,7 +276,7 @@ export function ShareCard({
               >
                 {copied ? '✓' : '📋'} {language === 'pa' ? 'ਟੈਕਸਟ' : 'Copy Text'}
               </button>
-              {typeof navigator !== 'undefined' && typeof navigator.share === 'function' && (
+              {canShare && (
                 <button
                   onClick={handleNativeShare}
                   className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors text-sm font-medium"

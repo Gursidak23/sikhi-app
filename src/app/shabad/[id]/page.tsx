@@ -7,7 +7,7 @@
 // Teeka (Punjabi meanings), and sharing capabilities
 // ============================================================================
 
-import { useState, useEffect, useCallback, use } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
@@ -19,9 +19,8 @@ import { fetchShabad, type BaniDBVerse, type BaniDBShabadResponse } from '@/lib/
 import { getRaagForAng } from '@/lib/constants/raag-ranges';
 import type { Language } from '@/types';
 
-export default function ShabadPage({ params }: { params: Promise<{ id: string }> }) {
-  const resolvedParams = use(params);
-  const shabadId = parseInt(resolvedParams.id, 10);
+export default function ShabadPage({ params }: { params: { id: string } }) {
+  const shabadId = parseInt(params.id, 10);
 
   const [language, setLanguage] = useState<Language>('pa');
   const [shabad, setShabad] = useState<BaniDBShabadResponse | null>(null);
@@ -49,14 +48,14 @@ export default function ShabadPage({ params }: { params: Promise<{ id: string }>
       if (data && data.verses?.length > 0) {
         setShabad(data);
       } else {
-        setError(isPunjabi ? 'ਸ਼ਬਦ ਨਹੀਂ ਮਿਲਿਆ' : 'Shabad not found');
+        setError('Shabad not found');
       }
     } catch {
-      setError(isPunjabi ? 'ਡਾਟਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' : 'Could not load data');
+      setError('Could not load data');
     } finally {
       setLoading(false);
     }
-  }, [shabadId, isPunjabi]);
+  }, [shabadId]);
 
   useEffect(() => { loadShabad(); }, [loadShabad]);
 
@@ -130,7 +129,7 @@ export default function ShabadPage({ params }: { params: Promise<{ id: string }>
           <div className="flex-1 flex items-center justify-center py-32">
             <div className="text-center max-w-md">
               <div className="text-4xl mb-4">❌</div>
-              <p className="text-red-700 dark:text-red-300 text-lg">{error}</p>
+              <p className="text-red-700 dark:text-red-300 text-lg">{isPunjabi ? 'ਡਾਟਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' : error}</p>
               <div className="flex gap-3 justify-center mt-6">
                 <button onClick={loadShabad} className="px-6 py-3 bg-neela-600 text-white rounded-xl hover:bg-neela-700 transition-colors">
                   {isPunjabi ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼' : 'Try Again'}
