@@ -7,7 +7,7 @@
 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
-import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { MainNavigation } from '@/components/layout/Navigation';
 import { ChatView } from '@/modules/community/components/ChatView';
 import type { Language } from '@/types';
 
@@ -39,13 +39,15 @@ export default function CommunityPage() {
         onLanguageChange={setLanguage}
       />
 
-      {/* Ephemeral chat warning banner */}
-      <div className="w-full bg-yellow-100 border-b border-yellow-300 text-yellow-900 text-sm font-medium py-2 px-4 flex items-center gap-2 dark:bg-yellow-900/30 dark:text-yellow-200 dark:border-yellow-700">
-        <svg className="w-5 h-5 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+      {/* Ephemeral chat info banner - more subtle */}
+      <div className="w-full bg-amber-50/80 border-b border-amber-200/50 text-amber-800 text-xs py-1.5 px-4 flex items-center justify-center gap-2 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/30">
+        <svg className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <span>
-          <strong>Notice:</strong> All chat data is temporary and will reset periodically. For production, use a persistent backend.
+        <span className={cn(isPunjabi && 'font-gurmukhi text-sm')}>
+          {isPunjabi
+            ? 'ℹ️ ਚੈਟ ਡੇਟਾ ਅਸਥਾਈ ਹੈ ਅਤੇ ਸਮੇਂ-ਸਮੇਂ ਰੀਸੈਟ ਹੋ ਸਕਦਾ ਹੈ'
+            : 'ℹ️ Chat data is temporary and may reset periodically'}
         </span>
       </div>
 
@@ -131,6 +133,28 @@ export default function CommunityPage() {
           <ChatView language={language} />
         </div>
       </main>
+
+      {/* Minimal Community Footer */}
+      <footer className="border-t border-amber-200/30 dark:border-gray-800 bg-white/50 dark:bg-gray-900/50">
+        <div className="container-content py-4">
+          <div className="flex flex-col sm:flex-row items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <p className="font-gurmukhi text-sm bg-gradient-to-r from-amber-500 to-amber-600 bg-clip-text text-transparent font-semibold">
+                ਵਾਹਿਗੁਰੂ ਜੀ ਕਾ ਖਾਲਸਾ, ਵਾਹਿਗੁਰੂ ਜੀ ਕੀ ਫਤਿਹ
+              </p>
+            </div>
+            <div className="flex items-center gap-4 text-xs text-gray-400">
+              <span className={cn(isPunjabi && 'font-gurmukhi text-sm')}>
+                {isPunjabi ? '🙏 ਸਤਿਕਾਰ ਨਾਲ ਗੱਲਬਾਤ ਕਰੋ' : '🙏 Communicate with respect'}
+              </span>
+              <span className="hidden sm:inline">•</span>
+              <span className={cn('hidden sm:inline', isPunjabi && 'font-gurmukhi text-sm')}>
+                {isPunjabi ? 'ਭੁੱਲ ਚੁੱਕ ਮਾਫ਼ ਕਰਨਾ' : 'Please forgive any errors'}
+              </span>
+            </div>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

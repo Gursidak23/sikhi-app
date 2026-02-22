@@ -4,7 +4,7 @@
 
 'use client';
 
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 import type { ChatMessage, ChatUser } from '../hooks/useChat';
@@ -29,6 +29,7 @@ export function MessageBubble({
   const [showActions, setShowActions] = useState(false);
   const [reactions, setReactions] = useState<Record<string, number>>({});
   const [myReaction, setMyReaction] = useState<string | null>(null);
+  const longPressTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isOwn = currentUser?.id === message.userId;
   const isPunjabi = language === 'pa';
   const isOptimistic = (message as any)._optimistic;
@@ -109,6 +110,15 @@ export function MessageBubble({
       )}
       onMouseEnter={() => setShowActions(true)}
       onMouseLeave={() => setShowActions(false)}
+      onTouchStart={() => {
+        longPressTimerRef.current = setTimeout(() => setShowActions(true), 500);
+      }}
+      onTouchEnd={() => {
+        if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+      }}
+      onTouchMove={() => {
+        if (longPressTimerRef.current) clearTimeout(longPressTimerRef.current);
+      }}
     >
       {/* Avatar */}
       <div
@@ -222,6 +232,16 @@ export function MessageBubble({
                 </svg>
               </button>
             )}
+            {/* Dismiss button for mobile */}
+            <button
+              onClick={() => setShowActions(false)}
+              className="md:hidden p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 transition-all ml-0.5"
+              aria-label="Close actions"
+            >
+              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
           </div>
         )}
 

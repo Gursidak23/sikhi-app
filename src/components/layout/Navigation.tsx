@@ -7,7 +7,8 @@
 // Gurbani and History are visually and structurally separated
 // ============================================================================
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -31,9 +32,54 @@ export function MainNavigation({
   const [showCalendar, setShowCalendar] = useState(false);
   const [showBookmarks, setShowBookmarks] = useState(false);
   const { bookmarks } = useBookmarks();
+  const calendarRef = useRef<HTMLDivElement>(null);
+  const calendarBtnDesktopRef = useRef<HTMLButtonElement>(null);
+  const calendarBtnMobileRef = useRef<HTMLButtonElement>(null);
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
   
   // Calculate Nanakshahi date
   const nanakshahiDate = useMemo(() => gregorianToNanakshahi(new Date()), []);
+
+  // Set up portal root on mount
+  useEffect(() => {
+    setPortalRoot(document.body);
+  }, []);
+
+  // Close calendar on ESC key and click-outside
+  const closeCalendar = useCallback(() => setShowCalendar(false), []);
+
+  useEffect(() => {
+    if (!showCalendar) return;
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeCalendar();
+    };
+
+    const handleClickOutside = (e: MouseEvent | TouchEvent) => {
+      const target = e.target as Node;
+      if (
+        calendarRef.current &&
+        !calendarRef.current.contains(target) &&
+        !calendarBtnDesktopRef.current?.contains(target) &&
+        !calendarBtnMobileRef.current?.contains(target)
+      ) {
+        closeCalendar();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside);
+    // Prevent body scroll when calendar is open
+    document.body.style.overflow = 'hidden';
+
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('touchstart', handleClickOutside);
+      document.body.style.overflow = '';
+    };
+  }, [showCalendar, closeCalendar]);
 
   const isGurbaniSection = pathname?.includes('/gurbani');
   const isItihaasSection = pathname?.includes('/itihaas');
@@ -196,9 +242,11 @@ export function MainNavigation({
             
             {/* Desktop only - Nanakshahi Date Badge */}
             <button
-              onClick={() => setShowCalendar(true)}
+              ref={calendarBtnDesktopRef}
+              onClick={() => setShowCalendar((prev) => !prev)}
               className="hidden md:flex items-center gap-1.5 px-3 py-1.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white text-sm rounded-lg transition-all shadow-sm shadow-amber-500/20 hover:shadow-md hover:shadow-amber-500/30 hover:scale-[1.02] active:scale-[0.98]"
               aria-label="Open Nanakshahi Calendar"
+              aria-expanded={showCalendar}
             >
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
@@ -294,6 +342,7 @@ export function MainNavigation({
                 
                 {/* Mobile Calendar */}
                 <button
+                  ref={calendarBtnMobileRef}
                   onClick={() => {
                     setMobileMenuOpen(false);
                     setShowCalendar(true);
@@ -343,19 +392,23 @@ export function MainNavigation({
         />
       )}
       
-      {/* Nanakshahi Calendar Modal */}
-      {showCalendar && (
+      {/* Nanakshahi Calendar Modal - rendered via Portal to escape header stacking context */}
+      {showCalendar && portalRoot && createPortal(
         <div 
-          className="fixed inset-0 z-[100] flex items-start justify-center pt-16 sm:pt-20 pb-4 px-2 sm:px-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
-          onClick={() => setShowCalendar(false)}
+          className="fixed inset-0 z-[9999] flex items-start justify-center pt-16 sm:pt-20 md:pt-24 pb-4 px-2 sm:px-4 bg-black/60 backdrop-blur-sm overflow-y-auto"
+          role="dialog"
+          aria-modal="true"
+          aria-label="Nanakshahi Calendar"
         >
           <div 
-            className="w-full max-w-lg rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200"
-            onClick={(e) => e.stopPropagation()}
+            ref={calendarRef}
+            className="w-full max-w-[95vw] sm:max-w-md md:max-w-lg rounded-2xl shadow-2xl"
+            style={{ animation: 'calendarFadeIn 0.2s ease-out' }}
           >
-            <NanakshahiCalendarFull language={currentLanguage} onClose={() => setShowCalendar(false)} />
+            <NanakshahiCalendarFull language={currentLanguage} onClose={closeCalendar} />
           </div>
-        </div>
+        </div>,
+        portalRoot
       )}
       
       {/* Bookmarks Panel */}

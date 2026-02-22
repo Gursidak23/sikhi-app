@@ -237,6 +237,8 @@ export function useChat() {
     setError(null);
     setReplyingTo(null);
     setTypingUsers([]);
+    // Reset tracked message IDs for the new room
+    messageIdsRef.current.clear();
     markActive();
 
     // Clear unread for this room
@@ -257,6 +259,10 @@ export function useChat() {
       setMessages(data.messages);
       setHasMore(data.hasMore);
       setNextCursor(data.nextCursor);
+      // Track all initially-loaded message IDs to prevent duplicates
+      for (const msg of data.messages) {
+        messageIdsRef.current.add(msg.id);
+      }
       lastPollTimeRef.current = new Date().toISOString();
     } catch (err: any) {
       setError(err.message);
@@ -348,6 +354,8 @@ export function useChat() {
       }
 
       const { message } = await res.json();
+      // Track the real message ID to prevent poll from re-adding it
+      messageIdsRef.current.add(message.id);
       // Replace optimistic message with real one
       setMessages((prev) =>
         prev.map((m) => (m.id === optimisticId ? message : m))
@@ -414,45 +422,59 @@ export function useChat() {
         const data = await res.json();
 
         if (data.messages && data.messages.length > 0) {
-          setMessages((prev) => {
-            // Replace optimistic messages with real ones & add new
-            const newMsgs: ChatMessage[] = [];
-            for (const msg of data.messages) {
-              if (messageIdsRef.current.has(msg.id)) continue;
-              messageIdsRef.current.add(msg.id);
-              newMsgs.push(msg);
+          // Determine which messages are truly new BEFORE mutating the set
+          const trulyNewMsgs: ChatMessage[] = [];
+          for (const msg of data.messages) {
+            if (!messageIdsRef.current.has(msg.id)) {
+              trulyNewMsgs.push(msg);
             }
-            if (newMsgs.length === 0) {
-              // Still replace optimistic msgs
+          }
+
+          // Now mark them all as tracked
+          for (const msg of data.messages) {
+            messageIdsRef.current.add(msg.id);
+          }
+
+          setMessages((prev) => {
+            // Build a Set of existing non-optimistic IDs for fast lookup
+            const existingIds = new Set(prev.filter(m => !m._optimistic).map(m => m.id));
+
+            if (trulyNewMsgs.length === 0) {
+              // No new messages — still replace any remaining optimistic msgs
               return prev.map((m) => {
                 if (!m._optimistic) return m;
                 const real = data.messages.find(
                   (rm: ChatMessage) => rm.content === m.content && rm.userId === m.userId
                 );
-                return real || m;
+                if (real) return real;
+                return m;
               });
             }
-            // Remove optimistic duplicates
+
+            // Filter out truly new messages that somehow already exist (safety)
+            const deduped = trulyNewMsgs.filter(nm => !existingIds.has(nm.id));
+
+            // Remove optimistic duplicates that match incoming messages
             const cleaned = prev.filter((m) => {
               if (!m._optimistic) return true;
-              return !newMsgs.some(
+              return !deduped.some(
                 (nm) => nm.content === m.content && nm.userId === m.userId
               );
             });
-            return [...cleaned, ...newMsgs];
+            return [...cleaned, ...deduped];
           });
 
-          // Notification sound for messages from others
-          const otherMsgs = data.messages.filter(
-            (m: ChatMessage) => m.userId !== user?.id && !messageIdsRef.current.has(m.id)
+          // Notification sound for truly new messages from others
+          const otherNewMsgs = trulyNewMsgs.filter(
+            (m: ChatMessage) => m.userId !== user?.id
           );
-          if (otherMsgs.length > 0) {
+          if (otherNewMsgs.length > 0) {
             playNotificationSound();
           }
 
-          // Count as unread if tab hidden
+          // Count as unread if tab hidden (only truly new messages from others)
           if (!isTabVisibleRef.current) {
-            const otherNew = data.messages.filter(
+            const otherNew = trulyNewMsgs.filter(
               (m: ChatMessage) => m.userId !== user?.id
             );
             if (otherNew.length > 0) {
