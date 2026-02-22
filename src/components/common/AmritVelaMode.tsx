@@ -82,12 +82,15 @@ export function AmritVelaProvider({ children }: { children: ReactNode }) {
     }
   }, [enabled]);
 
-  // Apply Amrit Vela class to document
+  // Apply Amrit Vela class to document — also force 'dark' so all Tailwind dark: variants activate
   useEffect(() => {
     if (enabled && isAmritVela) {
-      document.documentElement.classList.add('amrit-vela');
+      document.documentElement.classList.add('amrit-vela', 'dark');
+      document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('amrit-vela');
+      // Restore the user's actual theme preference (managed by ThemeProvider)
+      // Don't remove 'dark' here — ThemeProvider handles it
     }
     return () => {
       document.documentElement.classList.remove('amrit-vela');

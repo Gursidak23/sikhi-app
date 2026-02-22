@@ -36,8 +36,11 @@ function getPrismaClient(): PrismaClient {
 
   const client = new PrismaClient({
     log: process.env.NODE_ENV === 'development'
-      ? ['query', 'error', 'warn']
+      ? ['error', 'warn']
       : ['error'],
+    datasourceUrl: url.includes('connection_limit=')
+      ? url
+      : `${url}${url.includes('?') ? '&' : '?'}connection_limit=5`,
   });
 
   globalForPrisma.prisma = client;

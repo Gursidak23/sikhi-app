@@ -59,28 +59,53 @@
 
 /* ============================================================================
    AMRIT VELA MODE - Deep Meditative Theme (1AM-6AM)
+   ============================================================================ 
+   Amrit Vela adds both .amrit-vela + .dark to <html>, so all Tailwind dark:
+   variants activate. These overrides replace the standard dark palette with a
+   calming deep-blue/indigo meditative palette instead of neutral grays.
    ============================================================================ */
 .amrit-vela {
   --sikhi-cream: #0a0e1a;
   --sikhi-white: #070b14;
   --gradient-hero: linear-gradient(180deg, #0a0e1a 0%, #0f1a3a 50%, #1a2550 100%);
+  
+  /* Override dark-mode neutral grays → deep meditative blues */
+  --sikhi-kesri-light: #1a1530;
+  --sikhi-neela-light: #0f1528;
+  --gradient-kesri: linear-gradient(135deg, #b85c00 0%, #a34d00 50%, #8a3e00 100%);
+  --gradient-sacred: linear-gradient(135deg, #0f1528 0%, #131b35 50%, #1a2550 100%);
 }
 
+/* Body + main container */
 .amrit-vela body,
 .amrit-vela .min-h-screen {
   background: linear-gradient(180deg, #0a0e1a 0%, #0f1528 50%, #0a0e1a 100%) !important;
-  color: #c4cee8;
+  color: #c4cee8 !important;
 }
 
+/* Navigation */
 .amrit-vela .sikhi-nav {
   background: rgba(10, 14, 26, 0.95) !important;
-  border-bottom: 1px solid rgba(100, 130, 200, 0.15);
+  border-bottom: 1px solid rgba(100, 130, 200, 0.15) !important;
 }
 
+.amrit-vela .sikhi-nav a,
+.amrit-vela .sikhi-nav button,
+.amrit-vela .sikhi-nav span {
+  color: #b8c5e0;
+}
+
+.amrit-vela .sikhi-nav a:hover,
+.amrit-vela .sikhi-nav button:hover {
+  color: #e8d9a0;
+}
+
+/* Footer */
 .amrit-vela .sikhi-footer {
   background: #070b14 !important;
 }
 
+/* Saroop / Gurbani page */
 .amrit-vela .saroop-page {
   background: linear-gradient(135deg, #0f1528 0%, #131b35 50%, #0f1528 100%) !important;
   border-color: rgba(100, 130, 200, 0.2) !important;
@@ -99,6 +124,51 @@
   color: #daa520 !important;
   text-shadow: 0 0 30px rgba(218, 165, 32, 0.3);
 }
+
+/* ---- Amrit Vela: Tailwind dark-mode color overrides ---- */
+/* Background overrides: replace dark grays with deep blues */
+.amrit-vela .dark\:bg-neutral-950 { background-color: #070b14 !important; }
+.amrit-vela .dark\:bg-neutral-900 { background-color: #0a0e1a !important; }
+.amrit-vela .dark\:bg-neutral-800 { background-color: #0f1528 !important; }
+.amrit-vela .dark\:bg-gray-950 { background-color: #070b14 !important; }
+.amrit-vela .dark\:bg-gray-900 { background-color: #0a0e1a !important; }
+.amrit-vela .dark\:bg-gray-800 { background-color: #0f1528 !important; }
+.amrit-vela .dark\:bg-gray-800\/50 { background-color: rgba(15, 21, 40, 0.5) !important; }
+.amrit-vela .dark\:bg-gray-800\/30 { background-color: rgba(15, 21, 40, 0.3) !important; }
+.amrit-vela .dark\:bg-gray-700 { background-color: #131b35 !important; }
+
+/* Text overrides: replace dark-mode whites/grays with warm bluish tones */
+.amrit-vela .dark\:text-white { color: #e0e8f5 !important; }
+.amrit-vela .dark\:text-neutral-100 { color: #d0daf0 !important; }
+.amrit-vela .dark\:text-neutral-200 { color: #b8c5e0 !important; }
+.amrit-vela .dark\:text-neutral-300 { color: #a0b0d0 !important; }
+.amrit-vela .dark\:text-neutral-400 { color: #8090b5 !important; }
+.amrit-vela .dark\:text-gray-100 { color: #d0daf0 !important; }
+.amrit-vela .dark\:text-gray-200 { color: #b8c5e0 !important; }
+.amrit-vela .dark\:text-gray-300 { color: #a0b0d0 !important; }
+.amrit-vela .dark\:text-gray-400 { color: #8090b5 !important; }
+.amrit-vela .dark\:text-gray-500 { color: #6878a0 !important; }
+
+/* Border overrides */
+.amrit-vela .dark\:border-gray-700 { border-color: rgba(100, 130, 200, 0.2) !important; }
+.amrit-vela .dark\:border-gray-800 { border-color: rgba(80, 110, 180, 0.15) !important; }
+.amrit-vela .dark\:border-neutral-700 { border-color: rgba(100, 130, 200, 0.2) !important; }
+.amrit-vela .dark\:border-neutral-800 { border-color: rgba(80, 110, 180, 0.15) !important; }
+
+/* Amber (Kesri) accents remain warm */
+.amrit-vela .dark\:text-amber-300 { color: #e8d9a0 !important; }
+.amrit-vela .dark\:text-amber-400 { color: #daa520 !important; }
+.amrit-vela .dark\:bg-amber-900\/20 { background-color: rgba(180, 130, 20, 0.15) !important; }
+.amrit-vela .dark\:border-amber-800\/30 { border-color: rgba(180, 130, 20, 0.2) !important; }
+
+/* Hover states */
+.amrit-vela .dark\:hover\:bg-gray-700:hover { background-color: #1a2550 !important; }
+.amrit-vela .dark\:hover\:bg-gray-800:hover { background-color: #131b35 !important; }
+.amrit-vela .dark\:hover\:bg-neutral-700:hover { background-color: #1a2550 !important; }
+.amrit-vela .dark\:hover\:text-white:hover { color: #e8d9a0 !important; }
+
+/* Ring / outline overrides */
+.amrit-vela .dark\:ring-gray-900 { --tw-ring-color: #0a0e1a !important; }
 
 /* ============================================================================
    BASE STYLES
