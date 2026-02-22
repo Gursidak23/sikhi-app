@@ -111,18 +111,39 @@ function hashToken(raw: string): string {
   return createHash('sha256').update(raw).digest('hex');
 }
 
-// Session token hashes: userId -> hashed token.
-// Lives in memory — if serverless cold-starts, user re-registers
-// (chat history persists in DB regardless).
-const sessionTokens = new Map<string, string>();
+// In-memory session cache: userId -> hashed token.
+// Acts as a fast-path cache; DB is the source of truth.
+const sessionTokenCache = new Map<string, string>();
 
 /**
  * Verify that a raw session token matches the stored hash for a userId.
+ * Checks in-memory cache first, falls back to DB lookup (survives cold starts).
  */
-export function verifySessionToken(userId: string, rawToken: string): boolean {
-  const stored = sessionTokens.get(userId);
-  if (!stored) return false;
-  return stored === hashToken(rawToken);
+export async function verifySessionToken(userId: string, rawToken: string): Promise<boolean> {
+  const hashed = hashToken(rawToken);
+
+  // Fast path: check in-memory cache
+  const cached = sessionTokenCache.get(userId);
+  if (cached) {
+    return cached === hashed;
+  }
+
+  // Slow path: check DB (survives cold starts)
+  try {
+    const user = await prisma.chatUser.findUnique({
+      where: { id: userId },
+      select: { sessionTokenHash: true },
+    });
+    if (user?.sessionTokenHash) {
+      // Populate cache for next time
+      sessionTokenCache.set(userId, user.sessionTokenHash);
+      return user.sessionTokenHash === hashed;
+    }
+  } catch {
+    // DB error — deny
+  }
+
+  return false;
 }
 
 // ============================================================================
@@ -264,9 +285,30 @@ function userToResponse(u: {
   };
 }
 
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-function messageToResponse(m: any) {
-  const user = m.user || {};
+interface MessageWithRelations {
+  id: string;
+  content: string;
+  userId: string;
+  roomId: string;
+  isEdited: boolean;
+  isDeleted: boolean;
+  createdAt: Date | string;
+  updatedAt: Date | string;
+  user?: {
+    id: string;
+    displayName: string;
+    displayNameGurmukhi: string | null;
+    avatarColor: string;
+  } | null;
+  replyTo?: {
+    id: string;
+    content: string;
+    user?: { displayName: string } | null;
+  } | null;
+}
+
+function messageToResponse(m: MessageWithRelations) {
+  const user = m.user || {} as { id?: string; displayName?: string; displayNameGurmukhi?: string | null; avatarColor?: string };
   let replyTo = null;
   if (m.replyTo) {
     replyTo = {
@@ -302,9 +344,35 @@ function messageToResponse(m: any) {
 export async function createOrGetUser(
   displayName: string,
   displayNameGurmukhi?: string,
-  avatarColor?: string
+  avatarColor?: string,
+  existingUserId?: string
 ) {
   const color = avatarColor || getRandomColor();
+
+  // RECOVERY PATH: If an existing userId is provided, reissue a session token
+  // for the same user instead of creating a duplicate.
+  if (existingUserId) {
+    const existing = await prisma.chatUser.findUnique({
+      where: { id: existingUserId },
+    });
+    if (existing) {
+      const { raw, hashed } = generateSessionToken();
+      sessionTokenCache.set(existing.id, hashed);
+      await prisma.chatUser.update({
+        where: { id: existing.id },
+        data: {
+          sessionTokenHash: hashed,
+          isOnline: true,
+          lastSeenAt: new Date(),
+        },
+      });
+      return {
+        ...userToResponse(existing),
+        sessionToken: raw,
+      };
+    }
+    // User not found — fall through to create new
+  }
 
   const user = await prisma.chatUser.create({
     data: {
@@ -316,9 +384,13 @@ export async function createOrGetUser(
     },
   });
 
-  // Generate session token
+  // Generate session token and persist hash to DB
   const { raw, hashed } = generateSessionToken();
-  sessionTokens.set(user.id, hashed);
+  sessionTokenCache.set(user.id, hashed);
+  await prisma.chatUser.update({
+    where: { id: user.id },
+    data: { sessionTokenHash: hashed },
+  });
 
   // Auto-join default rooms (parallel for speed)
   const defaultRooms = await prisma.chatRoom.findMany({
@@ -356,7 +428,11 @@ export async function updateUserPresence(userId: string, isOnline: boolean) {
   }
 }
 
-export async function getOnlineUsers(roomId: string) {
+/**
+ * Get all members of a room (online AND offline).
+ * Returns full member list; callers can filter by isOnline client-side.
+ */
+export async function getRoomMembers(roomId: string) {
   const members = await prisma.chatRoomMember.findMany({
     where: { roomId },
     include: { user: true },

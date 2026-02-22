@@ -7,7 +7,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { getRoomById, joinRoom, leaveRoom, getOnlineUsers, verifySessionToken } from '@/lib/api/chat-handlers';
+import { getRoomById, joinRoom, leaveRoom, getRoomMembers, verifySessionToken } from '@/lib/api/chat-handlers';
 import { logApiError } from '@/lib/error-tracking';
 
 export async function GET(
@@ -25,7 +25,7 @@ export async function GET(
       return NextResponse.json({ error: 'Room not found' }, { status: 404 });
     }
 
-    const members = await getOnlineUsers(roomId);
+    const members = await getRoomMembers(roomId);
     return NextResponse.json({ room, members });
   } catch (error) {
     logApiError('GET /api/community/rooms/[roomId]', error instanceof Error ? error : new Error(String(error)));
@@ -47,7 +47,7 @@ export async function POST(
 
     // Verify session token
     const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
-    if (!sessionToken || !verifySessionToken(userId, sessionToken)) {
+    if (!sessionToken || !(await verifySessionToken(userId, sessionToken))) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
@@ -76,6 +76,12 @@ export async function DELETE(
 
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
+    }
+
+    // Verify session token for leaving room
+    const sessionToken = request.headers.get('X-Session-Token') || searchParams.get('sessionToken');
+    if (!sessionToken || !(await verifySessionToken(userId, sessionToken))) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
 
     await leaveRoom(userId, params.roomId);

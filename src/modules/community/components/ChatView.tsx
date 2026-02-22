@@ -32,14 +32,12 @@ export function ChatView({ language }: ChatViewProps) {
     messages,
     members,
     isLoading,
-    isSending,
     error,
     hasMore,
     replyingTo,
     connectionStatus,
     unreadCounts,
     onlineCount,
-    typingUsers,
     registerUser,
     selectRoom,
     sendMessage,
@@ -50,7 +48,6 @@ export function ChatView({ language }: ChatViewProps) {
     setError,
     reconnect,
     markActive,
-    sendTypingIndicator,
   } = useChat();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -439,32 +436,14 @@ export function ChatView({ language }: ChatViewProps) {
           )}
         </div>
 
-        {/* Typing Indicator */}
-        {typingUsers.length > 0 && (
-          <div className="px-4 py-1.5 flex items-center gap-2">
-            <div className="flex gap-1">
-              <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-              <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-              <div className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-            </div>
-            <span className={cn(
-              'text-xs text-gray-400 italic',
-              isPunjabi && 'font-gurmukhi'
-            )}>
-              {isPunjabi ? 'ਕੋਈ ਲਿਖ ਰਿਹਾ ਹੈ...' : 'Someone is typing...'}
-            </span>
-          </div>
-        )}
-
         {/* Chat Input */}
         <ChatInput
           onSend={sendMessage}
-          isSending={isSending}
           replyingTo={replyingTo}
           onCancelReply={() => setReplyingTo(null)}
           language={language}
           disabled={!activeRoom}
-          onActivity={() => { markActive(); sendTypingIndicator(); }}
+          onActivity={() => { markActive(); }}
         />
       </div>
 

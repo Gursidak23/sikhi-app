@@ -22,6 +22,11 @@ export const createChatUserSchema = z.object({
     .string()
     .regex(/^#[0-9A-Fa-f]{6}$/, 'Invalid color format')
     .optional(),
+  // For session recovery: reissue token for existing user instead of creating duplicate
+  existingUserId: z
+    .string()
+    .min(1)
+    .optional(),
 });
 
 export const updatePresenceSchema = z.object({
