@@ -57,7 +57,7 @@ export async function POST(
     }
 
     // Verify session token
-    const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
+    const sessionToken = request.headers.get('X-Session-Token');
     if (!sessionToken || !(await verifySessionToken(userId, sessionToken))) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -90,7 +90,7 @@ export async function DELETE(
     }
 
     // Verify session token for leaving room
-    const sessionToken = request.headers.get('X-Session-Token') || searchParams.get('sessionToken');
+    const sessionToken = request.headers.get('X-Session-Token');
     if (!sessionToken || !(await verifySessionToken(userId, sessionToken))) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }

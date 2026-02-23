@@ -35,9 +35,10 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { action, userId, sessionToken, ...payload } = body;
+    const { action, userId, ...payload } = body;
 
-    // Verify session token
+    // Verify session token (header-only)
+    const sessionToken = request.headers.get('X-Session-Token');
     if (!userId || !sessionToken) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }

@@ -501,7 +501,9 @@ export function useChat() {
             pollUrl += `&typingName=${encodeURIComponent(user.displayName)}`;
           }
         }
-        const res = await fetch(pollUrl);
+        const pollHeaders: Record<string, string> = {};
+        if (user?.sessionToken) pollHeaders['X-Session-Token'] = user.sessionToken;
+        const res = await fetch(pollUrl, { headers: pollHeaders });
 
         if (!res.ok) {
           failedPollsRef.current++;
@@ -847,7 +849,9 @@ export function useChat() {
   const fetchSavedMessages = useCallback(async () => {
     if (!user) return [];
     try {
-      const res = await fetch(`/api/community/messages/save?userId=${user.id}`);
+      const headers: Record<string, string> = {};
+      if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
+      const res = await fetch(`/api/community/messages/save?userId=${user.id}`, { headers });
       if (res.ok) {
         const data = await res.json();
         setSavedMessages(data.saved);

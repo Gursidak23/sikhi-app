@@ -20,7 +20,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
+    const sessionToken = request.headers.get('X-Session-Token');
 
     const parsed = toggleReactionSchema.safeParse(body);
     if (!parsed.success) {

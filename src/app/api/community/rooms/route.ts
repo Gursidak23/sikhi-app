@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Require auth for room creation
-    const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
+    const sessionToken = request.headers.get('X-Session-Token');
     const userId = body.userId;
     if (!sessionToken || !userId || !(await verifySessionToken(userId, sessionToken))) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });

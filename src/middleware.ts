@@ -55,15 +55,15 @@ function addSecurityHeaders(response: NextResponse) {
   if (process.env.NODE_ENV === 'production') {
     response.headers.set('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
   }
-  // Content Security Policy
+  // Content Security Policy — no unsafe-eval
   response.headers.set(
     'Content-Security-Policy',
     [
       "default-src 'self'",
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval'",
-      "style-src 'self' 'unsafe-inline'",
+      "script-src 'self' 'unsafe-inline'",
+      "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
       "img-src 'self' data: blob: https:",
-      "font-src 'self' data:",
+      "font-src 'self' data: https://fonts.gstatic.com",
       "connect-src 'self' https://api.banidb.com",
       "frame-ancestors 'self'",
       "base-uri 'self'",
@@ -81,6 +81,19 @@ export function middleware(request: NextRequest) {
   if (request.method === 'OPTIONS' && pathname.startsWith('/api/')) {
     const preflight = new NextResponse(null, { status: 204 });
     return addCorsHeaders(preflight, origin);
+  }
+
+  // CSRF protection: verify Origin header on all mutating API requests
+  if (
+    pathname.startsWith('/api/') &&
+    ['POST', 'PUT', 'PATCH', 'DELETE'].includes(request.method)
+  ) {
+    if (origin && !isOriginAllowed(origin)) {
+      return NextResponse.json(
+        { error: 'Forbidden: invalid origin' },
+        { status: 403 }
+      );
+    }
   }
 
   const response = NextResponse.next();
