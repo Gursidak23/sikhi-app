@@ -129,9 +129,30 @@ function hashToken(raw: string): string {
   return createHash('sha256').update(raw).digest('hex');
 }
 
-// In-memory session cache: userId -> hashed token.
-// Acts as a fast-path cache; DB is the source of truth.
-const sessionTokenCache = new Map<string, string>();
+// In-memory session cache: userId -> { hash, timestamp }.
+// Bounded to prevent unbounded memory growth. TTL = 30 min.
+const SESSION_CACHE_MAX = 500;
+const SESSION_CACHE_TTL_MS = 30 * 60 * 1000;
+const sessionTokenCache = new Map<string, { hash: string; ts: number }>();
+
+function sessionCacheSet(userId: string, hash: string) {
+  // Evict oldest entry if at capacity
+  if (sessionTokenCache.size >= SESSION_CACHE_MAX) {
+    const firstKey = sessionTokenCache.keys().next().value;
+    if (firstKey) sessionTokenCache.delete(firstKey);
+  }
+  sessionTokenCache.set(userId, { hash, ts: Date.now() });
+}
+
+function sessionCacheGet(userId: string): string | null {
+  const entry = sessionTokenCache.get(userId);
+  if (!entry) return null;
+  if (Date.now() - entry.ts > SESSION_CACHE_TTL_MS) {
+    sessionTokenCache.delete(userId);
+    return null;
+  }
+  return entry.hash;
+}
 
 /**
  * Verify that a raw session token matches the stored hash for a userId.
@@ -141,7 +162,7 @@ export async function verifySessionToken(userId: string, rawToken: string): Prom
   const hashed = hashToken(rawToken);
 
   // Fast path: check in-memory cache
-  const cached = sessionTokenCache.get(userId);
+  const cached = sessionCacheGet(userId);
   if (cached) {
     return cached === hashed;
   }
@@ -154,7 +175,7 @@ export async function verifySessionToken(userId: string, rawToken: string): Prom
     });
     if (user?.sessionTokenHash) {
       // Populate cache for next time
-      sessionTokenCache.set(userId, user.sessionTokenHash);
+      sessionCacheSet(userId, user.sessionTokenHash);
       return user.sessionTokenHash === hashed;
     }
   } catch {
@@ -202,6 +223,51 @@ function sanitizeContent(input: string): string {
   text = text.replace(/[\x00-\x08\x0B\x0C\x0E-\x1F\x7F]/g, '');
 
   return text.trim();
+}
+
+/**
+ * Basic content moderation filter.
+ * Returns { safe: true } if the message is acceptable,
+ * or { safe: false, reason: string } if it should be rejected.
+ * This is a lightweight first-pass — not a substitute for human moderation.
+ */
+function moderateContent(text: string): { safe: boolean; reason?: string } {
+  const lower = text.toLowerCase();
+
+  // Block common profanity / slurs (partial list; expand as needed)
+  const blockedPatterns = [
+    /\bf+u+c+k+/i,
+    /\bs+h+i+t+(?!kar)/i, // "shitkar" could be Gurmukhi transliteration edge case
+    /\bb+i+t+c+h+/i,
+    /\ba+s+s+h+o+l+e/i,
+    /\bn+i+g+g+/i,
+    /\bf+a+g+(?:g+o+t+)?/i,
+    /\bc+u+n+t+/i,
+    /\bretard/i,
+    /\bkill\s+(your|my|him|her|them)self/i,
+  ];
+
+  for (const pattern of blockedPatterns) {
+    if (pattern.test(lower)) {
+      return { safe: false, reason: 'Message contains inappropriate language' };
+    }
+  }
+
+  // Block excessive caps (spam indicator) — more than 70% caps in messages > 10 chars
+  if (text.length > 10) {
+    const capsCount = (text.match(/[A-Z]/g) || []).length;
+    const letterCount = (text.match(/[a-zA-Z]/g) || []).length;
+    if (letterCount > 0 && capsCount / letterCount > 0.7) {
+      return { safe: false, reason: 'Please avoid excessive use of capital letters' };
+    }
+  }
+
+  // Block spam-like repetition (same char repeated 10+ times)
+  if (/(.)\1{9,}/i.test(text)) {
+    return { safe: false, reason: 'Message contains repetitive content' };
+  }
+
+  return { safe: true };
 }
 
 // ============================================================================
@@ -284,6 +350,23 @@ export async function ensureDefaultRooms() {
 // ============================================================================
 // Response Builders
 // ============================================================================
+
+/**
+ * Reusable Prisma select for ChatUser to avoid leaking sessionTokenHash
+ * and other sensitive fields. Use as `include: { user: { select: SAFE_USER_SELECT } }`.
+ */
+const SAFE_USER_SELECT = {
+  id: true,
+  displayName: true,
+  displayNameGurmukhi: true,
+  email: true,
+  bio: true,
+  role: true,
+  avatarColor: true,
+  isOnline: true,
+  isBanned: true,
+  lastSeenAt: true,
+} as const;
 
 function userToResponse(u: {
   id: string;
@@ -473,7 +556,7 @@ export async function createOrGetUser(
       }
 
       const { raw, hashed } = generateSessionToken();
-      sessionTokenCache.set(existing.id, hashed);
+      sessionCacheSet(existing.id, hashed);
       await prisma.chatUser.update({
         where: { id: existing.id },
         data: {
@@ -504,7 +587,7 @@ export async function createOrGetUser(
 
   // Generate session token and persist hash to DB
   const { raw, hashed } = generateSessionToken();
-  sessionTokenCache.set(user.id, hashed);
+  sessionCacheSet(user.id, hashed);
   await prisma.chatUser.update({
     where: { id: user.id },
     data: { sessionTokenHash: hashed },
@@ -558,7 +641,7 @@ export async function getRoomMembers(roomId: string) {
 
   const members = await prisma.chatRoomMember.findMany({
     where: { roomId },
-    include: { user: true },
+    include: { user: { select: SAFE_USER_SELECT } },
   });
 
   const result = members.map((m) => userToResponse(m.user));
@@ -747,6 +830,12 @@ export async function sendMessage(data: {
     throw new Error('Message cannot be empty after sanitization');
   }
 
+  // Content moderation check
+  const moderation = moderateContent(sanitizedContent);
+  if (!moderation.safe) {
+    throw new Error(moderation.reason || 'Message rejected by content filter');
+  }
+
   const expiresAt = new Date(Date.now() + MESSAGE_LIFETIME_HOURS * 60 * 60 * 1000);
 
   const message = await prisma.chatMessage.create({
@@ -758,8 +847,8 @@ export async function sendMessage(data: {
       expiresAt,
     },
     include: {
-      user: true,
-      replyTo: { include: { user: true } },
+      user: { select: SAFE_USER_SELECT },
+      replyTo: { include: { user: { select: SAFE_USER_SELECT } } },
       savedBy: { select: { id: true } },
       reactions: { select: { emoji: true, userId: true } },
     },
@@ -809,8 +898,8 @@ export async function getMessages(roomId: string, cursor?: string, limit = 50) {
         orderBy: { createdAt: 'desc' },
         take: safeLimit,
         include: {
-          user: true,
-          replyTo: { include: { user: true } },
+          user: { select: SAFE_USER_SELECT },
+          replyTo: { include: { user: { select: SAFE_USER_SELECT } } },
           savedBy: { select: { id: true } },
           reactions: { select: { emoji: true, userId: true } },
         },
@@ -838,8 +927,8 @@ export async function getMessages(roomId: string, cursor?: string, limit = 50) {
     orderBy: { createdAt: 'desc' },
     take: safeLimit,
     include: {
-      user: true,
-      replyTo: { include: { user: true } },
+      user: { select: SAFE_USER_SELECT },
+      replyTo: { include: { user: { select: SAFE_USER_SELECT } } },
       savedBy: { select: { id: true } },
       reactions: { select: { emoji: true, userId: true } },
     },
@@ -874,8 +963,8 @@ export async function pollNewMessages(roomId: string, since: Date) {
     orderBy: { createdAt: 'asc' },
     take: 100,
     include: {
-      user: true,
-      replyTo: { include: { user: true } },
+      user: { select: SAFE_USER_SELECT },
+      replyTo: { include: { user: { select: SAFE_USER_SELECT } } },
       savedBy: { select: { id: true } },
       reactions: { select: { emoji: true, userId: true } },
     },
@@ -897,8 +986,8 @@ export async function deleteMessage(messageId: string, userId: string) {
       content: '[Message deleted]',
     },
     include: {
-      user: true,
-      replyTo: { include: { user: true } },
+      user: { select: SAFE_USER_SELECT },
+      replyTo: { include: { user: { select: SAFE_USER_SELECT } } },
       savedBy: { select: { id: true } },
       reactions: { select: { emoji: true, userId: true } },
     },
@@ -993,7 +1082,7 @@ export async function getSavedMessages(userId: string) {
     include: {
       message: {
         include: {
-          user: true,
+          user: { select: SAFE_USER_SELECT },
           room: { select: { id: true, name: true, nameGurmukhi: true, icon: true } },
         },
       },
@@ -1084,6 +1173,12 @@ export async function editMessage(messageId: string, userId: string, newContent:
   const sanitized = sanitizeContent(newContent);
   if (!sanitized) throw new Error('Message cannot be empty after sanitization');
 
+  // Content moderation check
+  const moderation = moderateContent(sanitized);
+  if (!moderation.safe) {
+    throw new Error(moderation.reason || 'Message rejected by content filter');
+  }
+
   const updated = await prisma.chatMessage.update({
     where: { id: messageId },
     data: {
@@ -1092,8 +1187,8 @@ export async function editMessage(messageId: string, userId: string, newContent:
       editedAt: new Date(),
     },
     include: {
-      user: true,
-      replyTo: { include: { user: true } },
+      user: { select: SAFE_USER_SELECT },
+      replyTo: { include: { user: { select: SAFE_USER_SELECT } } },
       savedBy: { select: { id: true } },
       reactions: { select: { emoji: true, userId: true } },
     },
@@ -1300,8 +1395,8 @@ export async function getPinnedMessages(roomId: string) {
     orderBy: { createdAt: 'desc' },
     take: 50,
     include: {
-      user: true,
-      replyTo: { include: { user: true } },
+      user: { select: SAFE_USER_SELECT },
+      replyTo: { include: { user: { select: SAFE_USER_SELECT } } },
       savedBy: { select: { id: true } },
       reactions: { select: { emoji: true, userId: true } },
     },
@@ -1329,8 +1424,8 @@ export async function searchMessages(roomId: string, query: string, limit = 20) 
     orderBy: { createdAt: 'desc' },
     take: safeLimit,
     include: {
-      user: true,
-      replyTo: { include: { user: true } },
+      user: { select: SAFE_USER_SELECT },
+      replyTo: { include: { user: { select: SAFE_USER_SELECT } } },
       savedBy: { select: { id: true } },
       reactions: { select: { emoji: true, userId: true } },
     },

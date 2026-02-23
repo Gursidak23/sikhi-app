@@ -24,6 +24,12 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
     }
 
+    // Verify session token
+    const sessionToken = request.headers.get('X-Session-Token');
+    if (!sessionToken || !(await verifySessionToken(userId, sessionToken))) {
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
     const saved = await getSavedMessages(userId);
     return NextResponse.json({ saved });
   } catch (error) {

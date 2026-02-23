@@ -64,7 +64,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Verify session token
-    const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
+    const sessionToken = request.headers.get('X-Session-Token');
     if (!sessionToken || !(await verifySessionToken(parsed.data.userId, sessionToken))) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -94,7 +94,7 @@ export async function DELETE(request: NextRequest) {
     }
 
     // Verify session token
-    const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
+    const sessionToken = request.headers.get('X-Session-Token');
     if (!sessionToken || !(await verifySessionToken(parsed.data.userId, sessionToken))) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }
@@ -133,7 +133,7 @@ export async function PATCH(request: NextRequest) {
     }
 
     // Verify session token
-    const sessionToken = request.headers.get('X-Session-Token') || body.sessionToken;
+    const sessionToken = request.headers.get('X-Session-Token');
     if (!sessionToken || !(await verifySessionToken(parsed.data.userId, sessionToken))) {
       return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
     }

@@ -5,7 +5,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
-import { pollNewMessages, getRoomMembers, getTypingUsers, setTyping, clearTyping } from '@/lib/api/chat-handlers';
+import { pollNewMessages, getRoomMembers, getTypingUsers, setTyping, clearTyping, verifySessionToken } from '@/lib/api/chat-handlers';
 import { rateLimit, getClientIdentifier } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
 
@@ -58,13 +58,18 @@ export async function GET(request: NextRequest) {
     const userId = searchParams.get('userId') || undefined;
     const typing = getTypingUsers(roomId, userId);
 
-    // If client is sending typing status, set/clear it
+    // If client is sending typing status, set/clear it (requires auth)
     const typingStatus = searchParams.get('typing');
     const typingName = searchParams.get('typingName');
-    if (userId && typingStatus === '1' && typingName) {
-      setTyping(roomId, userId, typingName);
-    } else if (userId && typingStatus === '0') {
-      clearTyping(roomId, userId);
+    if (userId && typingStatus !== null) {
+      const sessionToken = request.headers.get('X-Session-Token');
+      if (sessionToken && (await verifySessionToken(userId, sessionToken))) {
+        if (typingStatus === '1' && typingName) {
+          setTyping(roomId, userId, typingName);
+        } else if (typingStatus === '0') {
+          clearTyping(roomId, userId);
+        }
+      }
     }
 
     return NextResponse.json({

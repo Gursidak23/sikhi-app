@@ -7,6 +7,7 @@ import { BookmarkProvider } from '@/components/common/BookmarkSystem';
 import { FontSizeProvider } from '@/components/common/FontSizeControls';
 import { ServiceWorkerRegistrar } from '@/components/common/ServiceWorkerRegistrar';
 import { AmritVelaProvider } from '@/components/common/AmritVelaMode';
+import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -71,11 +72,20 @@ export const metadata: Metadata = {
     locale: 'pa_IN',
     alternateLocale: ['en_US', 'hi_IN'],
     siteName: 'Sikhi Vidhya',
+    images: [
+      {
+        url: '/icons/icon-512x512.svg',
+        width: 512,
+        height: 512,
+        alt: 'Sikhi Vidhya — ੴ Ik Onkar',
+      },
+    ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'ਸਿੱਖੀ ਵਿੱਦਿਆ | Sikhi Vidhya',
     description: 'Learn Sikhi through primary sources - Sri Guru Granth Sahib Ji and documented history',
+    images: ['/icons/icon-512x512.svg'],
   },
   robots: {
     index: true,
@@ -105,17 +115,19 @@ export default function RootLayout({
         <link rel="icon" href="/favicon.svg" sizes="any" />
       </head>
       <body className="min-h-screen bg-neutral-50 antialiased font-sans transition-colors">
-        <ThemeProvider>
-          <AmritVelaProvider>
-            <BookmarkProvider>
-              <FontSizeProvider>
-                <SkipLink />
-                <ServiceWorkerRegistrar />
-                {children}
-              </FontSizeProvider>
-            </BookmarkProvider>
-          </AmritVelaProvider>
-        </ThemeProvider>
+        <ErrorBoundary>
+          <ThemeProvider>
+            <AmritVelaProvider>
+              <BookmarkProvider>
+                <FontSizeProvider>
+                  <SkipLink />
+                  <ServiceWorkerRegistrar />
+                  {children}
+                </FontSizeProvider>
+              </BookmarkProvider>
+            </AmritVelaProvider>
+          </ThemeProvider>
+        </ErrorBoundary>
       </body>
     </html>
   );
