@@ -11,7 +11,15 @@ import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 
 // Nanakshahi months
-const NANAKSHAHI_MONTHS = [
+interface NanakshahiMonth {
+  pa: string;
+  en: string;
+  hi?: string;
+  days: number;
+  gregorianStart: { month: number; day: number };
+}
+
+const NANAKSHAHI_MONTHS: NanakshahiMonth[] = [
   { pa: 'ਚੇਤ', en: 'Chet', days: 31, gregorianStart: { month: 2, day: 14 } }, // March 14
   { pa: 'ਵੈਸਾਖ', en: 'Vaisakh', days: 31, gregorianStart: { month: 3, day: 14 } }, // April 14
   { pa: 'ਜੇਠ', en: 'Jeth', days: 31, gregorianStart: { month: 4, day: 15 } }, // May 15
@@ -29,8 +37,8 @@ const NANAKSHAHI_MONTHS = [
 // Important Sikh dates (fixed in Nanakshahi calendar)
 interface SikhEvent {
   type: 'gurpurab' | 'shaheedi' | 'historical';
-  name: { pa: string; en: string };
-  description?: { pa: string; en: string };
+  name: { pa: string; en: string; hi?: string };
+  description?: { pa: string; en: string; hi?: string };
   nanakshahiMonth: number; // 0-indexed
   nanakshahiDay: number;
   icon: string;
@@ -192,6 +200,8 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
   const monthEvents = useMemo(() => getEventsForMonth(selectedMonth), [selectedMonth]);
   
   const currentMonth = NANAKSHAHI_MONTHS[selectedMonth];
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   
   // Generate days grid for the month
   const daysInMonth = currentMonth.days;
@@ -234,8 +244,10 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
     return monthEvents.find(event => event.nanakshahiDay === day);
   };
   
-  const weekDays = language === 'pa' 
+  const weekDays = isPunjabi 
     ? ['ਐਤ', 'ਸੋਮ', 'ਮੰਗਲ', 'ਬੁੱਧ', 'ਵੀਰ', 'ਸ਼ੁੱਕਰ', 'ਸ਼ਨੀ']
+    : isHindi
+    ? ['रवि', 'सोम', 'मंगल', 'बुध', 'वीर', 'शुक्र', 'शनि']
     : ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
   
   return (
@@ -258,16 +270,16 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
         <div className="flex items-start justify-between mb-4 pr-10">
           <div className="flex-1">
             <h2 className="text-xl sm:text-2xl font-gurmukhi font-bold">
-              {language === 'pa' ? 'ਨਾਨਕਸ਼ਾਹੀ ਕੈਲੰਡਰ' : 'Nanakshahi Calendar'}
+              {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ ਕੈਲੰਡਰ' : isHindi ? 'नानकशाही कैलेंडर' : 'Nanakshahi Calendar'}
             </h2>
             <p className="text-amber-100 text-xs sm:text-sm mt-1">
-              {language === 'pa' ? 'ਸਿੱਖ ਕੈਲੰਡਰ' : 'Sikh Calendar'}
+              {isPunjabi ? 'ਸਿੱਖ ਕੈਲੰਡਰ' : isHindi ? 'सिख कैलेंडर' : 'Sikh Calendar'}
             </p>
           </div>
           <div className="text-right">
             <p className="text-3xl sm:text-4xl font-bold">{nanakshahiDate.year}</p>
             <p className="text-xs sm:text-sm text-amber-100">
-              {language === 'pa' ? 'ਨਾਨਕਸ਼ਾਹੀ' : 'Nanakshahi'}
+              {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ' : isHindi ? 'नानकशाही' : 'Nanakshahi'}
             </p>
           </div>
         </div>
@@ -275,11 +287,12 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
         {/* Today's Date */}
         <div className="bg-white/20 backdrop-blur rounded-xl p-3 sm:p-4">
           <p className="text-xs sm:text-sm text-amber-100">
-            {language === 'pa' ? 'ਅੱਜ ਦੀ ਤਾਰੀਖ' : "Today's Date"}
+            {isPunjabi ? 'ਅੱਜ ਦੀ ਤਾਰੀਖ' : isHindi ? 'आज की तारीख' : "Today's Date"}
           </p>
           <p className="text-lg sm:text-xl font-gurmukhi font-semibold">
-            {nanakshahiDate.day} {language === 'pa' 
+            {nanakshahiDate.day} {isPunjabi 
               ? NANAKSHAHI_MONTHS[nanakshahiDate.month].pa 
+              : isHindi ? (NANAKSHAHI_MONTHS[nanakshahiDate.month].hi || NANAKSHAHI_MONTHS[nanakshahiDate.month].pa)
               : NANAKSHAHI_MONTHS[nanakshahiDate.month].en
             }, {nanakshahiDate.year}
           </p>
@@ -301,10 +314,10 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
           
           <div className="text-center">
             <h3 className="text-lg sm:text-xl font-gurmukhi font-bold text-amber-900 dark:text-amber-200">
-              {language === 'pa' ? currentMonth.pa : currentMonth.en}
+              {isPunjabi ? currentMonth.pa : isHindi ? (currentMonth.hi || currentMonth.pa) : currentMonth.en}
             </h3>
             <p className="text-[10px] sm:text-xs text-amber-700 dark:text-amber-400">
-              {currentMonth.days} {language === 'pa' ? 'ਦਿਨ' : 'days'}
+              {currentMonth.days} {isPunjabi ? 'ਦਿਨ' : isHindi ? 'दिन' : 'days'}
             </p>
           </div>
           
@@ -349,7 +362,7 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
                       isToday && 'bg-amber-500 text-white font-bold shadow-md',
                       event && !isToday && 'bg-amber-200 dark:bg-amber-900/40 font-semibold text-amber-900 dark:text-amber-200'
                     )}
-                    title={event ? (language === 'pa' ? event.name.pa : event.name.en) : undefined}
+                    title={event ? (isPunjabi ? event.name.pa : isHindi ? (event.name.hi || event.name.pa) : event.name.en) : undefined}
                   >
                     {day}
                     {event && (
@@ -367,7 +380,7 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
       <div className="p-2.5 sm:p-3 border-t border-neutral-200 dark:border-neutral-700">
         <h4 className="text-[10px] sm:text-xs font-semibold text-neutral-600 dark:text-neutral-400 mb-2 flex items-center gap-1.5 uppercase tracking-wider">
           <span>📅</span>
-          {language === 'pa' ? 'ਇਸ ਮਹੀਨੇ ਦੇ ਦਿਹਾੜੇ' : 'Events This Month'}
+          {isPunjabi ? 'ਇਸ ਮਹੀਨੇ ਦੇ ਦਿਹਾੜੇ' : isHindi ? 'इस महीने के दिहाड़े' : 'Events This Month'}
         </h4>
         
         {monthEvents.length > 0 ? (
@@ -386,15 +399,15 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
                 <div className="flex-1 min-w-0">
                   <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-0.5 sm:gap-2">
                     <p className="font-semibold text-xs sm:text-sm text-neutral-900 dark:text-neutral-100">
-                      {language === 'pa' ? event.name.pa : event.name.en}
+                      {isPunjabi ? event.name.pa : isHindi ? (event.name.hi || event.name.pa) : event.name.en}
                     </p>
                     <span className="text-[10px] sm:text-xs bg-white dark:bg-neutral-700 px-2 py-0.5 sm:py-1 rounded-full text-neutral-600 dark:text-neutral-300 whitespace-nowrap w-fit">
-                      {event.nanakshahiDay} {language === 'pa' ? currentMonth.pa : currentMonth.en}
+                      {event.nanakshahiDay} {isPunjabi ? currentMonth.pa : isHindi ? (currentMonth.hi || currentMonth.pa) : currentMonth.en}
                     </span>
                   </div>
                   {event.description && (
                     <p className="text-xs sm:text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                      {language === 'pa' ? event.description.pa : event.description.en}
+                      {isPunjabi ? event.description.pa : isHindi ? (event.description.hi || event.description.pa) : event.description.en}
                     </p>
                   )}
                 </div>
@@ -403,8 +416,9 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
           </div>
         ) : (
           <p className="text-center text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 py-4 bg-neutral-50 dark:bg-neutral-800 rounded-xl">
-            {language === 'pa' 
+            {isPunjabi 
               ? 'ਇਸ ਮਹੀਨੇ ਕੋਈ ਦਿਹਾੜਾ ਨਹੀਂ' 
+              : isHindi ? 'इस महीने कोई दिहाड़ा नहीं'
               : 'No events this month'
             }
           </p>
@@ -417,25 +431,25 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
           <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="w-2 h-2 sm:w-3 sm:h-3 bg-amber-400 rounded-full"></span>
             <span className="text-neutral-600 dark:text-neutral-400">
-              {language === 'pa' ? 'ਗੁਰਪੁਰਬ' : 'Gurpurab'}
+              {isPunjabi ? 'ਗੁਰਪੁਰਬ' : isHindi ? 'गुरपुरब' : 'Gurpurab'}
             </span>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="w-2 h-2 sm:w-3 sm:h-3 bg-red-500 rounded-full"></span>
             <span className="text-neutral-600 dark:text-neutral-400">
-              {language === 'pa' ? 'ਸ਼ਹੀਦੀ ਦਿਵਸ' : 'Shaheedi'}
+              {isPunjabi ? 'ਸ਼ਹੀਦੀ ਦਿਵਸ' : isHindi ? 'शहीदी दिवस' : 'Shaheedi'}
             </span>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="w-2 h-2 sm:w-3 sm:h-3 bg-blue-500 rounded-full"></span>
             <span className="text-neutral-600 dark:text-neutral-400">
-              {language === 'pa' ? 'ਇਤਿਹਾਸਕ' : 'Historical'}
+              {isPunjabi ? 'ਇਤਿਹਾਸਕ' : isHindi ? 'ऐतिहासिक' : 'Historical'}
             </span>
           </div>
           <div className="flex items-center gap-1.5 sm:gap-2">
             <span className="w-2 h-2 sm:w-3 sm:h-3 bg-amber-500 rounded-full"></span>
             <span className="text-neutral-600 dark:text-neutral-400">
-              {language === 'pa' ? 'ਅੱਜ' : 'Today'}
+              {isPunjabi ? 'ਅੱਜ' : isHindi ? 'आज' : 'Today'}
             </span>
           </div>
         </div>
@@ -455,6 +469,8 @@ export function NanakshahiCalendar({ language }: { language: Language }) {
   const monthEvents = useMemo(() => getEventsForMonth(selectedMonth), [selectedMonth]);
   
   const currentMonth = NANAKSHAHI_MONTHS[selectedMonth];
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   
   return (
     <div className="bg-white dark:bg-neutral-900 rounded-xl shadow-lg overflow-hidden">
@@ -462,12 +478,12 @@ export function NanakshahiCalendar({ language }: { language: Language }) {
       <div className="bg-gradient-to-r from-kesri-600 to-kesri-700 text-white p-4">
         <div className="flex items-center justify-between">
           <h2 className="text-xl font-gurmukhi">
-            {language === 'pa' ? 'ਨਾਨਕਸ਼ਾਹੀ ਕੈਲੰਡਰ' : 'Nanakshahi Calendar'}
+            {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ ਕੈਲੰਡਰ' : isHindi ? 'नानकशाही कैलेंडर' : 'Nanakshahi Calendar'}
           </h2>
           <div className="text-right">
             <p className="text-2xl font-bold">{nanakshahiDate.year}</p>
             <p className="text-sm opacity-90">
-              {language === 'pa' ? 'ਨਾਨਕਸ਼ਾਹੀ' : 'Nanakshahi'}
+              {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ' : isHindi ? 'नानकशाही' : 'Nanakshahi'}
             </p>
           </div>
         </div>
@@ -475,11 +491,12 @@ export function NanakshahiCalendar({ language }: { language: Language }) {
         {/* Today's Date */}
         <div className="mt-4 p-3 bg-white/10 rounded-lg">
           <p className="text-sm opacity-90">
-            {language === 'pa' ? 'ਅੱਜ ਦੀ ਤਾਰੀਖ' : "Today's Date"}
+            {isPunjabi ? 'ਅੱਜ ਦੀ ਤਾਰੀਖ' : isHindi ? 'आज की तारीख' : "Today's Date"}
           </p>
           <p className="text-lg font-gurmukhi">
-            {nanakshahiDate.day} {language === 'pa' 
+            {nanakshahiDate.day} {isPunjabi 
               ? NANAKSHAHI_MONTHS[nanakshahiDate.month].pa 
+              : isHindi ? (NANAKSHAHI_MONTHS[nanakshahiDate.month].hi || NANAKSHAHI_MONTHS[nanakshahiDate.month].pa)
               : NANAKSHAHI_MONTHS[nanakshahiDate.month].en
             }, {nanakshahiDate.year}
           </p>
@@ -501,10 +518,10 @@ export function NanakshahiCalendar({ language }: { language: Language }) {
           
           <div className="text-center">
             <h3 className="text-xl font-gurmukhi text-neutral-900 dark:text-neutral-100">
-              {language === 'pa' ? currentMonth.pa : currentMonth.en}
+              {isPunjabi ? currentMonth.pa : isHindi ? (currentMonth.hi || currentMonth.pa) : currentMonth.en}
             </h3>
             <p className="text-sm text-neutral-600 dark:text-neutral-400">
-              {currentMonth.days} {language === 'pa' ? 'ਦਿਨ' : 'days'}
+              {currentMonth.days} {isPunjabi ? 'ਦਿਨ' : isHindi ? 'दिन' : 'days'}
             </p>
           </div>
           
@@ -523,7 +540,7 @@ export function NanakshahiCalendar({ language }: { language: Language }) {
       {/* Month Events */}
       <div className="p-4">
         <h4 className="text-sm font-semibold text-neutral-600 dark:text-neutral-400 mb-3">
-          {language === 'pa' ? 'ਇਸ ਮਹੀਨੇ ਦੇ ਦਿਹਾੜੇ' : 'Events This Month'}
+          {isPunjabi ? 'ਇਸ ਮਹੀਨੇ ਦੇ ਦਿਹਾੜੇ' : isHindi ? 'इस महीने के दिहाड़े' : 'Events This Month'}
         </h4>
         
         {monthEvents.length > 0 ? (
@@ -542,15 +559,15 @@ export function NanakshahiCalendar({ language }: { language: Language }) {
                   <span className="text-2xl">{event.icon}</span>
                   <div>
                     <p className="font-semibold text-neutral-900 dark:text-neutral-100">
-                      {language === 'pa' ? event.name.pa : event.name.en}
+                      {isPunjabi ? event.name.pa : isHindi ? (event.name.hi || event.name.pa) : event.name.en}
                     </p>
                     {event.description && (
                       <p className="text-sm text-neutral-600 dark:text-neutral-400 mt-1">
-                        {language === 'pa' ? event.description.pa : event.description.en}
+                        {isPunjabi ? event.description.pa : isHindi ? (event.description.hi || event.description.pa) : event.description.en}
                       </p>
                     )}
                     <p className="text-xs text-neutral-500 dark:text-neutral-500 mt-2 font-gurmukhi">
-                      {event.nanakshahiDay} {language === 'pa' ? currentMonth.pa : currentMonth.en}
+                      {event.nanakshahiDay} {isPunjabi ? currentMonth.pa : isHindi ? (currentMonth.hi || currentMonth.pa) : currentMonth.en}
                     </p>
                   </div>
                 </div>
@@ -559,8 +576,9 @@ export function NanakshahiCalendar({ language }: { language: Language }) {
           </div>
         ) : (
           <p className="text-center text-neutral-500 dark:text-neutral-400 py-6">
-            {language === 'pa' 
+            {isPunjabi 
               ? 'ਇਸ ਮਹੀਨੇ ਕੋਈ ਦਿਹਾੜਾ ਨਹੀਂ' 
+              : isHindi ? 'इस महीने कोई दिहाड़ा नहीं'
               : 'No events this month'
             }
           </p>
@@ -573,19 +591,19 @@ export function NanakshahiCalendar({ language }: { language: Language }) {
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 bg-amber-500 rounded-full"></span>
             <span className="text-neutral-600 dark:text-neutral-400">
-              {language === 'pa' ? 'ਗੁਰਪੁਰਬ' : 'Gurpurab'}
+              {isPunjabi ? 'ਗੁਰਪੁਰਬ' : isHindi ? 'गुरपुरब' : 'Gurpurab'}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 bg-red-500 rounded-full"></span>
             <span className="text-neutral-600 dark:text-neutral-400">
-              {language === 'pa' ? 'ਸ਼ਹੀਦੀ ਦਿਵਸ' : 'Shaheedi Divas'}
+              {isPunjabi ? 'ਸ਼ਹੀਦੀ ਦਿਵਸ' : isHindi ? 'शहीदी दिवस' : 'Shaheedi Divas'}
             </span>
           </div>
           <div className="flex items-center gap-2">
             <span className="w-3 h-3 bg-blue-500 rounded-full"></span>
             <span className="text-neutral-600 dark:text-neutral-400">
-              {language === 'pa' ? 'ਇਤਿਹਾਸਕ' : 'Historical'}
+              {isPunjabi ? 'ਇਤਿਹਾਸਕ' : isHindi ? 'ऐतिहासिक' : 'Historical'}
             </span>
           </div>
         </div>
@@ -598,6 +616,8 @@ export function NanakshahiCalendar({ language }: { language: Language }) {
 export function NanakshahiCalendarMini({ language }: { language: Language }) {
   const today = new Date();
   const nanakshahiDate = useMemo(() => gregorianToNanakshahi(today), []);
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   
   // Find upcoming events
   const upcomingEvents = useMemo(() => {
@@ -637,11 +657,12 @@ export function NanakshahiCalendarMini({ language }: { language: Language }) {
         <div className="flex items-center justify-between">
           <div>
             <p className="text-xs opacity-90">
-              {language === 'pa' ? 'ਅੱਜ' : 'Today'}
+              {isPunjabi ? 'ਅੱਜ' : isHindi ? 'आज' : 'Today'}
             </p>
             <p className="text-lg font-gurmukhi">
-              {nanakshahiDate.day} {language === 'pa' 
+              {nanakshahiDate.day} {isPunjabi 
                 ? NANAKSHAHI_MONTHS[nanakshahiDate.month].pa 
+                : isHindi ? (NANAKSHAHI_MONTHS[nanakshahiDate.month].hi || NANAKSHAHI_MONTHS[nanakshahiDate.month].pa)
                 : NANAKSHAHI_MONTHS[nanakshahiDate.month].en
               }
             </p>
@@ -656,7 +677,7 @@ export function NanakshahiCalendarMini({ language }: { language: Language }) {
       {upcomingEvents.length > 0 && (
         <div className="p-3">
           <p className="text-xs font-semibold text-neutral-500 dark:text-neutral-400 mb-2">
-            {language === 'pa' ? 'ਆਉਣ ਵਾਲੇ ਦਿਹਾੜੇ' : 'Upcoming'}
+            {isPunjabi ? 'ਆਉਣ ਵਾਲੇ ਦਿਹਾੜੇ' : isHindi ? 'आने वाले दिहाड़े' : 'Upcoming'}
           </p>
           <div className="space-y-2">
             {upcomingEvents.map((event, index) => (
@@ -664,15 +685,15 @@ export function NanakshahiCalendarMini({ language }: { language: Language }) {
                 <span>{event.icon}</span>
                 <div className="flex-1 min-w-0">
                   <p className="truncate text-neutral-800 dark:text-neutral-200">
-                    {language === 'pa' ? event.name.pa : event.name.en}
+                    {isPunjabi ? event.name.pa : isHindi ? (event.name.hi || event.name.pa) : event.name.en}
                   </p>
                 </div>
                 <span className="text-xs text-neutral-500 dark:text-neutral-400 whitespace-nowrap">
                   {event.daysAway === 0 
-                    ? (language === 'pa' ? 'ਅੱਜ' : 'Today')
+                    ? (isPunjabi ? 'ਅੱਜ' : isHindi ? 'आज' : 'Today')
                     : event.daysAway === 1 
-                      ? (language === 'pa' ? 'ਕੱਲ੍ਹ' : 'Tomorrow')
-                      : `${event.daysAway} ${language === 'pa' ? 'ਦਿਨ' : 'days'}`
+                      ? (isPunjabi ? 'ਕੱਲ੍ਹ' : isHindi ? 'कल' : 'Tomorrow')
+                      : `${event.daysAway} ${isPunjabi ? 'ਦਿਨ' : isHindi ? 'दिन' : 'days'}`
                   }
                 </span>
               </div>
@@ -694,6 +715,8 @@ export function NanakshahiDateBadge({
 }) {
   const today = new Date();
   const nanakshahiDate = useMemo(() => gregorianToNanakshahi(today), []);
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   
   // Find next upcoming event
   const nextEvent = useMemo(() => {
@@ -743,11 +766,12 @@ export function NanakshahiDateBadge({
       {/* Date */}
       <div className="text-left">
         <p className="text-xs opacity-90">
-          {language === 'pa' ? 'ਅੱਜ' : 'Today'}
+          {isPunjabi ? 'ਅੱਜ' : isHindi ? 'आज' : 'Today'}
         </p>
         <p className="text-sm font-gurmukhi font-medium">
-          {nanakshahiDate.day} {language === 'pa' 
+          {nanakshahiDate.day} {isPunjabi 
             ? NANAKSHAHI_MONTHS[nanakshahiDate.month].pa 
+            : isHindi ? (NANAKSHAHI_MONTHS[nanakshahiDate.month].hi || NANAKSHAHI_MONTHS[nanakshahiDate.month].pa)
             : NANAKSHAHI_MONTHS[nanakshahiDate.month].en
           }
         </p>
@@ -764,12 +788,12 @@ export function NanakshahiDateBadge({
           <span>{nextEvent.icon}</span>
           <div>
             <p className="opacity-80">
-              {language === 'pa' ? 'ਆਉਣ ਵਾਲਾ' : 'Upcoming'}
+              {isPunjabi ? 'ਆਉਣ ਵਾਲਾ' : isHindi ? 'आने वाला' : 'Upcoming'}
             </p>
             <p className="font-medium truncate max-w-[100px]">
               {nextEvent.daysAway === 0 
-                ? (language === 'pa' ? 'ਅੱਜ!' : 'Today!')
-                : `${nextEvent.daysAway} ${language === 'pa' ? 'ਦਿਨ' : 'days'}`
+                ? (isPunjabi ? 'ਅੱਜ!' : isHindi ? 'आज!' : 'Today!')
+                : `${nextEvent.daysAway} ${isPunjabi ? 'ਦਿਨ' : isHindi ? 'दिन' : 'days'}`
               }
             </p>
           </div>

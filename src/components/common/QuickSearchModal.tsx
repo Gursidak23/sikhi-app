@@ -34,20 +34,23 @@ export function QuickSearchModal({ language }: QuickSearchModalProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
 
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
+
   // Quick navigation options
   const quickNav: SearchResult[] = [
     {
       type: 'bani',
       id: 'japji',
-      title: language === 'pa' ? 'ਜਪੁ ਜੀ ਸਾਹਿਬ' : 'Japji Sahib',
-      subtitle: language === 'pa' ? 'ਸਵੇਰ ਦੀ ਬਾਣੀ' : 'Morning Prayer',
+      title: isPunjabi ? 'ਜਪੁ ਜੀ ਸਾਹਿਬ' : isHindi ? 'जपु जी साहिब' : 'Japji Sahib',
+      subtitle: isPunjabi ? 'ਸਵੇਰ ਦੀ ਬਾਣੀ' : isHindi ? 'सुबह की बाणी' : 'Morning Prayer',
       url: '/nitnem',
       icon: '🙏',
     },
     {
       type: 'gurbani',
       id: 'ang1',
-      title: language === 'pa' ? 'ਅੰਗ ੧' : 'Ang 1',
+      title: isPunjabi ? 'ਅੰਗ ੧' : isHindi ? 'अंग १' : 'Ang 1',
       subtitle: 'Mool Mantar',
       url: '/gurbani?ang=1',
       icon: '📖',
@@ -55,24 +58,24 @@ export function QuickSearchModal({ language }: QuickSearchModalProps) {
     {
       type: 'gurbani',
       id: 'gurbani',
-      title: language === 'pa' ? 'ਗੁਰਬਾਣੀ' : 'Gurbani',
-      subtitle: language === 'pa' ? 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ' : 'Sri Guru Granth Sahib Ji',
+      title: isPunjabi ? 'ਗੁਰਬਾਣੀ' : isHindi ? 'गुरबाणी' : 'Gurbani',
+      subtitle: isPunjabi ? 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ' : isHindi ? 'श्री गुरू ग्रंथ साहिब जी' : 'Sri Guru Granth Sahib Ji',
       url: '/gurbani',
       icon: '📖',
     },
     {
       type: 'bani',
       id: 'nitnem',
-      title: language === 'pa' ? 'ਨਿਤਨੇਮ' : 'Nitnem',
-      subtitle: language === 'pa' ? 'ਰੋਜ਼ਾਨਾ ਬਾਣੀਆਂ' : 'Daily Prayers',
+      title: isPunjabi ? 'ਨਿਤਨੇਮ' : isHindi ? 'नितनेम' : 'Nitnem',
+      subtitle: isPunjabi ? 'ਰੋਜ਼ਾਨਾ ਬਾਣੀਆਂ' : isHindi ? 'रोज़ाना बाणियाँ' : 'Daily Prayers',
       url: '/nitnem',
       icon: '📿',
     },
     {
       type: 'history',
       id: 'itihaas',
-      title: language === 'pa' ? 'ਇਤਿਹਾਸ' : 'History',
-      subtitle: language === 'pa' ? 'ਸਿੱਖ ਇਤਿਹਾਸ' : 'Sikh History',
+      title: isPunjabi ? 'ਇਤਿਹਾਸ' : isHindi ? 'इतिहास' : 'History',
+      subtitle: isPunjabi ? 'ਸਿੱਖ ਇਤਿਹਾਸ' : isHindi ? 'सिख इतिहास' : 'Sikh History',
       url: '/itihaas',
       icon: '📜',
     },
@@ -134,7 +137,7 @@ export function QuickSearchModal({ language }: QuickSearchModalProps) {
         filtered.unshift({
           type: 'gurbani',
           id: `ang-${angNumber}`,
-          title: language === 'pa' ? `ਅੰਗ ${angNumber}` : `Ang ${angNumber}`,
+          title: isPunjabi ? `ਅੰਗ ${angNumber}` : isHindi ? `अंग ${angNumber}` : `Ang ${angNumber}`,
           subtitle: 'Go to Ang',
           url: `/gurbani?ang=${angNumber}`,
           icon: '📖',
@@ -154,7 +157,7 @@ export function QuickSearchModal({ language }: QuickSearchModalProps) {
               type: 'gurbani' as const,
               id: `verse-${verse.verseId}`,
               title: verse.verse?.unicode || verse.verse?.gurmukhi || '',
-              subtitle: `${language === 'pa' ? 'ਅੰਗ' : 'Ang'} ${verse.pageNo}`,
+              subtitle: `${isPunjabi ? 'ਅੰਗ' : isHindi ? 'अंग' : 'Ang'} ${verse.pageNo}`,
               url: `/gurbani?ang=${verse.pageNo}`,
               icon: '📖',
             }));
@@ -225,7 +228,7 @@ export function QuickSearchModal({ language }: QuickSearchModalProps) {
             'hover:bg-neutral-100 dark:hover:bg-neutral-800',
             'transition-colors'
           )}
-          aria-label={language === 'pa' ? 'ਖੋਜੋ' : 'Search'}
+          aria-label={isPunjabi ? 'ਖੋਜੋ' : isHindi ? 'खोजें' : 'Search'}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -247,7 +250,7 @@ export function QuickSearchModal({ language }: QuickSearchModalProps) {
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
           </svg>
-          <span>{language === 'pa' ? 'ਖੋਜੋ' : 'Search'}</span>
+          <span>{isPunjabi ? 'ਖੋਜੋ' : isHindi ? 'खोजें' : 'Search'}</span>
           <kbd className="ml-2 text-xs bg-neutral-200 dark:bg-neutral-700 px-1.5 py-0.5 rounded">
             ⌘K
           </kbd>
@@ -277,12 +280,13 @@ export function QuickSearchModal({ language }: QuickSearchModalProps) {
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={handleKeyDown}
-            placeholder={language === 'pa' ? 'ਗੁਰਬਾਣੀ ਜਾਂ ਅੰਗ ਨੰਬਰ ਖੋਜੋ...' : 'Search Gurbani or Ang number...'}
+            placeholder={isPunjabi ? 'ਗੁਰਬਾਣੀ ਜਾਂ ਅੰਗ ਨੰਬਰ ਖੋਜੋ...' : isHindi ? 'गुरबाणी या अंग नंबर खोजें...' : 'Search Gurbani or Ang number...'}
             className={cn(
               'flex-1 bg-transparent border-none outline-none',
               'text-neutral-900 dark:text-neutral-100',
               'placeholder-neutral-400 dark:placeholder-neutral-500',
-              language === 'pa' && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}
           />
           {isSearching && (
@@ -297,14 +301,14 @@ export function QuickSearchModal({ language }: QuickSearchModalProps) {
         <div className="max-h-[50vh] overflow-y-auto">
           {displayResults.length === 0 && query && !isSearching && (
             <div className="p-4 text-center text-neutral-500 dark:text-neutral-400">
-              {language === 'pa' ? 'ਕੋਈ ਨਤੀਜੇ ਨਹੀਂ ਮਿਲੇ' : 'No results found'}
+              {isPunjabi ? 'ਕੋਈ ਨਤੀਜੇ ਨਹੀਂ ਮਿਲੇ' : isHindi ? 'कोई नतीजे नहीं मिले' : 'No results found'}
             </div>
           )}
 
           {!query && (
             <div className="p-2">
               <p className="px-3 py-2 text-xs font-semibold text-neutral-500 dark:text-neutral-400 uppercase">
-                {language === 'pa' ? 'ਤੇਜ਼ ਨੈਵੀਗੇਸ਼ਨ' : 'Quick Navigation'}
+                {isPunjabi ? 'ਤੇਜ਼ ਨੈਵੀਗੇਸ਼ਨ' : isHindi ? 'तेज़ नेविगेशन' : 'Quick Navigation'}
               </p>
             </div>
           )}
@@ -341,9 +345,9 @@ export function QuickSearchModal({ language }: QuickSearchModalProps) {
                   result.type === 'history' && 'bg-kesri-100 dark:bg-kesri-900 text-kesri-700 dark:text-kesri-300',
                   result.type === 'bani' && 'bg-amber-100 dark:bg-amber-900 text-amber-700 dark:text-amber-300'
                 )}>
-                  {result.type === 'gurbani' && (language === 'pa' ? 'ਗੁਰਬਾਣੀ' : 'Gurbani')}
-                  {result.type === 'history' && (language === 'pa' ? 'ਇਤਿਹਾਸ' : 'History')}
-                  {result.type === 'bani' && (language === 'pa' ? 'ਬਾਣੀ' : 'Bani')}
+                  {result.type === 'gurbani' && (isPunjabi ? 'ਗੁਰਬਾਣੀ' : isHindi ? 'गुरबाणी' : 'Gurbani')}
+                  {result.type === 'history' && (isPunjabi ? 'ਇਤਿਹਾਸ' : isHindi ? 'इतिहास' : 'History')}
+                  {result.type === 'bani' && (isPunjabi ? 'ਬਾਣੀ' : isHindi ? 'बाणी' : 'Bani')}
                 </span>
               </button>
             ))}
@@ -355,15 +359,15 @@ export function QuickSearchModal({ language }: QuickSearchModalProps) {
           <div className="flex items-center justify-center gap-4 text-xs text-neutral-500 dark:text-neutral-400">
             <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700 rounded">↑↓</kbd>
-              {language === 'pa' ? 'ਨੈਵੀਗੇਟ' : 'Navigate'}
+              {isPunjabi ? 'ਨੈਵੀਗੇਟ' : isHindi ? 'नेविगेत' : 'Navigate'}
             </span>
             <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700 rounded">↵</kbd>
-              {language === 'pa' ? 'ਚੁਣੋ' : 'Select'}
+              {isPunjabi ? 'ਚੁਣੋ' : isHindi ? 'चुनें' : 'Select'}
             </span>
             <span className="flex items-center gap-1">
               <kbd className="px-1.5 py-0.5 bg-neutral-200 dark:bg-neutral-700 rounded">esc</kbd>
-              {language === 'pa' ? 'ਬੰਦ ਕਰੋ' : 'Close'}
+              {isPunjabi ? 'ਬੰਦ ਕਰੋ' : isHindi ? 'बंद करें' : 'Close'}
             </span>
           </div>
         </div>

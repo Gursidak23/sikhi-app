@@ -94,7 +94,7 @@ export function ReadingProgress({ color = 'kesri' }: { color?: 'kesri' | 'neela'
 // Keyboard shortcuts helper
 interface KeyboardShortcut {
   key: string;
-  description: { pa: string; en: string };
+  description: { pa: string; en: string; hi?: string };
   action: () => void;
   ctrlKey?: boolean;
   shiftKey?: boolean;
@@ -134,7 +134,7 @@ interface KeyboardShortcutsModalProps {
   isOpen: boolean;
   onClose: () => void;
   shortcuts: KeyboardShortcut[];
-  language?: 'pa' | 'en';
+  language?: 'pa' | 'hi' | 'en';
 }
 
 export function KeyboardShortcutsModal({
@@ -153,6 +153,9 @@ export function KeyboardShortcutsModal({
     }
   }, [isOpen, onClose]);
 
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
+
   if (!isOpen) return null;
 
   return (
@@ -164,9 +167,10 @@ export function KeyboardShortcutsModal({
         <div className="flex items-center justify-between mb-4">
           <h3 className={cn(
             'text-lg font-semibold text-gray-900',
-            language === 'pa' && 'font-gurmukhi'
+            isPunjabi && 'font-gurmukhi',
+            isHindi && 'font-devanagari'
           )}>
-            {language === 'pa' ? '⌨️ ਕੀਬੋਰਡ ਸ਼ਾਰਟਕੱਟ' : '⌨️ Keyboard Shortcuts'}
+            {isPunjabi ? '⌨️ ਕੀਬੋਰਡ ਸ਼ਾਰਟਕੱਟ' : isHindi ? '⌨️ कीबोर्ड शॉर्टकट' : '⌨️ Keyboard Shortcuts'}
           </h3>
           <button
             onClick={onClose}
@@ -183,9 +187,10 @@ export function KeyboardShortcutsModal({
             <div key={i} className="flex items-center justify-between py-2 border-b border-gray-100 last:border-0">
               <span className={cn(
                 'text-gray-700',
-                language === 'pa' && 'font-gurmukhi'
+                isPunjabi && 'font-gurmukhi',
+                isHindi && 'font-devanagari'
               )}>
-                {language === 'pa' ? shortcut.description.pa : shortcut.description.en}
+                {isPunjabi ? shortcut.description.pa : isHindi ? (shortcut.description.hi || shortcut.description.pa) : shortcut.description.en}
               </span>
               <kbd className="px-2 py-1 bg-gray-100 rounded text-sm font-mono text-gray-600">
                 {shortcut.ctrlKey && 'Ctrl + '}
@@ -197,7 +202,7 @@ export function KeyboardShortcutsModal({
         </div>
 
         <p className="mt-4 text-xs text-gray-500 text-center">
-          {language === 'pa' ? 'ਬੰਦ ਕਰਨ ਲਈ Esc ਦਬਾਓ' : 'Press Esc to close'}
+          {isPunjabi ? 'ਬੰਦ ਕਰਨ ਲਈ Esc ਦਬਾਓ' : isHindi ? 'बंद करने के लिए Esc दबाएँ' : 'Press Esc to close'}
         </p>
       </div>
     </div>

@@ -65,6 +65,7 @@ export function AngBrowser({ language, currentAng, onNavigate }: AngBrowserProps
   const [history, setHistory] = useState<AngHistory>(loadHistory);
   const [view, setView] = useState<'raag' | 'grid'>('raag');
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   // Refresh history when component mounts or becomes visible
   useEffect(() => {
@@ -80,8 +81,8 @@ export function AngBrowser({ language, currentAng, onNavigate }: AngBrowserProps
       {/* Header */}
       <div className="p-4 bg-gradient-to-r from-amber-50 to-orange-50 dark:from-neutral-800 dark:to-amber-950/30 border-b border-amber-200 dark:border-neutral-700">
         <div className="flex items-center justify-between mb-3">
-          <h3 className={cn('font-bold text-amber-900 dark:text-amber-200', isPunjabi && 'font-gurmukhi')}>
-            {isPunjabi ? '📖 ਅੰਗ ਬ੍ਰਾਊਜ਼ਰ' : '📖 Ang Browser'}
+          <h3 className={cn('font-bold text-amber-900 dark:text-amber-200', isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : '')}>
+            {isPunjabi ? '📖 ਅੰਗ ਬ੍ਰਾਊਜ਼ਰ' : isHindi ? '📖 अंग ब्राउज़र' : '📖 Ang Browser'}
           </h3>
           <div className="flex gap-1">
             <button
@@ -91,7 +92,7 @@ export function AngBrowser({ language, currentAng, onNavigate }: AngBrowserProps
                 view === 'raag' ? 'bg-amber-600 text-white' : 'bg-amber-100 dark:bg-neutral-700 text-amber-700 dark:text-neutral-300'
               )}
             >
-              {isPunjabi ? 'ਰਾਗ' : 'Raag'}
+              {isPunjabi ? 'ਰਾਗ' : isHindi ? 'राग' : 'Raag'}
             </button>
             <button
               onClick={() => setView('grid')}
@@ -100,7 +101,7 @@ export function AngBrowser({ language, currentAng, onNavigate }: AngBrowserProps
                 view === 'grid' ? 'bg-amber-600 text-white' : 'bg-amber-100 dark:bg-neutral-700 text-amber-700 dark:text-neutral-300'
               )}
             >
-              {isPunjabi ? 'ਗਰਿੱਡ' : 'Grid'}
+              {isPunjabi ? 'ਗਰਿੱਡ' : isHindi ? 'ग्रिड' : 'Grid'}
             </button>
           </div>
         </div>
@@ -152,6 +153,7 @@ function RaagView({
   onNavigate: (ang: number) => void;
 }) {
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   return (
     <div className="space-y-2">
@@ -175,9 +177,9 @@ function RaagView({
               <div className="flex items-center justify-between">
                 <p className={cn(
                   'font-medium text-sm text-neutral-900 dark:text-white truncate',
-                  isPunjabi && 'font-gurmukhi'
+                  isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''
                 )}>
-                  {isPunjabi ? raag.name.pa : raag.name.en}
+                  {isPunjabi ? raag.name.pa : isHindi ? (raag.name.hi ?? raag.name.pa) : raag.name.en}
                 </p>
                 <span className="text-[10px] text-neutral-500 dark:text-neutral-500 flex-shrink-0 ml-2">
                   {raag.angStart}-{raag.angEnd}

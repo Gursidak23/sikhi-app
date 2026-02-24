@@ -10,6 +10,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import type { Language } from '@/types';
 
@@ -86,7 +87,8 @@ interface QuizQuestion {
 }
 
 export default function LearnPage() {
-  const [language, setLanguage] = useState<Language>('pa');
+  const { language, isPunjabi } = useLanguage();
+  const isHindi = language === 'hi';
   const [tab, setTab] = useState<Tab>('alphabet');
   const [selectedLetter, setSelectedLetter] = useState<typeof CONSONANTS[0] | null>(null);
   const [practiceInput, setPracticeInput] = useState('');
@@ -97,8 +99,6 @@ export default function LearnPage() {
   const [quizScore, setQuizScore] = useState(0);
   const [quizAnswer, setQuizAnswer] = useState<string | null>(null);
   const [learnedLetters, setLearnedLetters] = useState<Set<string>>(new Set());
-
-  const isPunjabi = language === 'pa';
 
   // Load learned letters from localStorage on mount
   useEffect(() => {
@@ -195,34 +195,34 @@ export default function LearnPage() {
 
   const progress = Math.round((learnedLetters.size / CONSONANTS.length) * 100);
 
-  const tabs: { id: Tab; label: { pa: string; en: string }; icon: string }[] = [
-    { id: 'alphabet', label: { pa: 'ਅੱਖਰ', en: 'Alphabet' }, icon: 'ੳ' },
-    { id: 'vowels', label: { pa: 'ਲਗਾਂ ਮਾਤਰਾ', en: 'Vowels' }, icon: 'ਾ' },
-    { id: 'numbers', label: { pa: 'ਅੰਕ', en: 'Numbers' }, icon: '੧' },
-    { id: 'practice', label: { pa: 'ਅਭਿਆਸ', en: 'Practice' }, icon: '✍️' },
-    { id: 'quiz', label: { pa: 'ਕੁਇਜ਼', en: 'Quiz' }, icon: '🎯' },
+  const tabs: { id: Tab; label: { pa: string; en: string; hi?: string }; icon: string }[] = [
+    { id: 'alphabet', label: { pa: 'ਅੱਖਰ', en: 'Alphabet', hi: 'अक्षर' }, icon: 'ੳ' },
+    { id: 'vowels', label: { pa: 'ਲਗਾਂ ਮਾਤਰਾ', en: 'Vowels', hi: 'स्वर' }, icon: 'ਾ' },
+    { id: 'numbers', label: { pa: 'ਅੰਕ', en: 'Numbers', hi: 'अंक' }, icon: '੧' },
+    { id: 'practice', label: { pa: 'ਅਭਿਆਸ', en: 'Practice', hi: 'अभ्यास' }, icon: '✍️' },
+    { id: 'quiz', label: { pa: 'ਕੁਇਜ਼', en: 'Quiz', hi: 'क्विज़' }, icon: '🎯' },
   ];
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-purple-50 via-white to-indigo-50 dark:from-[#1a1a2e] dark:via-[#16213e] dark:to-[#1a1a2e]">
-      <MainNavigation currentLanguage={language} onLanguageChange={setLanguage} />
+      <MainNavigation />
 
       <main id="main-content" className="flex-1">
         {/* Header */}
         <section className="py-8 md:py-12 text-center">
           <div className="container-content">
             <div className="text-5xl font-gurmukhi text-purple-600 dark:text-purple-400 mb-3">ੳ ਅ ੲ</div>
-            <h1 className={cn('text-3xl md:text-4xl font-bold text-purple-900 dark:text-purple-200', isPunjabi && 'font-gurmukhi')}>
-              {isPunjabi ? 'ਗੁਰਮੁਖੀ ਸਿੱਖੋ' : 'Learn Gurmukhi'}
+            <h1 className={cn('text-3xl md:text-4xl font-bold text-purple-900 dark:text-purple-200', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+              {isPunjabi ? 'ਗੁਰਮੁਖੀ ਸਿੱਖੋ' : isHindi ? 'गुरमुखी सीखें' : 'Learn Gurmukhi'}
             </h1>
-            <p className={cn('text-purple-700 dark:text-purple-300 mt-2 text-lg', isPunjabi && 'font-gurmukhi')}>
-              {isPunjabi ? 'ਗੁਰੂ ਦੀ ਲਿਪੀ — ਅੱਖਰ, ਲਗਾਂ, ਅੰਕ ਅਤੇ ਅਭਿਆਸ' : "The Guru's Script — Letters, Vowels, Numbers & Practice"}
+            <p className={cn('text-purple-700 dark:text-purple-300 mt-2 text-lg', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+              {isPunjabi ? 'ਗੁਰੂ ਦੀ ਲਿਪੀ — ਅੱਖਰ, ਲਗਾਂ, ਅੰਕ ਅਤੇ ਅਭਿਆਸ' : isHindi ? 'गुरु की लिपि — अक्षर, स्वर, अंक और अभ्यास' : "The Guru's Script — Letters, Vowels, Numbers & Practice"}
             </p>
 
             {/* Progress Bar */}
             <div className="max-w-md mx-auto mt-6">
               <div className="flex items-center justify-between text-sm text-purple-600 dark:text-purple-400 mb-2">
-                <span>{isPunjabi ? 'ਤਰੱਕੀ' : 'Progress'}</span>
+                <span>{isPunjabi ? 'ਤਰੱਕੀ' : isHindi ? 'प्रगति' : 'Progress'}</span>
                 <span>{progress}% ({learnedLetters.size}/{CONSONANTS.length})</span>
               </div>
               <div className="h-3 bg-purple-100 dark:bg-purple-900/30 rounded-full overflow-hidden">
@@ -251,7 +251,7 @@ export default function LearnPage() {
                   )}
                 >
                   <span className="font-gurmukhi">{t.icon}</span>
-                  <span className={isPunjabi ? 'font-gurmukhi' : ''}>{isPunjabi ? t.label.pa : t.label.en}</span>
+                  <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>{isPunjabi ? t.label.pa : isHindi ? (t.label.hi || t.label.en) : t.label.en}</span>
                 </button>
               ))}
             </div>
@@ -282,13 +282,13 @@ export default function LearnPage() {
                             onClick={() => { markLearned(selectedLetter.gurmukhi); setSelectedLetter(null); }}
                             className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors"
                           >
-                            ✓ {isPunjabi ? 'ਸਿੱਖ ਲਿਆ' : 'Mark Learned'}
+                            ✓ {isPunjabi ? 'ਸਿੱਖ ਲਿਆ' : isHindi ? 'सीख लिया' : 'Mark Learned'}
                           </button>
                           <button
                             onClick={() => setSelectedLetter(null)}
                             className="px-4 py-2.5 bg-neutral-200 dark:bg-neutral-700 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors"
                           >
-                            {isPunjabi ? 'ਬੰਦ' : 'Close'}
+                            {isPunjabi ? 'ਬੰਦ' : isHindi ? 'बंद' : 'Close'}
                           </button>
                         </div>
                       </div>
@@ -355,8 +355,8 @@ export default function LearnPage() {
             {tab === 'practice' && (
               <div className="max-w-lg mx-auto text-center">
                 <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-purple-200 dark:border-purple-800 p-8 shadow-lg">
-                  <p className={cn('text-sm text-purple-600 dark:text-purple-400 mb-4', isPunjabi && 'font-gurmukhi')}>
-                    {isPunjabi ? 'ਇਹ ਅੱਖਰ ਟਾਈਪ ਕਰੋ:' : 'Type this letter:'}
+                  <p className={cn('text-sm text-purple-600 dark:text-purple-400 mb-4', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                    {isPunjabi ? 'ਇਹ ਅੱਖਰ ਟਾਈਪ ਕਰੋ:' : isHindi ? 'यह अक्षर टाइप करें:' : 'Type this letter:'}
                   </p>
                   <div className="text-8xl font-gurmukhi text-purple-700 dark:text-purple-300 mb-6">
                     {practiceTarget}
@@ -375,14 +375,14 @@ export default function LearnPage() {
                   />
                   <div className="flex gap-3 justify-center mt-6">
                     <button onClick={checkPractice} className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors">
-                      {isPunjabi ? 'ਚੈੱਕ ਕਰੋ' : 'Check'}
+                      {isPunjabi ? 'ਚੈੱਕ ਕਰੋ' : isHindi ? 'जाँचें' : 'Check'}
                     </button>
                     <button onClick={generatePracticeTarget} className="px-6 py-3 bg-neutral-200 dark:bg-neutral-700 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors">
-                      {isPunjabi ? 'ਅਗਲਾ' : 'Skip'}
+                      {isPunjabi ? 'ਅਗਲਾ' : isHindi ? 'अगला' : 'Skip'}
                     </button>
                   </div>
                   <div className="mt-6 text-lg">
-                    🔥 {isPunjabi ? 'ਲੜੀ' : 'Streak'}: <span className="font-bold text-purple-600">{streak}</span>
+                    🔥 {isPunjabi ? 'ਲੜੀ' : isHindi ? 'लड़ी' : 'Streak'}: <span className="font-bold text-purple-600">{streak}</span>
                   </div>
                 </div>
               </div>
@@ -395,12 +395,12 @@ export default function LearnPage() {
                   <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-purple-200 dark:border-purple-800 p-8 shadow-lg">
                     {/* Progress */}
                     <div className="flex items-center justify-between text-sm text-neutral-500 mb-6">
-                      <span>{isPunjabi ? `ਸਵਾਲ ${quizIndex + 1}/${quizQuestions.length}` : `Question ${quizIndex + 1}/${quizQuestions.length}`}</span>
+                      <span>{isPunjabi ? `ਸਵਾਲ ${quizIndex + 1}/${quizQuestions.length}` : isHindi ? `सवाल ${quizIndex + 1}/${quizQuestions.length}` : `Question ${quizIndex + 1}/${quizQuestions.length}`}</span>
                       <span>🎯 {quizScore}/{quizIndex}</span>
                     </div>
 
-                    <p className={cn('text-sm text-purple-600 dark:text-purple-400 mb-4', isPunjabi && 'font-gurmukhi')}>
-                      {isPunjabi ? 'ਇਸ ਅੱਖਰ ਦਾ ਉਚਾਰਨ ਕੀ ਹੈ?' : 'What is the pronunciation?'}
+                    <p className={cn('text-sm text-purple-600 dark:text-purple-400 mb-4', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                      {isPunjabi ? 'ਇਸ ਅੱਖਰ ਦਾ ਉਚਾਰਨ ਕੀ ਹੈ?' : isHindi ? 'इस अक्षर का उच्चारण क्या है?' : 'What is the pronunciation?'}
                     </p>
                     <div className="text-8xl font-gurmukhi text-purple-700 dark:text-purple-300 mb-8">
                       {quizQuestions[quizIndex].gurmukhi}
@@ -431,20 +431,20 @@ export default function LearnPage() {
                   /* Quiz Complete */
                   <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-purple-200 dark:border-purple-800 p-8 shadow-lg">
                     <div className="text-6xl mb-4">{quizScore >= 8 ? '🏆' : quizScore >= 5 ? '👍' : '💪'}</div>
-                    <h2 className={cn('text-2xl font-bold text-neutral-900 dark:text-white mb-2', isPunjabi && 'font-gurmukhi')}>
-                      {isPunjabi ? 'ਕੁਇਜ਼ ਪੂਰਾ!' : 'Quiz Complete!'}
+                    <h2 className={cn('text-2xl font-bold text-neutral-900 dark:text-white mb-2', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                      {isPunjabi ? 'ਕੁਇਜ਼ ਪੂਰਾ!' : isHindi ? 'क्विज़ पूरा!' : 'Quiz Complete!'}
                     </h2>
                     <p className="text-4xl font-bold text-purple-600 dark:text-purple-400 my-4">
                       {quizScore}/{quizQuestions.length}
                     </p>
                     <p className="text-neutral-600 dark:text-neutral-400">
-                      {quizScore >= 8 ? (isPunjabi ? 'ਬਹੁਤ ਵਧੀਆ!' : 'Excellent!') : quizScore >= 5 ? (isPunjabi ? 'ਚੰਗਾ ਕੰਮ!' : 'Good work!') : (isPunjabi ? 'ਹੋਰ ਅਭਿਆਸ ਕਰੋ' : 'Keep practicing!')}
+                      {quizScore >= 8 ? (isPunjabi ? 'ਬਹੁਤ ਵਧੀਆ!' : isHindi ? 'बहुत बढ़िया!' : 'Excellent!') : quizScore >= 5 ? (isPunjabi ? 'ਚੰਗਾ ਕੰਮ!' : isHindi ? 'अच्छा काम!' : 'Good work!') : (isPunjabi ? 'ਹੋਰ ਅਭਿਆਸ ਕਰੋ' : isHindi ? 'और अभ्यास करें' : 'Keep practicing!')}
                     </p>
                     <button
                       onClick={generateQuiz}
                       className="mt-6 px-8 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors"
                     >
-                      {isPunjabi ? 'ਦੁਬਾਰਾ ਖੇਡੋ' : 'Play Again'}
+                      {isPunjabi ? 'ਦੁਬਾਰਾ ਖੇਡੋ' : isHindi ? 'दोबारा खेलें' : 'Play Again'}
                     </button>
                   </div>
                 )}
@@ -455,7 +455,7 @@ export default function LearnPage() {
       </main>
 
       <ScrollToTop />
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

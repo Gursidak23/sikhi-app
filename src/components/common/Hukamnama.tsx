@@ -109,6 +109,8 @@ export function Hukamnama({
       console.error('Hukamnama error:', err);
       setError(language === 'pa' 
         ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' 
+        : language === 'hi'
+        ? 'हुकमनामा लोड नहीं हो सका'
         : 'Could not load Hukamnama');
     } finally {
       setLoading(false);
@@ -130,13 +132,16 @@ export function Hukamnama({
     ? hukamnama?.verses || []
     : (hukamnama?.verses || []).slice(0, 3);
 
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
+
   if (loading) {
     return (
       <div className={cn('bg-gradient-to-br from-amber-50 to-yellow-50 dark:from-neutral-800 dark:to-neutral-900 rounded-2xl p-6', className)}>
         <div className="text-center py-12">
           <div className="ik-onkar text-4xl animate-pulse text-amber-600 dark:text-amber-400">ੴ</div>
           <p className="text-amber-700 dark:text-amber-300 mt-4 font-gurmukhi">
-            {language === 'pa' ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : 'Loading Hukamnama...'}
+            {isPunjabi ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : isHindi ? 'हुकमनामा लोड हो रहा है...' : 'Loading Hukamnama...'}
           </p>
         </div>
       </div>
@@ -152,7 +157,7 @@ export function Hukamnama({
             onClick={fetchHukamnama}
             className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
           >
-            {language === 'pa' ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : 'Try Again'}
+            {isPunjabi ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : isHindi ? 'दोबारा कोशिश करें' : 'Try Again'}
           </button>
         </div>
       </div>
@@ -179,10 +184,10 @@ export function Hukamnama({
       <div className="text-center pt-6 pb-4 border-b border-amber-200/50 dark:border-amber-800/30">
         <div className="text-4xl text-amber-700 dark:text-amber-400 font-gurmukhi">ੴ</div>
         <h2 className="text-2xl font-gurmukhi text-amber-900 dark:text-amber-200 mt-2">
-          {language === 'pa' ? 'ਅੱਜ ਦਾ ਹੁਕਮਨਾਮਾ' : "Today's Hukamnama"}
+          {isPunjabi ? 'ਅੱਜ ਦਾ ਹੁਕਮਨਾਮਾ' : isHindi ? 'आज का हुकमनामा' : "Today's Hukamnama"}
         </h2>
         <p className="text-sm text-amber-700 dark:text-amber-400 mt-1">
-          {new Date().toLocaleDateString(language === 'pa' ? 'pa-IN' : 'en-US', {
+          {new Date().toLocaleDateString(isPunjabi ? 'pa-IN' : isHindi ? 'hi-IN' : 'en-US', {
             weekday: 'long',
             year: 'numeric',
             month: 'long',
@@ -265,8 +270,8 @@ export function Hukamnama({
             className="px-6 py-2 bg-amber-600 dark:bg-amber-700 text-white rounded-lg hover:bg-amber-700 dark:hover:bg-amber-600 transition-colors font-gurmukhi"
           >
             {expanded
-              ? (language === 'pa' ? 'ਘੱਟ ਦਿਖਾਓ' : 'Show Less')
-              : (language === 'pa' ? `ਪੂਰਾ ਸ਼ਬਦ (${hukamnama.verses.length} ਪੰਕਤੀਆਂ)` : `Full Shabad (${hukamnama.verses.length} lines)`)}
+              ? (isPunjabi ? 'ਘੱਟ ਦਿਖਾਓ' : isHindi ? 'कम दिखाएँ' : 'Show Less')
+              : (isPunjabi ? `ਪੂਰਾ ਸ਼ਬਦ (${hukamnama.verses.length} ਪੰਕਤੀਆਂ)` : isHindi ? `पूरा शब्द (${hukamnama.verses.length} पंक्तियाँ)` : `Full Shabad (${hukamnama.verses.length} lines)`)}
           </button>
         </div>
       )}
@@ -374,14 +379,17 @@ export function HukamnamaSection({ language = 'pa' }: { language?: Language }) {
         }
       } catch (err) {
         console.error('Hukamnama error:', err);
-        setError(language === 'pa' ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' : 'Could not load Hukamnama');
-      } finally {
-        setLoading(false);
-      }
+setError(language === 'pa' ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' : language === 'hi' ? 'हुकमनामा लोड नहीं हो सका' : 'Could not load Hukamnama');
+    } finally {
+      setLoading(false);
     }
-    
-    fetchHukamnama();
-  }, [language]);
+  }
+  
+  fetchHukamnama();
+}, [language]);
+
+const isPunjabiSection = language === 'pa';
+const isHindiSection = language === 'hi';
 
   const getTranslation = (verse: HukamnamaVerse): string | null => {
     if (verse.translation?.en?.bdb) return verse.translation.en.bdb;
@@ -397,7 +405,7 @@ export function HukamnamaSection({ language = 'pa' }: { language?: Language }) {
           <div className="text-center">
             <div className="text-5xl animate-pulse text-amber-600 dark:text-[#daa520] font-gurmukhi">ੴ</div>
             <p className="text-amber-700 dark:text-amber-400 mt-4 font-gurmukhi">
-              {language === 'pa' ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : 'Loading Hukamnama...'}
+              {isPunjabiSection ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : isHindiSection ? 'हुकमनामा लोड हो रहा है...' : 'Loading Hukamnama...'}
             </p>
           </div>
         </div>
@@ -435,14 +443,14 @@ export function HukamnamaSection({ language = 'pa' }: { language?: Language }) {
           <div className="flex items-center justify-center gap-2 mb-3">
             <span className="text-lg">🙏</span>
             <p className="text-sm text-amber-800 dark:text-amber-300 font-medium">
-              {language === 'pa' ? 'ਸ੍ਰੀ ਹਰਿਮੰਦਰ ਸਾਹਿਬ ਤੋਂ' : 'From Sri Harmandir Sahib'}
+              {isPunjabiSection ? 'ਸ੍ਰੀ ਹਰਿਮੰਦਰ ਸਾਹਿਬ ਤੋਂ' : isHindiSection ? 'श्री हरिमंदर साहिब से' : 'From Sri Harmandir Sahib'}
             </p>
           </div>
           
           {/* Date display */}
           {hukamDate && (
             <p className="text-xs text-amber-700 dark:text-amber-400 mb-3">
-              {new Date(hukamDate.gregorian.year, hukamDate.gregorian.month - 1, hukamDate.gregorian.date).toLocaleDateString(language === 'pa' ? 'pa-IN' : 'en-US', {
+              {new Date(hukamDate.gregorian.year, hukamDate.gregorian.month - 1, hukamDate.gregorian.date).toLocaleDateString(isPunjabiSection ? 'pa-IN' : isHindiSection ? 'hi-IN' : 'en-US', {
                 weekday: 'long',
                 day: 'numeric',
                 month: 'long',
@@ -518,7 +526,7 @@ export function HukamnamaSection({ language = 'pa' }: { language?: Language }) {
           
           {hukamnama.verses.length > 5 && (
             <p className="text-center text-sm text-amber-600 dark:text-amber-500 mt-4">
-              +{hukamnama.verses.length - 5} {language === 'pa' ? 'ਹੋਰ ਪੰਕਤੀਆਂ' : 'more lines'}
+              +{hukamnama.verses.length - 5} {isPunjabiSection ? 'ਹੋਰ ਪੰਕਤੀਆਂ' : isHindiSection ? 'और पंक्तियाँ' : 'more lines'}
             </p>
           )}
         </div>
@@ -531,6 +539,8 @@ export function HukamnamaSection({ language = 'pa' }: { language?: Language }) {
           <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
             {language === 'pa' 
               ? 'ਸ੍ਰੀ ਹਰਿਮੰਦਰ ਸਾਹਿਬ ਤੋਂ ਅੱਜ ਦਾ ਹੁਕਮਨਾਮਾ • ਡਾਟਾ: BaniDB'
+              : language === 'hi'
+              ? 'श्री हरिमंदर साहिब से आज का हुकमनामा • डाटा: BaniDB'
               : 'Daily Hukamnama from Sri Harmandir Sahib • Data: BaniDB'}
           </p>
         </div>

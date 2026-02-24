@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { ReadingProgress } from '@/components/common/ReadingProgress';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
@@ -54,7 +55,8 @@ interface BaniVerse {
 }
 
 export default function NitnemPage() {
-  const [language, setLanguage] = useState<Language>('pa');
+  const { language } = useLanguage();
+  const isHindi = language === 'hi';
   const [selectedBani, setSelectedBani] = useState<string | null>(null);
   const [baniContent, setBaniContent] = useState<BaniVerse[]>([]);
   const [loading, setLoading] = useState(false);
@@ -82,6 +84,7 @@ export default function NitnemPage() {
       console.error('Error fetching bani:', err);
       setError(language === 'pa' 
         ? 'ਬਾਣੀ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ। ਕਿਰਪਾ ਕਰਕੇ ਇੰਟਰਨੈੱਟ ਚੈੱਕ ਕਰੋ।' 
+        : isHindi ? 'बाणी लोड नहीं हो सकी। कृपया इंटरनेट चेक करें।'
         : 'Could not load Bani. Please check your internet connection.');
     } finally {
       setLoading(false);
@@ -127,10 +130,7 @@ export default function NitnemPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#fef9e7] via-[#fdf6e3] to-[#fef3c7] dark:from-[#1a1a1a] dark:via-[#1f1f1f] dark:to-[#262626]" style={{ backgroundImage: 'url("data:image/svg+xml,%3Csvg width=\'60\' height=\'60\' viewBox=\'0 0 60 60\' xmlns=\'http://www.w3.org/2000/svg\'%3E%3Cpath d=\'M30 0L60 30L30 60L0 30z\' fill=\'none\' stroke=\'%23daa52015\' stroke-width=\'1\'/%3E%3C/svg%3E")' }}>
-      <MainNavigation
-        currentLanguage={language}
-        onLanguageChange={setLanguage}
-      />
+      <MainNavigation />
 
       <main id="main-content" className="flex-1">
         <div className="container-content py-6 px-4">
@@ -144,7 +144,7 @@ export default function NitnemPage() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
               </svg>
               <span className="font-gurmukhi">
-                {language === 'pa' ? 'ਵਾਪਸ' : 'Back to Nitnem'}
+                {language === 'pa' ? 'ਵਾਪਸ' : isHindi ? 'वापस' : 'Back to Nitnem'}
               </span>
             </button>
           )}
@@ -155,10 +155,10 @@ export default function NitnemPage() {
               <div className="text-center mb-10">
                 <div className="text-5xl mb-3">📿</div>
                 <h1 className="text-3xl sm:text-4xl font-gurmukhi font-bold text-amber-900 dark:text-[#daa520]">
-                  {language === 'pa' ? 'ਨਿਤਨੇਮ' : 'Nitnem'}
+                  {language === 'pa' ? 'ਨਿਤਨੇਮ' : isHindi ? 'नितनेम' : 'Nitnem'}
                 </h1>
                 <p className="text-amber-700 dark:text-amber-400 mt-2 font-gurmukhi text-lg">
-                  {language === 'pa' ? 'ਰੋਜ਼ਾਨਾ ਬਾਣੀਆਂ' : 'Daily Prayers'}
+                  {language === 'pa' ? 'ਰੋਜ਼ਾਨਾ ਬਾਣੀਆਂ' : isHindi ? 'रोज़ाना बाणियाँ' : 'Daily Prayers'}
                 </p>
                 <div className="mt-4 w-24 h-0.5 bg-gradient-to-r from-transparent via-amber-400 to-transparent mx-auto" />
               </div>
@@ -169,8 +169,8 @@ export default function NitnemPage() {
                   onClick={() => setShowStreak(!showStreak)}
                   className="w-full flex items-center justify-between py-2 text-amber-800 dark:text-amber-300 hover:text-amber-600 transition-colors"
                 >
-                  <span className={cn('font-semibold', language === 'pa' && 'font-gurmukhi')}>
-                    {language === 'pa' ? '🔥 ਨਿਤਨੇਮ ਲੜੀ ਟ੍ਰੈਕਰ' : '🔥 Streak Tracker'}
+                  <span className={cn('font-semibold', language === 'pa' && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                    {language === 'pa' ? '🔥 ਨਿਤਨੇਮ ਲੜੀ ਟ੍ਰੈਕਰ' : isHindi ? '🔥 नितनेम लड़ी ट्रैकर' : '🔥 Streak Tracker'}
                   </span>
                   <span className="text-sm">{showStreak ? '▲' : '▼'}</span>
                 </button>
@@ -185,10 +185,10 @@ export default function NitnemPage() {
                     <span className="text-2xl">🌅</span>
                     <div>
                       <h2 className="text-lg font-semibold text-amber-800 dark:text-amber-300 font-gurmukhi">
-                        {language === 'pa' ? 'ਅੰਮ੍ਰਿਤ ਵੇਲਾ (ਸਵੇਰ)' : 'Amritvela (Morning)'}
+                        {language === 'pa' ? 'ਅੰਮ੍ਰਿਤ ਵੇਲਾ (ਸਵੇਰ)' : isHindi ? 'अमृत वेला (सुबह)' : 'Amritvela (Morning)'}
                       </h2>
                       <p className="text-sm text-amber-600 dark:text-amber-500">
-                        {language === 'pa' ? '੫ ਬਾਣੀਆਂ' : '5 Banis'}
+                        {language === 'pa' ? '੫ ਬਾਣੀਆਂ' : isHindi ? '५ बाणियाँ' : '5 Banis'}
                       </p>
                     </div>
                     <div className="flex-1 h-px bg-gradient-to-r from-amber-300 to-transparent dark:from-amber-700" />
@@ -211,10 +211,10 @@ export default function NitnemPage() {
                     <span className="text-2xl">🌆</span>
                     <div>
                       <h2 className="text-lg font-semibold text-orange-800 dark:text-orange-300 font-gurmukhi">
-                        {language === 'pa' ? 'ਸ਼ਾਮ' : 'Evening'}
+                        {language === 'pa' ? 'ਸ਼ਾਮ' : isHindi ? 'शाम' : 'Evening'}
                       </h2>
                       <p className="text-sm text-orange-600 dark:text-orange-500">
-                        {language === 'pa' ? '੧ ਬਾਣੀ' : '1 Bani'}
+                        {language === 'pa' ? '੧ ਬਾਣੀ' : isHindi ? '१ बाणी' : '1 Bani'}
                       </p>
                     </div>
                     <div className="flex-1 h-px bg-gradient-to-r from-orange-300 to-transparent dark:from-orange-700" />
@@ -237,10 +237,10 @@ export default function NitnemPage() {
                     <span className="text-2xl">🌙</span>
                     <div>
                       <h2 className="text-lg font-semibold text-indigo-800 dark:text-indigo-300 font-gurmukhi">
-                        {language === 'pa' ? 'ਰਾਤ' : 'Night'}
+                        {language === 'pa' ? 'ਰਾਤ' : isHindi ? 'रात' : 'Night'}
                       </h2>
                       <p className="text-sm text-indigo-600 dark:text-indigo-500">
-                        {language === 'pa' ? '੧ ਬਾਣੀ' : '1 Bani'}
+                        {language === 'pa' ? '੧ ਬਾਣੀ' : isHindi ? '१ बाणी' : '1 Bani'}
                       </p>
                     </div>
                     <div className="flex-1 h-px bg-gradient-to-r from-indigo-300 to-transparent dark:from-indigo-700" />
@@ -263,10 +263,10 @@ export default function NitnemPage() {
                     <span className="text-2xl">✨</span>
                     <div>
                       <h2 className="text-lg font-semibold text-teal-800 dark:text-teal-300 font-gurmukhi">
-                        {language === 'pa' ? 'ਹੋਰ ਬਾਣੀਆਂ' : 'Other Banis'}
+                        {language === 'pa' ? 'ਹੋਰ ਬਾਣੀਆਂ' : isHindi ? 'अन्य बाणियाँ' : 'Other Banis'}
                       </h2>
                       <p className="text-sm text-teal-600 dark:text-teal-500">
-                        {language === 'pa' ? '੨ ਬਾਣੀਆਂ' : '2 Banis'}
+                        {language === 'pa' ? '੨ ਬਾਣੀਆਂ' : isHindi ? '२ बाणियाँ' : '2 Banis'}
                       </p>
                     </div>
                     <div className="flex-1 h-px bg-gradient-to-r from-teal-300 to-transparent dark:from-teal-700" />
@@ -293,10 +293,10 @@ export default function NitnemPage() {
                   <div className="text-center mb-6 pb-6 border-b border-amber-200 dark:border-amber-800">
                     <span className="text-4xl">{currentBani.icon}</span>
                     <h1 className="text-2xl sm:text-3xl font-gurmukhi text-amber-900 dark:text-amber-200 mt-2">
-                      {language === 'pa' ? currentBani.name.pa : currentBani.name.en}
+                      {language === 'pa' ? currentBani.name.pa : isHindi ? ((currentBani.name as any).hi || currentBani.name.en) : currentBani.name.en}
                     </h1>
                     <p className="text-amber-700 dark:text-amber-400 mt-1">
-                      {language === 'pa' ? currentBani.description.pa : currentBani.description.en}
+                      {language === 'pa' ? currentBani.description.pa : isHindi ? ((currentBani.description as any).hi || currentBani.description.en) : currentBani.description.en}
                     </p>
                   </div>
 
@@ -314,7 +314,7 @@ export default function NitnemPage() {
                             : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
                         )}
                       >
-                        {language === 'pa' ? 'ਅਰਥ' : 'Translation'}
+                        {language === 'pa' ? 'ਅਰਥ' : isHindi ? 'अर्थ' : 'Translation'}
                       </button>
                       <button
                         onClick={() => setShowTransliteration(!showTransliteration)}
@@ -325,7 +325,7 @@ export default function NitnemPage() {
                             : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
                         )}
                       >
-                        {language === 'pa' ? 'ਉਚਾਰਨ' : 'Pronunciation'}
+                        {language === 'pa' ? 'ਉਚਾਰਨ' : isHindi ? 'उच्चारण' : 'Pronunciation'}
                       </button>
                     </div>
                   </div>
@@ -335,7 +335,7 @@ export default function NitnemPage() {
                     <div className="text-center py-12">
                       <div className="text-4xl animate-pulse">ੴ</div>
                       <p className="text-amber-700 dark:text-amber-400 mt-4 font-gurmukhi">
-                        {language === 'pa' ? 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : 'Loading...'}
+                        {language === 'pa' ? 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : isHindi ? 'लोड हो रहा है...' : 'Loading...'}
                       </p>
                     </div>
                   )}
@@ -348,7 +348,7 @@ export default function NitnemPage() {
                         onClick={() => loadBani(currentBani.baniId)}
                         className="mt-4 px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700"
                       >
-                        {language === 'pa' ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : 'Try Again'}
+                        {language === 'pa' ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : isHindi ? 'दोबारा कोशिश करें' : 'Try Again'}
                       </button>
                     </div>
                   )}
@@ -360,7 +360,7 @@ export default function NitnemPage() {
                         <div className="saroop-header">
                           <div className="ik-onkar">ੴ</div>
                           <p className="raag-title font-gurmukhi">
-                            {language === 'pa' ? currentBani.name.pa : currentBani.name.en}
+                            {language === 'pa' ? currentBani.name.pa : isHindi ? ((currentBani.name as any).hi || currentBani.name.en) : currentBani.name.en}
                           </p>
                         </div>
 
@@ -430,7 +430,7 @@ export default function NitnemPage() {
 
       <ReadingProgress variant="kesri" />
       <ScrollToTop />
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }
@@ -458,6 +458,7 @@ function BaniCard({
   language: Language;
   onClick: () => void;
 }) {
+  const isHindi = language === 'hi';
   const gradient = GRADIENT_MAP[bani.color] || { from: 'from-amber-500', to: 'to-orange-600', shadow: 'shadow-amber-500/25' };
 
   return (
@@ -485,16 +486,16 @@ function BaniCard({
       <span className="text-3xl drop-shadow-sm">{bani.icon}</span>
       
       <h3 className="text-xl font-gurmukhi mt-3 font-semibold drop-shadow-sm">
-        {language === 'pa' ? bani.name.pa : bani.name.en}
+        {language === 'pa' ? bani.name.pa : isHindi ? ((bani.name as any).hi || bani.name.en) : bani.name.en}
       </h3>
       
       <p className="text-sm text-white/85 mt-1.5 leading-relaxed">
-        {language === 'pa' ? bani.description.pa : bani.description.en}
+        {language === 'pa' ? bani.description.pa : isHindi ? ((bani.description as any).hi || bani.description.en) : bani.description.en}
       </p>
       
       <div className="mt-4 flex items-center gap-1.5 text-sm text-white/75 group-hover:text-white transition-colors">
         <span className="transform group-hover:translate-x-1 transition-transform">→</span>
-        <span className="font-medium">{language === 'pa' ? 'ਪੜ੍ਹੋ' : 'Read'}</span>
+        <span className="font-medium">{language === 'pa' ? 'ਪੜ੍ਹੋ' : isHindi ? 'पढ़ें' : 'Read'}</span>
       </div>
     </button>
   );

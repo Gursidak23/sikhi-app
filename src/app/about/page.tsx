@@ -1,24 +1,20 @@
 'use client';
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import type { Language } from '@/types';
 
 /**
  * About Page - Sikhi Themed Platform Information
  */
 export default function AboutPage() {
-  const [language, setLanguage] = useState<Language>('pa');
-  const isPunjabi = language === 'pa';
+  const { language, isPunjabi } = useLanguage();
 
   return (
     <div className="min-h-screen flex flex-col bg-[#FDF8F0] dark:bg-neutral-950">
-      <MainNavigation
-        currentLanguage={language}
-        onLanguageChange={setLanguage}
-      />
+      <MainNavigation />
 
       <main id="main-content" className="flex-1">
         {/* Hero Section */}
@@ -319,7 +315,7 @@ export default function AboutPage() {
         </section>
       </main>
 
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

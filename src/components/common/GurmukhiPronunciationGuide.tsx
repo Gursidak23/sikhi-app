@@ -13,7 +13,7 @@ import type { Language } from '@/types';
 
 interface GurmukhiLetter {
   letter: string;
-  name: { pa: string; en: string };
+  name: { pa: string; en: string; hi?: string };
   pronunciation: string;
   example?: { word: string; meaning: string };
   category: 'vowel-carrier' | 'consonant' | 'vowel-sign' | 'nasal' | 'special';
@@ -80,6 +80,8 @@ const VOWEL_SIGNS: GurmukhiLetter[] = [
 export function GurmukhiPronunciationGuide({ language }: { language: Language }) {
   const [selectedLetter, setSelectedLetter] = useState<GurmukhiLetter | null>(null);
   const [activeTab, setActiveTab] = useState<'consonants' | 'vowels'>('consonants');
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   const getCategoryColor = (category: GurmukhiLetter['category']) => {
     switch (category) {
@@ -101,11 +103,12 @@ export function GurmukhiPronunciationGuide({ language }: { language: Language })
       {/* Header */}
       <div className="bg-gradient-to-r from-neela-600 to-neela-700 text-white p-6">
         <h2 className="text-xl font-gurmukhi mb-2">
-          {language === 'pa' ? 'ਗੁਰਮੁਖੀ ਉਚਾਰਨ ਗਾਈਡ' : 'Gurmukhi Pronunciation Guide'}
+          {isPunjabi ? 'ਗੁਰਮੁਖੀ ਉਚਾਰਨ ਗਾਈਡ' : isHindi ? 'गुरमुखी उच्चारण गाइड' : 'Gurmukhi Pronunciation Guide'}
         </h2>
         <p className="text-neela-100 text-sm">
-          {language === 'pa' 
+          {isPunjabi 
             ? 'ਅੱਖਰਾਂ ਤੇ ਕਲਿੱਕ ਕਰੋ ਉਚਾਰਨ ਸਿੱਖਣ ਲਈ' 
+            : isHindi ? 'अक्षरों पर क्लिक करें उच्चारण सीखने के लिए'
             : 'Click on letters to learn pronunciation'
           }
         </p>
@@ -122,7 +125,7 @@ export function GurmukhiPronunciationGuide({ language }: { language: Language })
               : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'
           )}
         >
-          {language === 'pa' ? 'ਵਿਅੰਜਨ' : 'Consonants'}
+          {isPunjabi ? 'ਵਿਅੰਜਨ' : isHindi ? 'व्यंजन' : 'Consonants'}
         </button>
         <button
           onClick={() => setActiveTab('vowels')}
@@ -133,7 +136,7 @@ export function GurmukhiPronunciationGuide({ language }: { language: Language })
               : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-50 dark:hover:bg-neutral-800'
           )}
         >
-          {language === 'pa' ? 'ਲਗਾਂ ਮਾਤਰਾਂ' : 'Vowel Signs'}
+          {isPunjabi ? 'ਲਗਾਂ ਮਾਤਰਾਂ' : isHindi ? 'लगाँ मात्राएँ' : 'Vowel Signs'}
         </button>
       </div>
 
@@ -174,15 +177,15 @@ export function GurmukhiPronunciationGuide({ language }: { language: Language })
             </div>
             <div className="flex-1">
               <h3 className="font-gurmukhi text-xl text-neutral-900 dark:text-neutral-100">
-                {language === 'pa' ? selectedLetter.name.pa : selectedLetter.name.en}
+                {isPunjabi ? selectedLetter.name.pa : isHindi ? (selectedLetter.name.hi || selectedLetter.name.pa) : selectedLetter.name.en}
               </h3>
               <p className="text-neutral-600 dark:text-neutral-400 mt-1">
-                <span className="font-medium">{language === 'pa' ? 'ਉਚਾਰਨ' : 'Pronunciation'}:</span>{' '}
+                <span className="font-medium">{isPunjabi ? 'ਉਚਾਰਨ' : isHindi ? 'उच्चारण' : 'Pronunciation'}:</span>{' '}
                 <span className="text-lg font-mono">{selectedLetter.pronunciation}</span>
               </p>
               {selectedLetter.example && (
                 <p className="text-neutral-600 dark:text-neutral-400 mt-2">
-                  <span className="font-medium">{language === 'pa' ? 'ਉਦਾਹਰਨ' : 'Example'}:</span>{' '}
+                  <span className="font-medium">{isPunjabi ? 'ਉਦਾਹਰਨ' : isHindi ? 'उदाहरण' : 'Example'}:</span>{' '}
                   <span className="font-gurmukhi text-lg">{selectedLetter.example.word}</span>
                   <span className="text-sm ml-2">({selectedLetter.example.meaning})</span>
                 </p>
@@ -198,25 +201,25 @@ export function GurmukhiPronunciationGuide({ language }: { language: Language })
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-amber-400"></span>
             <span className="text-neutral-600 dark:text-neutral-400">
-              {language === 'pa' ? 'ਸਵਰ ਵਾਹਕ' : 'Vowel Carriers'}
+              {isPunjabi ? 'ਸਵਰ ਵਾਹਕ' : isHindi ? 'स्वर वाहक' : 'Vowel Carriers'}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-neela-400"></span>
             <span className="text-neutral-600 dark:text-neutral-400">
-              {language === 'pa' ? 'ਵਿਅੰਜਨ' : 'Consonants'}
+              {isPunjabi ? 'ਵਿਅੰਜਨ' : isHindi ? 'व्यंजन' : 'Consonants'}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-purple-400"></span>
             <span className="text-neutral-600 dark:text-neutral-400">
-              {language === 'pa' ? 'ਨਾਸਕ' : 'Nasals'}
+              {isPunjabi ? 'ਨਾਸਕ' : isHindi ? 'नासिक' : 'Nasals'}
             </span>
           </div>
           <div className="flex items-center gap-1.5">
             <span className="w-3 h-3 rounded bg-green-400"></span>
             <span className="text-neutral-600 dark:text-neutral-400">
-              {language === 'pa' ? 'ਲਗਾਂ ਮਾਤਰਾਂ' : 'Vowel Signs'}
+              {isPunjabi ? 'ਲਗਾਂ ਮਾਤਰਾਂ' : isHindi ? 'लगाँ मात्राएँ' : 'Vowel Signs'}
             </span>
           </div>
         </div>

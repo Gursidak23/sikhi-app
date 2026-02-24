@@ -119,6 +119,8 @@ export function useStudyMode() {
 
 // Study Mode Toggle Button
 export function StudyModeToggle({ language }: { language: Language }) {
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const { isStudyMode, toggleStudyMode } = useStudyMode();
 
   return (
@@ -136,10 +138,10 @@ export function StudyModeToggle({ language }: { language: Language }) {
           d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" 
         />
       </svg>
-      <span className={language === 'pa' ? 'font-gurmukhi' : ''}>
+      <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
         {isStudyMode
-          ? (language === 'pa' ? 'ਅਧਿਐਨ ਮੋਡ ਬੰਦ' : 'Exit Study Mode')
-          : (language === 'pa' ? 'ਅਧਿਐਨ ਮੋਡ' : 'Study Mode')
+          ? (isPunjabi ? 'ਅਧਿਐਨ ਮੋਡ ਬੰਦ' : isHindi ? 'अध्ययन मोड बंद' : 'Exit Study Mode')
+          : (isPunjabi ? 'ਅਧਿਐਨ ਮੋਡ' : isHindi ? 'अध्ययन मोड' : 'Study Mode')
         }
       </span>
     </button>
@@ -148,6 +150,8 @@ export function StudyModeToggle({ language }: { language: Language }) {
 
 // Study Mode Controls Panel
 export function StudyModeControls({ language }: { language: Language }) {
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const { isStudyMode, readingSpeed, setReadingSpeed, notes } = useStudyMode();
 
   if (!isStudyMode) return null;
@@ -158,13 +162,13 @@ export function StudyModeControls({ language }: { language: Language }) {
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
         </svg>
-        {language === 'pa' ? 'ਅਧਿਐਨ ਸੈਟਿੰਗਾਂ' : 'Study Settings'}
+        {isPunjabi ? 'ਅਧਿਐਨ ਸੈਟਿੰਗਾਂ' : isHindi ? 'अध्ययन सेटिंग्स' : 'Study Settings'}
       </h4>
 
       {/* Reading Speed */}
       <div className="mb-4">
         <p className="text-xs text-neutral-500 dark:text-neutral-400 mb-2">
-          {language === 'pa' ? 'ਪੜ੍ਹਨ ਦੀ ਗਤੀ' : 'Reading Speed'}
+          {isPunjabi ? 'ਪੜ੍ਹਨ ਦੀ ਗਤੀ' : isHindi ? 'पढ़ने की गति' : 'Reading Speed'}
         </p>
         <div className="flex gap-2">
           {(['slow', 'medium', 'fast'] as const).map((speed) => (
@@ -178,9 +182,9 @@ export function StudyModeControls({ language }: { language: Language }) {
                   : 'bg-neutral-100 dark:bg-neutral-800 text-neutral-700 dark:text-neutral-300'
               )}
             >
-              {speed === 'slow' && (language === 'pa' ? 'ਹੌਲੀ' : 'Slow')}
-              {speed === 'medium' && (language === 'pa' ? 'ਮੱਧਮ' : 'Medium')}
-              {speed === 'fast' && (language === 'pa' ? 'ਤੇਜ਼' : 'Fast')}
+              {speed === 'slow' && (isPunjabi ? 'ਹੌਲੀ' : isHindi ? 'धीमी' : 'Slow')}
+              {speed === 'medium' && (isPunjabi ? 'ਮੱਧਮ' : isHindi ? 'मध्यम' : 'Medium')}
+              {speed === 'fast' && (isPunjabi ? 'ਤੇਜ਼' : isHindi ? 'तेज़' : 'Fast')}
             </button>
           ))}
         </div>
@@ -189,7 +193,7 @@ export function StudyModeControls({ language }: { language: Language }) {
       {/* Notes Count */}
       <div className="text-xs text-neutral-500 dark:text-neutral-400">
         <span className="text-amber-600 dark:text-amber-400 font-semibold">{notes.size}</span>
-        {language === 'pa' ? ' ਨੋਟਸ ਸੇਵ ਕੀਤੇ' : ' notes saved'}
+        {isPunjabi ? ' ਨੋਟਸ ਸੇਵ ਕੀਤੇ' : isHindi ? ' नोट्स सेव किए' : ' notes saved'}
       </div>
     </div>
   );
@@ -203,6 +207,8 @@ export function VerseNote({
   verseId: string;
   language: Language;
 }) {
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const { isStudyMode, notes, addNote, removeNote } = useStudyMode();
   const [isEditing, setIsEditing] = useState(false);
   const [noteText, setNoteText] = useState(notes.get(verseId) || '');
@@ -230,7 +236,7 @@ export function VerseNote({
         <textarea
           value={noteText}
           onChange={(e) => setNoteText(e.target.value)}
-          placeholder={language === 'pa' ? 'ਆਪਣਾ ਨੋਟ ਲਿਖੋ...' : 'Write your note...'}
+          placeholder={isPunjabi ? 'ਆਪਣਾ ਨੋਟ ਲਿਖੋ...' : isHindi ? 'अपना नोट लिखें...' : 'Write your note...'}
           className={cn(
             'w-full p-2 rounded border border-amber-300 dark:border-amber-700',
             'bg-white dark:bg-neutral-900 text-neutral-800 dark:text-neutral-200',
@@ -244,13 +250,13 @@ export function VerseNote({
             onClick={() => setIsEditing(false)}
             className="px-3 py-1 text-xs text-neutral-600 dark:text-neutral-400 hover:text-neutral-800 dark:hover:text-neutral-200"
           >
-            {language === 'pa' ? 'ਰੱਦ ਕਰੋ' : 'Cancel'}
+            {isPunjabi ? 'ਰੱਦ ਕਰੋ' : isHindi ? 'रद्द करें' : 'Cancel'}
           </button>
           <button
             onClick={handleSave}
             className="px-3 py-1 text-xs bg-amber-500 text-white rounded hover:bg-amber-600"
           >
-            {language === 'pa' ? 'ਸੇਵ ਕਰੋ' : 'Save'}
+            {isPunjabi ? 'ਸੇਵ ਕਰੋ' : isHindi ? 'सेव करें' : 'Save'}
           </button>
         </div>
       </div>
@@ -281,7 +287,7 @@ export function VerseNote({
       <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
       </svg>
-      {language === 'pa' ? 'ਨੋਟ ਜੋੜੋ' : 'Add Note'}
+      {isPunjabi ? 'ਨੋਟ ਜੋੜੋ' : isHindi ? 'नोट जोड़ें' : 'Add Note'}
     </button>
   );
 }

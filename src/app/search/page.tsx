@@ -11,6 +11,7 @@ import { useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { GurmukhiKeyboard } from '@/components/common/GurmukhiKeyboard';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
@@ -30,7 +31,8 @@ const SEARCH_TYPES: { value: SearchType; label: { pa: string; en: string }; desc
 ];
 
 export default function SearchPage() {
-  const [language, setLanguage] = useState<Language>('pa');
+  const { language, isPunjabi } = useLanguage();
+  const isHindi = language === 'hi';
   const [query, setQuery] = useState('');
   const [searchType, setSearchType] = useState<SearchType>(0);
   const [results, setResults] = useState<BaniDBSearchResponse | null>(null);
@@ -39,8 +41,6 @@ export default function SearchPage() {
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [searched, setSearched] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
-
-  const isPunjabi = language === 'pa';
 
   const handleSearch = useCallback(async (page = 1) => {
     if (!query.trim()) return;
@@ -93,7 +93,7 @@ export default function SearchPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-blue-50 via-white to-blue-50 dark:from-[#1a1a2e] dark:via-[#16213e] dark:to-[#1a1a2e]">
-      <MainNavigation currentLanguage={language} onLanguageChange={setLanguage} />
+      <MainNavigation />
 
       <main id="main-content" className="flex-1">
         {/* Hero Search Header */}
@@ -103,13 +103,15 @@ export default function SearchPage() {
             <div className="text-center mb-8">
               <h1 className={cn(
                 'text-3xl md:text-4xl lg:text-5xl font-bold text-neela-900 dark:text-blue-200',
-                isPunjabi && 'font-gurmukhi'
+                isPunjabi && 'font-gurmukhi',
+                isHindi && 'font-devanagari'
               )}>
-                {isPunjabi ? 'ਗੁਰਬਾਣੀ ਖੋਜ' : 'Gurbani Search'}
+                {isPunjabi ? 'ਗੁਰਬਾਣੀ ਖੋਜ' : isHindi ? 'गुरबाणी खोज' : 'Gurbani Search'}
               </h1>
               <p className={cn(
                 'text-neela-700 dark:text-blue-300 mt-3 text-lg',
-                isPunjabi && 'font-gurmukhi'
+                isPunjabi && 'font-gurmukhi',
+                isHindi && 'font-devanagari'
               )}>
                 {isPunjabi
                   ? 'ਸ੍ਰੀ ਗੁਰੂ ਗ੍ਰੰਥ ਸਾਹਿਬ ਜੀ, ਦਸਮ ਗ੍ਰੰਥ, ਭਾਈ ਗੁਰਦਾਸ ਜੀ ਵਾਰਾਂ'
@@ -133,7 +135,7 @@ export default function SearchPage() {
                     )}
                     title={st.desc}
                   >
-                    {isPunjabi ? st.label.pa : st.label.en}
+                    {isPunjabi ? st.label.pa : isHindi ? ((st.label as any).hi || st.label.en) : st.label.en}
                   </button>
                 ))}
               </div>
@@ -147,7 +149,7 @@ export default function SearchPage() {
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
                     onKeyDown={handleKeyDown}
-                    placeholder={isPunjabi ? 'ਗੁਰਬਾਣੀ ਖੋਜੋ...' : 'Search Gurbani...'}
+                    placeholder={isPunjabi ? 'ਗੁਰਬਾਣੀ ਖੋਜੋ...' : isHindi ? 'गुरबाणी खोजें...' : 'Search Gurbani...'}
                     className={cn(
                       'w-full px-4 py-3 pr-10 rounded-xl border border-neutral-300 dark:border-neutral-600',
                       'bg-neutral-50 dark:bg-neutral-900 text-neutral-900 dark:text-white',
@@ -201,8 +203,8 @@ export default function SearchPage() {
             {/* Popular Searches */}
             {!searched && (
               <div className="mt-6 text-center">
-                <p className={cn('text-sm text-neutral-500 mb-3', isPunjabi && 'font-gurmukhi')}>
-                  {isPunjabi ? 'ਮਸ਼ਹੂਰ ਖੋਜ:' : 'Popular searches:'}
+                <p className={cn('text-sm text-neutral-500 mb-3', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                  {isPunjabi ? 'ਮਸ਼ਹੂਰ ਖੋਜ:' : isHindi ? 'लोकप्रिय खोज:' : 'Popular searches:'}
                 </p>
                 <div className="flex flex-wrap justify-center gap-2">
                   {popularSearches.map((ps) => (
@@ -241,7 +243,7 @@ export default function SearchPage() {
               {/* Results Info */}
               {results && (
                 <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
-                  <p className={cn('text-neutral-600 dark:text-neutral-400', isPunjabi && 'font-gurmukhi')}>
+                  <p className={cn('text-neutral-600 dark:text-neutral-400', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
                     {isPunjabi
                       ? `${results.resultsInfo.totalResults} ਨਤੀਜੇ ਮਿਲੇ`
                       : `${results.resultsInfo.totalResults} results found`}
@@ -256,11 +258,11 @@ export default function SearchPage() {
               {results && results.resultsInfo.totalResults === 0 && (
                 <div className="text-center py-16 bg-neutral-50 dark:bg-neutral-800/50 rounded-2xl">
                   <div className="text-4xl mb-4">🔍</div>
-                  <p className={cn('text-neutral-600 dark:text-neutral-400 text-lg', isPunjabi && 'font-gurmukhi')}>
-                    {isPunjabi ? 'ਕੋਈ ਨਤੀਜੇ ਨਹੀਂ ਮਿਲੇ' : 'No results found'}
+                  <p className={cn('text-neutral-600 dark:text-neutral-400 text-lg', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                    {isPunjabi ? 'ਕੋਈ ਨਤੀਜੇ ਨਹੀਂ ਮਿਲੇ' : isHindi ? 'कोई परिणाम नहीं मिले' : 'No results found'}
                   </p>
                   <p className="text-neutral-500 mt-2 text-sm">
-                    {isPunjabi ? 'ਵੱਖਰੇ ਸ਼ਬਦਾਂ ਨਾਲ ਖੋਜੋ' : 'Try different keywords or search type'}
+                    {isPunjabi ? 'ਵੱਖਰੇ ਸ਼ਬਦਾਂ ਨਾਲ ਖੋਜੋ' : isHindi ? 'अलग शब्दों से खोजें' : 'Try different keywords or search type'}
                   </p>
                 </div>
               )}
@@ -284,7 +286,7 @@ export default function SearchPage() {
                             ਅੰਗ {verse.pageNo}
                           </Link>
                           <span className="text-xs bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300 px-2.5 py-1 rounded-full">
-                            {isPunjabi ? raag.pa : raag.en}
+                            {isPunjabi ? raag.pa : isHindi ? ((raag as any).hi || raag.en) : raag.en}
                           </span>
                           {verse.writer && (
                             <span className="text-xs text-neutral-500 dark:text-neutral-400">
@@ -333,13 +335,13 @@ export default function SearchPage() {
                             href={`/shabad/${verse.shabadId}`}
                             className="text-xs text-neela-600 dark:text-blue-400 hover:underline flex items-center gap-1"
                           >
-                            📖 {isPunjabi ? 'ਪੂਰਾ ਸ਼ਬਦ' : 'Full Shabad'}
+                            📖 {isPunjabi ? 'ਪੂਰਾ ਸ਼ਬਦ' : isHindi ? 'पूरा शबद' : 'Full Shabad'}
                           </Link>
                           <Link
                             href={`/gurbani?ang=${verse.pageNo}`}
                             className="text-xs text-amber-600 dark:text-amber-400 hover:underline flex items-center gap-1"
                           >
-                            📄 {isPunjabi ? 'ਅੰਗ ਦੇਖੋ' : 'View Ang'}
+                            📄 {isPunjabi ? 'ਅੰਗ ਦੇਖੋ' : isHindi ? 'अंग देखें' : 'View Ang'}
                           </Link>
                         </div>
                       </div>
@@ -356,7 +358,7 @@ export default function SearchPage() {
                     disabled={currentPage <= 1}
                     className="px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 disabled:opacity-50 hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors min-h-[40px]"
                   >
-                    ← {isPunjabi ? 'ਪਿਛਲਾ' : 'Previous'}
+                    ← {isPunjabi ? 'ਪਿਛਲਾ' : isHindi ? 'पिछला' : 'Previous'}
                   </button>
                   <span className="px-4 py-2 text-sm text-neutral-600 dark:text-neutral-400">
                     {currentPage} / {results.resultsInfo.pages?.totalPages || 1}
@@ -366,7 +368,7 @@ export default function SearchPage() {
                     disabled={currentPage >= (results.resultsInfo.pages?.totalPages || 1)}
                     className="px-4 py-2 rounded-lg bg-neutral-100 dark:bg-neutral-700 disabled:opacity-50 hover:bg-neutral-200 dark:hover:bg-neutral-600 transition-colors min-h-[40px]"
                   >
-                    {isPunjabi ? 'ਅਗਲਾ' : 'Next'} →
+                    {isPunjabi ? 'ਅਗਲਾ' : isHindi ? 'अगला' : 'Next'} →
                   </button>
                 </div>
               )}
@@ -376,7 +378,7 @@ export default function SearchPage() {
       </main>
 
       <ScrollToTop />
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

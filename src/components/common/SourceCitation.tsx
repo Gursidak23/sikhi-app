@@ -25,6 +25,9 @@ export function SourceCitation({
   variant = 'block',
   className,
 }: SourceCitationProps) {
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
+
   const getTitle = () => {
     if (language === 'pa') return source.title.pa;
     if (language === 'hi' && source.title.hi) return source.title.hi;
@@ -53,7 +56,8 @@ export function SourceCitation({
       <span
         className={cn(
           'text-xs text-neutral-500 italic',
-          language === 'pa' && 'font-gurmukhi',
+          isPunjabi && 'font-gurmukhi',
+          isHindi && 'font-devanagari',
           className
         )}
       >
@@ -85,7 +89,7 @@ export function SourceCitation({
             d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253"
           />
         </svg>
-        <span className={language === 'pa' ? 'font-gurmukhi' : ''}>
+        <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
           {getTitle()}
         </span>
       </span>
@@ -117,7 +121,8 @@ export function SourceCitation({
         <div className="flex-1 min-w-0">
           <p className={cn(
             'font-medium text-neutral-800 text-sm',
-            language === 'pa' && 'font-gurmukhi'
+            isPunjabi && 'font-gurmukhi',
+            isHindi && 'font-devanagari'
           )}>
             {getTitle()}
           </p>
@@ -125,7 +130,8 @@ export function SourceCitation({
           {getAuthor() && (
             <p className={cn(
               'text-neutral-600 text-xs mt-0.5',
-              language === 'pa' && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}>
               {getAuthor()}
               {source.yearPublished && ` (${source.yearPublished})`}
@@ -162,7 +168,8 @@ export function SourceCitation({
       {citation?.originalQuote && (
         <blockquote className={cn(
           'mt-3 pl-3 border-l-2 border-neutral-300 text-sm text-neutral-600 italic',
-          language === 'pa' && 'font-gurmukhi'
+          isPunjabi && 'font-gurmukhi',
+          isHindi && 'font-devanagari'
         )}>
           "{citation.originalQuote}"
         </blockquote>
@@ -183,15 +190,19 @@ export function MultipleSources({
   language = 'pa',
   className,
 }: MultipleSourcesProps) {
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
+
   if (sources.length === 0) return null;
 
   return (
     <div className={cn('space-y-2', className)}>
       <h4 className={cn(
         'text-sm font-medium text-neutral-700',
-        language === 'pa' && 'font-gurmukhi'
+        isPunjabi && 'font-gurmukhi',
+        isHindi && 'font-devanagari'
       )}>
-        {language === 'pa' ? 'ਸਰੋਤ:' : language === 'hi' ? 'स्रोत:' : 'Sources:'}
+        {isPunjabi ? 'ਸਰੋਤ:' : isHindi ? 'स्रोत:' : 'Sources:'}
       </h4>
       {sources.map((item, index) => (
         <SourceCitation

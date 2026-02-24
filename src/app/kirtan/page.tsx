@@ -11,6 +11,7 @@ import { useState, useCallback, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
 import { fetchAng, searchGurbani, type BaniDBVerse, type BaniDBAngResponse } from '@/lib/api/banidb-client';
@@ -71,7 +72,8 @@ function pickRandomAngs(min: number, max: number, count: number): number[] {
 }
 
 export default function KirtanPage() {
-  const [language, setLanguage] = useState<Language>('pa');
+  const { language, isPunjabi } = useLanguage();
+  const isHindi = language === 'hi';
   const [shabads, setShabads] = useState<ShabadItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [selectedRaag, setSelectedRaag] = useState<string>('all');
@@ -79,8 +81,6 @@ export default function KirtanPage() {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<ShabadItem[]>([]);
   const [searching, setSearching] = useState(false);
-
-  const isPunjabi = language === 'pa';
   const loadIdRef = useRef(0); // prevent stale loads
 
   /**
@@ -205,18 +205,18 @@ export default function KirtanPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-emerald-50 via-white to-teal-50 dark:from-[#0d1b2a] dark:via-[#1b2838] dark:to-[#0d1b2a]">
-      <MainNavigation currentLanguage={language} onLanguageChange={setLanguage} />
+      <MainNavigation />
 
       <main id="main-content" className="flex-1">
         {/* Header */}
         <section className="py-8 md:py-12 text-center">
           <div className="container-content">
             <div className="text-5xl mb-3">🎵</div>
-            <h1 className={cn('text-3xl md:text-4xl font-bold text-emerald-900 dark:text-emerald-200', isPunjabi && 'font-gurmukhi')}>
-              {isPunjabi ? 'ਕੀਰਤਨ ਖ਼ਜ਼ਾਨਾ' : 'Kirtan Library'}
+            <h1 className={cn('text-3xl md:text-4xl font-bold text-emerald-900 dark:text-emerald-200', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+              {isPunjabi ? 'ਕੀਰਤਨ ਖ਼ਜ਼ਾਨਾ' : isHindi ? 'कीर्तन खज़ाना' : 'Kirtan Library'}
             </h1>
-            <p className={cn('text-emerald-700 dark:text-emerald-300 mt-2 text-lg', isPunjabi && 'font-gurmukhi')}>
-              {isPunjabi ? 'ਸ਼ਬਦ ਖੋਜੋ, ਪੜ੍ਹੋ ਅਤੇ ਸੁਣੋ' : 'Discover, Read & Listen to Shabads'}
+            <p className={cn('text-emerald-700 dark:text-emerald-300 mt-2 text-lg', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+              {isPunjabi ? 'ਸ਼ਬਦ ਖੋਜੋ, ਪੜ੍ਹੋ ਅਤੇ ਸੁਣੋ' : isHindi ? 'शबद खोजें, पढ़ें और सुनें' : 'Discover, Read & Listen to Shabads'}
             </p>
           </div>
         </section>
@@ -231,7 +231,7 @@ export default function KirtanPage() {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                placeholder={isPunjabi ? 'ਸ਼ਬਦ ਖੋਜੋ...' : 'Search shabads...'}
+                placeholder={isPunjabi ? 'ਸ਼ਬਦ ਖੋਜੋ...' : isHindi ? 'शबद खोजें...' : 'Search shabads...'}
                 className={cn(
                   'flex-1 px-4 py-3 rounded-xl border border-neutral-300 dark:border-neutral-600',
                   'bg-white dark:bg-neutral-800 text-neutral-900 dark:text-white',
@@ -250,8 +250,8 @@ export default function KirtanPage() {
 
             {/* Featured Raags */}
             <div className="mb-6">
-              <h3 className={cn('text-sm font-medium text-neutral-500 mb-3', isPunjabi && 'font-gurmukhi')}>
-                {isPunjabi ? 'ਮੁੱਖ ਰਾਗ:' : 'Browse by Raag:'}
+              <h3 className={cn('text-sm font-medium text-neutral-500 mb-3', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                {isPunjabi ? 'ਮੁੱਖ ਰਾਗ:' : isHindi ? 'राग के अनुसार:' : 'Browse by Raag:'}
               </h3>
               <div className="flex flex-wrap gap-2">
                 <button
@@ -263,7 +263,7 @@ export default function KirtanPage() {
                       : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                   )}
                 >
-                  {isPunjabi ? 'ਸਾਰੇ' : 'All'}
+                  {isPunjabi ? 'ਸਾਰੇ' : isHindi ? 'सभी' : 'All'}
                 </button>
                 {featuredRaags.map((raag) => (
                   <button
@@ -276,7 +276,7 @@ export default function KirtanPage() {
                         : 'bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800'
                     )}
                   >
-                    {isPunjabi ? raag.name.pa : raag.name.en}
+                    {isPunjabi ? raag.name.pa : isHindi ? ((raag.name as any).hi || raag.name.en) : raag.name.en}
                   </button>
                 ))}
               </div>
@@ -285,7 +285,7 @@ export default function KirtanPage() {
             {/* View Toggle + Refresh */}
             <div className="flex items-center justify-between">
               <p className="text-sm text-neutral-500">
-                {displayShabads.length} {isPunjabi ? 'ਸ਼ਬਦ' : 'shabads'}
+                {displayShabads.length} {isPunjabi ? 'ਸ਼ਬਦ' : isHindi ? 'शबद' : 'shabads'}
               </p>
               <div className="flex gap-2">
                 <button
@@ -304,7 +304,7 @@ export default function KirtanPage() {
                   onClick={() => loadShabads(selectedRaag)}
                   className="px-3 py-2 text-sm bg-emerald-50 dark:bg-emerald-900/20 text-emerald-700 dark:text-emerald-300 rounded-lg hover:bg-emerald-100 transition-colors"
                 >
-                  🔄 {isPunjabi ? 'ਹੋਰ ਲੋਡ' : 'Refresh'}
+                  🔄 {isPunjabi ? 'ਹੋਰ ਲੋਡ' : isHindi ? 'रिफ्रेश' : 'Refresh'}
                 </button>
               </div>
             </div>
@@ -317,8 +317,8 @@ export default function KirtanPage() {
             {loading && (
               <div className="text-center py-20">
                 <div className="text-5xl animate-pulse">🎵</div>
-                <p className={cn('text-emerald-700 dark:text-emerald-400 mt-4', isPunjabi && 'font-gurmukhi')}>
-                  {isPunjabi ? 'ਸ਼ਬਦ ਲੋਡ ਹੋ ਰਹੇ ਹਨ...' : 'Loading shabads...'}
+                <p className={cn('text-emerald-700 dark:text-emerald-400 mt-4', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                  {isPunjabi ? 'ਸ਼ਬਦ ਲੋਡ ਹੋ ਰਹੇ ਹਨ...' : isHindi ? 'शबद लोड हो रहे हैं...' : 'Loading shabads...'}
                 </p>
               </div>
             )}
@@ -327,13 +327,13 @@ export default function KirtanPage() {
               <div className="text-center py-16 bg-neutral-50 dark:bg-neutral-800/50 rounded-2xl">
                 <div className="text-4xl mb-4">🔍</div>
                 <p className="text-neutral-600 dark:text-neutral-400 font-gurmukhi">
-                  {isPunjabi ? 'ਕੋਈ ਸ਼ਬਦ ਨਹੀਂ ਮਿਲੇ' : 'No shabads found'}
+                  {isPunjabi ? 'ਕੋਈ ਸ਼ਬਦ ਨਹੀਂ ਮਿਲੇ' : isHindi ? 'कोई शबद नहीं मिले' : 'No shabads found'}
                 </p>
                 <button
                   onClick={() => loadShabads(selectedRaag)}
                   className="mt-4 px-4 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors text-sm"
                 >
-                  {isPunjabi ? '🔄 ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : '🔄 Try Again'}
+                  {isPunjabi ? '🔄 ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : isHindi ? '🔄 दोबारा कोशिश करें' : '🔄 Try Again'}
                 </button>
               </div>
             )}
@@ -369,7 +369,7 @@ export default function KirtanPage() {
                       <div className="flex items-center justify-between mt-4 pt-3 border-t border-neutral-100 dark:border-neutral-700">
                         <span className="text-xs text-neutral-500">✍️ {shabad.writer}</span>
                         <span className="text-xs text-emerald-600 dark:text-emerald-400 opacity-0 group-hover:opacity-100 transition-opacity">
-                          {isPunjabi ? 'ਪੜ੍ਹੋ →' : 'Read →'}
+                          {isPunjabi ? 'ਪੜ੍ਹੋ →' : isHindi ? 'पढ़ें →' : 'Read →'}
                         </span>
                       </div>
                     </Link>
@@ -408,7 +408,7 @@ export default function KirtanPage() {
       </main>
 
       <ScrollToTop />
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

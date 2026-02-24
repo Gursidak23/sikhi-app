@@ -108,7 +108,7 @@ export function WaheguruSimran({ language = 'pa' }: { language?: string }) {
   }, []);
 
   const handleReset = () => {
-    if (confirm(language === 'pa' ? 'ਅੱਜ ਦੀ ਗਿਣਤੀ ਮਿਟਾਉਣੀ ਹੈ?' : 'Reset today\'s count?')) {
+    if (confirm(isPunjabi ? 'ਅੱਜ ਦੀ ਗਿਣਤੀ ਮਿਟਾਉਣੀ ਹੈ?' : isHindi ? 'आज की गिनती मिटानी है?' : 'Reset today\'s count?')) {
       setStats(prev => {
         const newStats = { ...prev, today: 0 };
         saveStats(newStats);
@@ -118,6 +118,7 @@ export function WaheguruSimran({ language = 'pa' }: { language?: string }) {
   };
 
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   // Complete a mala (108 beads)
   const malasCompleted = Math.floor(stats.today / 108);
@@ -145,7 +146,7 @@ export function WaheguruSimran({ language = 'pa' }: { language?: string }) {
             isActive && 'scale-95 shadow-lg',
             ripple && 'ring-4 ring-amber-400/60',
           )}
-          aria-label={isPunjabi ? 'ਵਾਹਿਗੁਰੂ ਦਾ ਸਿਮਰਨ ਕਰੋ' : 'Count Waheguru'}
+          aria-label={isPunjabi ? 'ਵਾਹਿਗੁਰੂ ਦਾ ਸਿਮਰਨ ਕਰੋ' : isHindi ? 'वाहेगुरू का सिमरन करें' : 'Count Waheguru'}
         >
           {/* Ripple effect */}
           {ripple && (
@@ -162,7 +163,7 @@ export function WaheguruSimran({ language = 'pa' }: { language?: string }) {
           
           {/* Label */}
           <span className="text-blue-200 text-sm mt-1 font-gurmukhi">
-            {isPunjabi ? 'ਵਾਹਿਗੁਰੂ' : 'Waheguru'}
+            {isPunjabi ? 'ਵਾਹਿਗੁਰੂ' : isHindi ? 'वाहेगुरू' : 'Waheguru'}
           </span>
         </button>
       </div>
@@ -174,8 +175,8 @@ export function WaheguruSimran({ language = 'pa' }: { language?: string }) {
             <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
               {malasCompleted}
             </p>
-            <p className={cn('text-amber-600 dark:text-amber-500 text-xs', isPunjabi && 'font-gurmukhi')}>
-              {isPunjabi ? 'ਮਾਲਾ' : 'Malas'}
+            <p className={cn('text-amber-600 dark:text-amber-500 text-xs', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+              {isPunjabi ? 'ਮਾਲਾ' : isHindi ? 'माला' : 'Malas'}
             </p>
           </div>
           
@@ -185,8 +186,8 @@ export function WaheguruSimran({ language = 'pa' }: { language?: string }) {
             <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
               {beadsInCurrentMala}<span className="text-base text-amber-500">/108</span>
             </p>
-            <p className={cn('text-amber-600 dark:text-amber-500 text-xs', isPunjabi && 'font-gurmukhi')}>
-              {isPunjabi ? 'ਮਣਕੇ' : 'Beads'}
+            <p className={cn('text-amber-600 dark:text-amber-500 text-xs', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+              {isPunjabi ? 'ਮਣਕੇ' : isHindi ? 'मनके' : 'Beads'}
             </p>
           </div>
           
@@ -196,8 +197,8 @@ export function WaheguruSimran({ language = 'pa' }: { language?: string }) {
             <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">
               {stats.streak}
             </p>
-            <p className={cn('text-amber-600 dark:text-amber-500 text-xs', isPunjabi && 'font-gurmukhi')}>
-              {isPunjabi ? 'ਦਿਨ' : 'Day Streak'}
+            <p className={cn('text-amber-600 dark:text-amber-500 text-xs', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+              {isPunjabi ? 'ਦਿਨ' : isHindi ? 'दिन' : 'Day Streak'}
             </p>
           </div>
         </div>
@@ -217,7 +218,7 @@ export function WaheguruSimran({ language = 'pa' }: { language?: string }) {
       <div className="mt-6 flex justify-between items-center px-4">
         <div className="text-center">
           <p className="text-sm text-neutral-500 dark:text-neutral-400">
-            {isPunjabi ? 'ਕੁੱਲ' : 'All Time'}
+            {isPunjabi ? 'ਕੁੱਲ' : isHindi ? 'कुल' : 'All Time'}
           </p>
           <p className="text-lg font-bold text-neutral-700 dark:text-neutral-300">
             {stats.allTime.toLocaleString()}
@@ -228,7 +229,7 @@ export function WaheguruSimran({ language = 'pa' }: { language?: string }) {
           onClick={handleReset}
           className="text-xs text-neutral-400 hover:text-red-500 transition-colors px-3 py-1 rounded"
         >
-          {isPunjabi ? 'ਰੀਸੈੱਟ' : 'Reset Today'}
+          {isPunjabi ? 'ਰੀਸੈੱਟ' : isHindi ? 'रीसेट' : 'Reset Today'}
         </button>
       </div>
     </div>

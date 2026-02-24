@@ -28,6 +28,8 @@ export function GurbaniAudioPlayer({
   onEnded,
   className,
 }: GurbaniAudioPlayerProps) {
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const audioRef = useRef<HTMLAudioElement>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [currentTime, setCurrentTime] = useState(0);
@@ -59,7 +61,7 @@ export function GurbaniAudioPlayer({
     };
 
     const handleError = () => {
-      setError(language === 'pa' ? 'ਆਡੀਓ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ' : 'Could not load audio');
+      setError(isPunjabi ? 'ਆਡੀਓ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ' : isHindi ? 'ऑडियो लोड नहीं हो सकी' : 'Could not load audio');
       setIsLoading(false);
     };
 
@@ -168,7 +170,7 @@ export function GurbaniAudioPlayer({
             <div className="w-12 h-12 rounded-full bg-neela-300 dark:bg-neela-700"></div>
           </div>
           <p className="text-sm text-neela-600 dark:text-neela-400 mt-2">
-            {language === 'pa' ? 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : 'Loading...'}
+            {isPunjabi ? 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : isHindi ? 'लोड हो रहा है...' : 'Loading...'}
           </p>
         </div>
       )}
@@ -249,7 +251,7 @@ export function GurbaniAudioPlayer({
             {/* Playback Speed */}
             <div className="flex items-center gap-2">
               <span className="text-xs text-neela-600 dark:text-neela-400">
-                {language === 'pa' ? 'ਸਪੀਡ' : 'Speed'}
+                {isPunjabi ? 'ਸਪੀਡ' : isHindi ? 'स्पीड' : 'Speed'}
               </span>
               <select
                 value={playbackRate}
@@ -278,7 +280,7 @@ export function GurbaniAudioPlayer({
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
               </svg>
-              <span>{language === 'pa' ? 'ਦੁਹਰਾਓ' : 'Loop'}</span>
+              <span>{isPunjabi ? 'ਦੁਹਰਾਓ' : isHindi ? 'दोहराएँ' : 'Loop'}</span>
             </button>
           </div>
         </>

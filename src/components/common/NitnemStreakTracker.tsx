@@ -111,6 +111,7 @@ interface NitnemStreakTrackerProps {
 export function NitnemStreakTracker({ language, onMarkComplete }: NitnemStreakTrackerProps) {
   const [streakData, setStreakData] = useState<StreakData>(loadStreak);
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   const todayLog = useMemo(() => {
     const today = getTodayKey();
@@ -144,14 +145,14 @@ export function NitnemStreakTracker({ language, onMarkComplete }: NitnemStreakTr
     <div className="bg-gradient-to-br from-amber-50 to-orange-50 dark:from-neutral-800 dark:to-amber-950/30 rounded-2xl p-5 md:p-6 border border-amber-200 dark:border-amber-800/50">
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
-        <h2 className={cn('text-lg font-bold text-amber-900 dark:text-amber-200', isPunjabi && 'font-gurmukhi')}>
-          {isPunjabi ? '🔥 ਨਿਤਨੇਮ ਲੜੀ' : '🔥 Nitnem Streak'}
+        <h2 className={cn('text-lg font-bold text-amber-900 dark:text-amber-200', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+          {isPunjabi ? '🔥 ਨਿਤਨੇਮ ਲੜੀ' : isHindi ? '🔥 नितनेम लड़ी' : '🔥 Nitnem Streak'}
         </h2>
         <div className="flex items-center gap-1.5 bg-amber-100 dark:bg-amber-900/40 px-3 py-1 rounded-full">
           <span className="text-lg">🔥</span>
           <span className="font-bold text-amber-800 dark:text-amber-300">{stats.current}</span>
           <span className="text-xs text-amber-600 dark:text-amber-400">
-            {isPunjabi ? 'ਦਿਨ' : 'days'}
+            {isPunjabi ? 'ਦਿਨ' : isHindi ? 'दिन' : 'days'}
           </span>
         </div>
       </div>
@@ -159,8 +160,8 @@ export function NitnemStreakTracker({ language, onMarkComplete }: NitnemStreakTr
       {/* Today's Progress */}
       <div className="mb-5">
         <div className="flex items-center justify-between text-sm mb-1.5">
-          <span className={cn('text-amber-700 dark:text-amber-400', isPunjabi && 'font-gurmukhi')}>
-            {isPunjabi ? 'ਅੱਜ ਦੀ ਪ੍ਰਗਤੀ' : "Today's Progress"}
+          <span className={cn('text-amber-700 dark:text-amber-400', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+            {isPunjabi ? 'ਅੱਜ ਦੀ ਪ੍ਰਗਤੀ' : isHindi ? 'आज की प्रगति' : "Today's Progress"}
           </span>
           <span className="font-mono text-amber-800 dark:text-amber-300">{completedToday}/{requiredCount}</span>
         </div>
@@ -176,8 +177,8 @@ export function NitnemStreakTracker({ language, onMarkComplete }: NitnemStreakTr
           />
         </div>
         {progressPercent === 100 && (
-          <p className={cn('text-sm text-green-600 dark:text-green-400 mt-1.5 text-center font-medium', isPunjabi && 'font-gurmukhi')}>
-            {isPunjabi ? '✅ ਅੱਜ ਦੇ ਸਾਰੇ ਨਿਤਨੇਮ ਪੂਰੇ!' : '✅ All daily Nitnem complete!'}
+          <p className={cn('text-sm text-green-600 dark:text-green-400 mt-1.5 text-center font-medium', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+            {isPunjabi ? '✅ ਅੱਜ ਦੇ ਸਾਰੇ ਨਿਤਨੇਮ ਪੂਰੇ!' : isHindi ? '✅ आज के सारे नितनेम पूरे!' : '✅ All daily Nitnem complete!'}
           </p>
         )}
       </div>
@@ -220,8 +221,8 @@ export function NitnemStreakTracker({ language, onMarkComplete }: NitnemStreakTr
               )}
             >
               <span>{done ? '✅' : '⬜'}</span>
-              <span className={cn('truncate', isPunjabi && 'font-gurmukhi')}>
-                {isPunjabi ? baniLabel.pa : baniLabel.en}
+              <span className={cn('truncate', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                {isPunjabi ? baniLabel.pa : isHindi ? (baniLabel.hi || baniLabel.en) : baniLabel.en}
               </span>
             </button>
           );
@@ -232,28 +233,28 @@ export function NitnemStreakTracker({ language, onMarkComplete }: NitnemStreakTr
       <div className="grid grid-cols-3 gap-3 mb-5">
         <div className="text-center bg-white dark:bg-neutral-800 rounded-xl p-3 border border-amber-100 dark:border-neutral-700">
           <p className="text-2xl font-bold text-amber-600 dark:text-amber-400">{stats.current}</p>
-          <p className={cn('text-xs text-neutral-600 dark:text-neutral-400', isPunjabi && 'font-gurmukhi')}>
-            {isPunjabi ? 'ਮੌਜੂਦਾ ਲੜੀ' : 'Current'}
+          <p className={cn('text-xs text-neutral-600 dark:text-neutral-400', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+            {isPunjabi ? 'ਮੌਜੂਦਾ ਲੜੀ' : isHindi ? 'वर्तमान लड़ी' : 'Current'}
           </p>
         </div>
         <div className="text-center bg-white dark:bg-neutral-800 rounded-xl p-3 border border-amber-100 dark:border-neutral-700">
           <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">{stats.longest}</p>
-          <p className={cn('text-xs text-neutral-600 dark:text-neutral-400', isPunjabi && 'font-gurmukhi')}>
-            {isPunjabi ? 'ਸਭ ਤੋਂ ਲੰਬੀ' : 'Longest'}
+          <p className={cn('text-xs text-neutral-600 dark:text-neutral-400', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+            {isPunjabi ? 'ਸਭ ਤੋਂ ਲੰਬੀ' : isHindi ? 'सबसे लंबी' : 'Longest'}
           </p>
         </div>
         <div className="text-center bg-white dark:bg-neutral-800 rounded-xl p-3 border border-amber-100 dark:border-neutral-700">
           <p className="text-2xl font-bold text-green-600 dark:text-green-400">{stats.totalDays}</p>
-          <p className={cn('text-xs text-neutral-600 dark:text-neutral-400', isPunjabi && 'font-gurmukhi')}>
-            {isPunjabi ? 'ਕੁੱਲ ਦਿਨ' : 'Total Days'}
+          <p className={cn('text-xs text-neutral-600 dark:text-neutral-400', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+            {isPunjabi ? 'ਕੁੱਲ ਦਿਨ' : isHindi ? 'कुल दिन' : 'Total Days'}
           </p>
         </div>
       </div>
 
       {/* 30-Day Heatmap */}
       <div>
-        <h3 className={cn('text-sm font-medium text-amber-800 dark:text-amber-300 mb-2', isPunjabi && 'font-gurmukhi')}>
-          {isPunjabi ? 'ਪਿਛਲੇ 30 ਦਿਨ' : 'Last 30 Days'}
+        <h3 className={cn('text-sm font-medium text-amber-800 dark:text-amber-300 mb-2', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+          {isPunjabi ? 'ਪਿਛਲੇ 30 ਦਿਨ' : isHindi ? 'पिछले 30 दिन' : 'Last 30 Days'}
         </h3>
         <div className="flex gap-[3px] flex-wrap">
           {last30Days.map((day) => (
@@ -273,13 +274,13 @@ export function NitnemStreakTracker({ language, onMarkComplete }: NitnemStreakTr
           ))}
         </div>
         <div className="flex items-center gap-2 mt-2 text-[10px] text-neutral-500 dark:text-neutral-500">
-          <span>{isPunjabi ? 'ਘੱਟ' : 'Less'}</span>
+          <span>{isPunjabi ? 'ਘੱਟ' : isHindi ? 'कम' : 'Less'}</span>
           <div className="w-3 h-3 rounded-sm bg-neutral-200 dark:bg-neutral-700" />
           <div className="w-3 h-3 rounded-sm bg-amber-300 dark:bg-amber-800" />
           <div className="w-3 h-3 rounded-sm bg-amber-400 dark:bg-amber-700" />
           <div className="w-3 h-3 rounded-sm bg-orange-400 dark:bg-orange-700" />
           <div className="w-3 h-3 rounded-sm bg-green-500 dark:bg-green-600" />
-          <span>{isPunjabi ? 'ਵੱਧ' : 'More'}</span>
+          <span>{isPunjabi ? 'ਵੱਧ' : isHindi ? 'ज़्यादा' : 'More'}</span>
         </div>
       </div>
     </div>
@@ -300,7 +301,7 @@ export function NitnemStreakBadge({ language }: { language: Language }) {
 
   return (
     <span className="inline-flex items-center gap-1 text-xs bg-amber-100 dark:bg-amber-900/40 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-full">
-      🔥 {streak} {language === 'pa' ? 'ਦਿਨ' : 'days'}
+      🔥 {streak} {language === 'pa' ? 'ਦਿਨ' : language === 'hi' ? 'दिन' : 'days'}
     </span>
   );
 }
@@ -324,12 +325,12 @@ export function markBaniComplete(baniId: string) {
   saveStreak(data);
 }
 
-const BANI_LABELS: Record<string, { pa: string; en: string }> = {
-  'japji': { pa: 'ਜਪੁਜੀ', en: 'Japji' },
-  'jaap': { pa: 'ਜਾਪ', en: 'Jaap' },
-  'tav-prasad-savaiye': { pa: 'ਸਵੱਯੇ', en: 'Savaiye' },
-  'chaupai': { pa: 'ਚੌਪਈ', en: 'Chaupai' },
-  'anand': { pa: 'ਅਨੰਦ', en: 'Anand' },
-  'rehras': { pa: 'ਰਹਿਰਾਸ', en: 'Rehras' },
-  'kirtan-sohila': { pa: 'ਸੋਹਿਲਾ', en: 'Sohila' },
+const BANI_LABELS: Record<string, { pa: string; en: string; hi: string }> = {
+  'japji': { pa: 'ਜਪੁਜੀ', en: 'Japji', hi: 'जपुजी' },
+  'jaap': { pa: 'ਜਾਪ', en: 'Jaap', hi: 'जाप' },
+  'tav-prasad-savaiye': { pa: 'ਸਵੱਯੇ', en: 'Savaiye', hi: 'सवैये' },
+  'chaupai': { pa: 'ਚੌਪਈ', en: 'Chaupai', hi: 'चौपई' },
+  'anand': { pa: 'ਅਨੰਦ', en: 'Anand', hi: 'आनंद' },
+  'rehras': { pa: 'ਰਹਿਰਾਸ', en: 'Rehras', hi: 'रहिरास' },
+  'kirtan-sohila': { pa: 'ਸੋਹਿਲਾ', en: 'Sohila', hi: 'सोहिला' },
 };

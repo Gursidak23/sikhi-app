@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 interface ErrorBoundaryProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
-  language?: 'pa' | 'en';
+  language?: 'pa' | 'en' | 'hi';
 }
 
 interface ErrorBoundaryState {
@@ -43,6 +43,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
       }
 
       const isPunjabi = this.props.language === 'pa';
+      const isHindi = this.props.language === 'hi';
 
       return (
         <div className="min-h-[400px] flex items-center justify-center p-8">
@@ -57,14 +58,17 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
             {/* Error message */}
             <h2 className={cn(
               'text-xl font-semibold text-gray-900 mb-2',
-              isPunjabi && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}>
-              {isPunjabi ? 'ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ' : 'Something went wrong'}
+              {isPunjabi ? 'ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ' : isHindi ? 'कुछ गलत हो गया' : 'Something went wrong'}
             </h2>
 
             <p className="text-gray-600 mb-6">
               {isPunjabi
                 ? 'ਕਿਰਪਾ ਕਰਕੇ ਪੰਨਾ ਦੁਬਾਰਾ ਲੋਡ ਕਰੋ ਜਾਂ ਬਾਅਦ ਵਿੱਚ ਕੋਸ਼ਿਸ਼ ਕਰੋ।'
+                : isHindi
+                ? 'कृपया पन्ना दोबारा लोड करें या बाद में कोशिश करें।'
                 : 'Please refresh the page or try again later.'}
             </p>
 
@@ -77,7 +81,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
                 'transition-colors'
               )}
             >
-              {isPunjabi ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : 'Try Again'}
+              {isPunjabi ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : isHindi ? 'दोबारा कोशिश करें' : 'Try Again'}
             </button>
           </div>
         </div>
@@ -99,7 +103,7 @@ interface ErrorFallbackProps {
     label: string;
     onClick: () => void;
   };
-  language?: 'pa' | 'en';
+  language?: 'pa' | 'en' | 'hi';
   type?: 'error' | 'empty' | 'notFound';
 }
 
@@ -111,11 +115,12 @@ export function ErrorFallback({
   type = 'error'
 }: ErrorFallbackProps) {
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   const defaultContent = {
     error: {
-      title: isPunjabi ? 'ਗਲਤੀ' : 'Error',
-      message: isPunjabi ? 'ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ' : 'Something went wrong',
+      title: isPunjabi ? 'ਗਲਤੀ' : isHindi ? 'गलती' : 'Error',
+      message: isPunjabi ? 'ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ' : isHindi ? 'कुछ गलत हो गया' : 'Something went wrong',
       icon: (
         <svg className="w-12 h-12 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
@@ -125,8 +130,8 @@ export function ErrorFallback({
       iconBg: 'bg-red-100'
     },
     empty: {
-      title: isPunjabi ? 'ਕੋਈ ਨਤੀਜਾ ਨਹੀਂ' : 'No Results',
-      message: isPunjabi ? 'ਕੋਈ ਡੇਟਾ ਨਹੀਂ ਮਿਲਿਆ' : 'No data found',
+      title: isPunjabi ? 'ਕੋਈ ਨਤੀਜਾ ਨਹੀਂ' : isHindi ? 'कोई नतीजा नहीं' : 'No Results',
+      message: isPunjabi ? 'ਕੋਈ ਡੇਟਾ ਨਹੀਂ ਮਿਲਿਆ' : isHindi ? 'कोई डेटा नहीं मिला' : 'No data found',
       icon: (
         <svg className="w-12 h-12 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4" />
@@ -136,8 +141,8 @@ export function ErrorFallback({
       iconBg: 'bg-gray-100'
     },
     notFound: {
-      title: isPunjabi ? 'ਨਹੀਂ ਲੱਭਿਆ' : 'Not Found',
-      message: isPunjabi ? 'ਇਹ ਪੰਨਾ ਮੌਜੂਦ ਨਹੀਂ ਹੈ' : 'This page does not exist',
+      title: isPunjabi ? 'ਨਹੀਂ ਲੱਭਿਆ' : isHindi ? 'नहीं मिला' : 'Not Found',
+      message: isPunjabi ? 'ਇਹ ਪੰਨਾ ਮੌਜੂਦ ਨਹੀਂ ਹੈ' : isHindi ? 'यह पन्ना मौजूद नहीं है' : 'This page does not exist',
       icon: (
         <svg className="w-12 h-12 text-neela-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -161,14 +166,16 @@ export function ErrorFallback({
 
       <h3 className={cn(
         'text-lg font-semibold text-gray-900 mb-2',
-        isPunjabi && 'font-gurmukhi'
+        isPunjabi && 'font-gurmukhi',
+        isHindi && 'font-devanagari'
       )}>
         {title || content.title}
       </h3>
 
       <p className={cn(
         'text-gray-600 mb-4',
-        isPunjabi && 'font-gurmukhi'
+        isPunjabi && 'font-gurmukhi',
+        isHindi && 'font-devanagari'
       )}>
         {message || content.message}
       </p>
@@ -200,23 +207,24 @@ interface ApiErrorProps {
     code?: string;
   };
   onRetry?: () => void;
-  language?: 'pa' | 'en';
+  language?: 'pa' | 'en' | 'hi';
 }
 
 export function ApiError({ error, onRetry, language = 'en' }: ApiErrorProps) {
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   const getErrorMessage = () => {
     if (error.status === 404) {
-      return isPunjabi ? 'ਡੇਟਾ ਨਹੀਂ ਮਿਲਿਆ' : 'Data not found';
+      return isPunjabi ? 'ਡੇਟਾ ਨਹੀਂ ਮਿਲਿਆ' : isHindi ? 'डेटा नहीं मिला' : 'Data not found';
     }
     if (error.status === 429) {
-      return isPunjabi ? 'ਬਹੁਤ ਸਾਰੀਆਂ ਬੇਨਤੀਆਂ। ਕਿਰਪਾ ਕਰਕੇ ਉਡੀਕ ਕਰੋ।' : 'Too many requests. Please wait.';
+      return isPunjabi ? 'ਬਹੁਤ ਸਾਰੀਆਂ ਬੇਨਤੀਆਂ। ਕਿਰਪਾ ਕਰਕੇ ਉਡੀਕ ਕਰੋ।' : isHindi ? 'बहुत सारी बेनतियाँ। कृपया प्रतीक्षा करें।' : 'Too many requests. Please wait.';
     }
     if (error.status === 500) {
-      return isPunjabi ? 'ਸਰਵਰ ਗਲਤੀ। ਕਿਰਪਾ ਕਰਕੇ ਬਾਅਦ ਵਿੱਚ ਕੋਸ਼ਿਸ਼ ਕਰੋ।' : 'Server error. Please try later.';
+      return isPunjabi ? 'ਸਰਵਰ ਗਲਤੀ। ਕਿਰਪਾ ਕਰਕੇ ਬਾਅਦ ਵਿੱਚ ਕੋਸ਼ਿਸ਼ ਕਰੋ।' : isHindi ? 'सर्वर गलती। कृपया बाद में कोशिश करें।' : 'Server error. Please try later.';
     }
-    return error.message || (isPunjabi ? 'ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ' : 'Something went wrong');
+    return error.message || (isPunjabi ? 'ਕੁਝ ਗਲਤ ਹੋ ਗਿਆ' : isHindi ? 'कुछ गलत हो गया' : 'Something went wrong');
   };
 
   return (
@@ -230,7 +238,8 @@ export function ApiError({ error, onRetry, language = 'en' }: ApiErrorProps) {
         <div className="flex-1 min-w-0">
           <p className={cn(
             'text-sm text-red-700',
-            isPunjabi && 'font-gurmukhi'
+            isPunjabi && 'font-gurmukhi',
+            isHindi && 'font-devanagari'
           )}>
             {getErrorMessage()}
           </p>
@@ -245,7 +254,7 @@ export function ApiError({ error, onRetry, language = 'en' }: ApiErrorProps) {
             onClick={onRetry}
             className="flex-shrink-0 text-sm font-medium text-red-600 hover:text-red-700"
           >
-            {isPunjabi ? 'ਦੁਬਾਰਾ' : 'Retry'}
+            {isPunjabi ? 'ਦੁਬਾਰਾ' : isHindi ? 'दोबारा' : 'Retry'}
           </button>
         )}
       </div>
