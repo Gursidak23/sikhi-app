@@ -10,6 +10,7 @@
 import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { NanakshahiCalendarFull, gregorianToNanakshahi, NANAKSHAHI_MONTHS } from '@/components/common/NanakshahiCalendar';
 import type { Language } from '@/types';
@@ -18,9 +19,9 @@ import type { Language } from '@/types';
 interface GurpurabEvent {
   id: string;
   type: 'gurpurab' | 'shaheedi' | 'historical' | 'mela';
-  name: { pa: string; en: string };
-  description: { pa: string; en: string };
-  history: { pa: string; en: string };
+  name: { pa: string; en: string; hi?: string };
+  description: { pa: string; en: string; hi?: string };
+  history: { pa: string; en: string; hi?: string };
   nanakshahiMonth: number;
   nanakshahiDay: number;
   icon: string;
@@ -189,18 +190,17 @@ const typeColors = {
 };
 
 const typeLabels = {
-  gurpurab: { pa: 'ਗੁਰਪੁਰਬ', en: 'Gurpurab' },
-  shaheedi: { pa: 'ਸ਼ਹੀਦੀ ਦਿਵਸ', en: 'Shaheedi Divas' },
-  historical: { pa: 'ਇਤਿਹਾਸਕ', en: 'Historical' },
-  mela: { pa: 'ਮੇਲਾ', en: 'Mela/Festival' },
+  gurpurab: { pa: 'ਗੁਰਪੁਰਬ', en: 'Gurpurab', hi: 'गुरपुरब' },
+  shaheedi: { pa: 'ਸ਼ਹੀਦੀ ਦਿਵਸ', en: 'Shaheedi Divas', hi: 'शहीदी दिवस' },
+  historical: { pa: 'ਇਤਿਹਾਸਕ', en: 'Historical', hi: 'ऐतिहासिक' },
+  mela: { pa: 'ਮੇਲਾ', en: 'Mela/Festival', hi: 'त्यौहार' },
 };
 
 export default function CalendarPage() {
-  const [language, setLanguage] = useState<Language>('pa');
+  const { language, isPunjabi } = useLanguage();
+  const isHindi = language === 'hi';
   const [selectedEvent, setSelectedEvent] = useState<GurpurabEvent | null>(null);
   const [filter, setFilter] = useState<'all' | 'gurpurab' | 'shaheedi' | 'historical' | 'mela'>('all');
-
-  const isPunjabi = language === 'pa';
   const nanakshahiDate = useMemo(() => gregorianToNanakshahi(new Date()), []);
 
   const filteredEvents = filter === 'all' ? GURPURAB_EVENTS : GURPURAB_EVENTS.filter(e => e.type === filter);
@@ -214,20 +214,22 @@ export default function CalendarPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-amber-50 via-white to-amber-50 dark:from-[#1a1a1a] dark:via-[#1e1e1e] dark:to-[#1a1a1a]">
-      <MainNavigation currentLanguage={language} onLanguageChange={setLanguage} />
+      <MainNavigation />
 
       <main id="main-content" className="flex-1">
         {/* Header */}
         <section className="py-8 md:py-12 text-center">
           <div className="container-content">
             <div className="text-5xl mb-3">📅</div>
-            <h1 className={cn('text-3xl md:text-4xl font-bold text-amber-900 dark:text-[#daa520]', isPunjabi && 'font-gurmukhi')}>
-              {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ ਕੈਲੰਡਰ' : 'Nanakshahi Calendar'}
+            <h1 className={cn('text-3xl md:text-4xl font-bold text-amber-900 dark:text-[#daa520]', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+              {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ ਕੈਲੰਡਰ' : isHindi ? 'नानकशाही कैलेंडर' : 'Nanakshahi Calendar'}
             </h1>
-            <p className={cn('text-amber-700 dark:text-amber-400 mt-2 text-lg', isPunjabi && 'font-gurmukhi')}>
+            <p className={cn('text-amber-700 dark:text-amber-400 mt-2 text-lg', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
               {isPunjabi
                 ? `${nanakshahiDate.day} ${NANAKSHAHI_MONTHS[nanakshahiDate.month].pa} ${nanakshahiDate.year} ਨਾਨਕਸ਼ਾਹੀ`
-                : `${nanakshahiDate.day} ${NANAKSHAHI_MONTHS[nanakshahiDate.month].en} ${nanakshahiDate.year} Nanakshahi`}
+                : isHindi
+                  ? `${nanakshahiDate.day} ${NANAKSHAHI_MONTHS[nanakshahiDate.month].en} ${nanakshahiDate.year} नानकशाही`
+                  : `${nanakshahiDate.day} ${NANAKSHAHI_MONTHS[nanakshahiDate.month].en} ${nanakshahiDate.year} Nanakshahi`}
             </p>
           </div>
         </section>
@@ -242,8 +244,8 @@ export default function CalendarPage() {
         {/* Events Section */}
         <section className="py-8 md:py-12 bg-white dark:bg-neutral-900/50">
           <div className="container-content max-w-5xl">
-            <h2 className={cn('text-2xl font-bold text-center text-amber-900 dark:text-amber-200 mb-6', isPunjabi && 'font-gurmukhi')}>
-              {isPunjabi ? 'ਗੁਰਪੁਰਬ ਅਤੇ ਇਤਿਹਾਸਕ ਦਿਵਸ' : 'Gurpurabs & Historical Events'}
+            <h2 className={cn('text-2xl font-bold text-center text-amber-900 dark:text-amber-200 mb-6', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+              {isPunjabi ? 'ਗੁਰਪੁਰਬ ਅਤੇ ਇਤਿਹਾਸਕ ਦਿਵਸ' : isHindi ? 'गुरपुरब और ऐतिहासिक दिवस' : 'Gurpurabs & Historical Events'}
             </h2>
 
             {/* Filters */}
@@ -260,8 +262,8 @@ export default function CalendarPage() {
                   )}
                 >
                   {f === 'all'
-                    ? (isPunjabi ? 'ਸਾਰੇ' : 'All')
-                    : (isPunjabi ? typeLabels[f].pa : typeLabels[f].en)}
+                    ? (isPunjabi ? 'ਸਾਰੇ' : isHindi ? 'सभी' : 'All')
+                    : (isPunjabi ? typeLabels[f].pa : isHindi ? (typeLabels[f].hi || typeLabels[f].en) : typeLabels[f].en)}
                 </button>
               ))}
             </div>
@@ -277,14 +279,14 @@ export default function CalendarPage() {
                   <div className="flex items-start justify-between mb-3">
                     <span className="text-3xl">{event.icon}</span>
                     <span className={cn('text-xs px-2.5 py-1 rounded-full', typeColors[event.type])}>
-                      {isPunjabi ? typeLabels[event.type].pa : typeLabels[event.type].en}
+                      {isPunjabi ? typeLabels[event.type].pa : isHindi ? (typeLabels[event.type].hi || typeLabels[event.type].en) : typeLabels[event.type].en}
                     </span>
                   </div>
-                  <h3 className={cn('font-semibold text-neutral-900 dark:text-white mb-1', isPunjabi && 'font-gurmukhi text-lg')}>
-                    {isPunjabi ? event.name.pa : event.name.en}
+                  <h3 className={cn('font-semibold text-neutral-900 dark:text-white mb-1', isPunjabi && 'font-gurmukhi text-lg', isHindi && 'font-devanagari text-lg')}>
+                    {isPunjabi ? event.name.pa : isHindi ? (event.name.hi || event.name.en) : event.name.en}
                   </h3>
-                  <p className={cn('text-sm text-neutral-600 dark:text-neutral-400', isPunjabi && 'font-gurmukhi')}>
-                    {isPunjabi ? event.description.pa : event.description.en}
+                  <p className={cn('text-sm text-neutral-600 dark:text-neutral-400', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                    {isPunjabi ? event.description.pa : isHindi ? (event.description.hi || event.description.en) : event.description.en}
                   </p>
                   <div className="mt-3 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
                     <span className="font-gurmukhi">
@@ -293,7 +295,7 @@ export default function CalendarPage() {
                     {event.year && <span>• {event.year} CE</span>}
                   </div>
                   <span className="text-xs text-neela-600 dark:text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity mt-2 block">
-                    {isPunjabi ? 'ਹੋਰ ਪੜ੍ਹੋ →' : 'Read more →'}
+                    {isPunjabi ? 'ਹੋਰ ਪੜ੍ਹੋ →' : isHindi ? 'और पढ़ें →' : 'Read more →'}
                   </span>
                 </button>
               ))}
@@ -312,8 +314,8 @@ export default function CalendarPage() {
                     ✕
                   </button>
                 </div>
-                <h2 className={cn('text-xl font-bold mt-4', isPunjabi && 'font-gurmukhi text-2xl')}>
-                  {isPunjabi ? selectedEvent.name.pa : selectedEvent.name.en}
+                <h2 className={cn('text-xl font-bold mt-4', isPunjabi && 'font-gurmukhi text-2xl', isHindi && 'font-devanagari text-2xl')}>
+                  {isPunjabi ? selectedEvent.name.pa : isHindi ? (selectedEvent.name.hi || selectedEvent.name.en) : selectedEvent.name.en}
                 </h2>
                 <div className="flex items-center gap-3 mt-2 text-sm text-white/80">
                   <span className="font-gurmukhi">
@@ -324,10 +326,10 @@ export default function CalendarPage() {
               </div>
               <div className="p-6">
                 <div className={cn('text-xs px-3 py-1 rounded-full inline-block mb-4', typeColors[selectedEvent.type])}>
-                  {isPunjabi ? typeLabels[selectedEvent.type].pa : typeLabels[selectedEvent.type].en}
+                  {isPunjabi ? typeLabels[selectedEvent.type].pa : isHindi ? (typeLabels[selectedEvent.type].hi || typeLabels[selectedEvent.type].en) : typeLabels[selectedEvent.type].en}
                 </div>
-                <p className={cn('text-neutral-700 dark:text-neutral-300 leading-relaxed', isPunjabi && 'font-gurmukhi text-lg leading-loose')}>
-                  {isPunjabi ? selectedEvent.history.pa : selectedEvent.history.en}
+                <p className={cn('text-neutral-700 dark:text-neutral-300 leading-relaxed', isPunjabi && 'font-gurmukhi text-lg leading-loose', isHindi && 'font-devanagari text-lg leading-loose')}>
+                  {isPunjabi ? selectedEvent.history.pa : isHindi ? (selectedEvent.history.hi || selectedEvent.history.en) : selectedEvent.history.en}
                 </p>
               </div>
             </div>
@@ -336,7 +338,7 @@ export default function CalendarPage() {
       </main>
 
       <ScrollToTop />
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

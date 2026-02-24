@@ -23,37 +23,37 @@ interface ShareVerseCardProps {
 const CARD_THEMES = [
   {
     id: 'kesri',
-    name: { pa: 'ਕੇਸਰੀ', en: 'Kesri' },
+    name: { pa: 'ਕੇਸਰੀ', en: 'Kesri', hi: 'केसरी' },
     gradient: ['#f97316', '#ea580c'],
     textColor: '#ffffff',
   },
   {
     id: 'neela',
-    name: { pa: 'ਨੀਲਾ', en: 'Neela' },
+    name: { pa: 'ਨੀਲਾ', en: 'Neela', hi: 'नीला' },
     gradient: ['#3b82f6', '#1d4ed8'],
     textColor: '#ffffff',
   },
   {
     id: 'hara',
-    name: { pa: 'ਹਰਾ', en: 'Green' },
+    name: { pa: 'ਹਰਾ', en: 'Green', hi: 'हरा' },
     gradient: ['#22c55e', '#16a34a'],
     textColor: '#ffffff',
   },
   {
     id: 'saffron-cream',
-    name: { pa: 'ਕੇਸਰੀ-ਕਰੀਮ', en: 'Saffron Cream' },
+    name: { pa: 'ਕੇਸਰੀ-ਕਰੀਮ', en: 'Saffron Cream', hi: 'केसरी-क्रीम' },
     gradient: ['#fff7ed', '#ffedd5'],
     textColor: '#9a3412',
   },
   {
     id: 'royal',
-    name: { pa: 'ਸ਼ਾਹੀ', en: 'Royal' },
+    name: { pa: 'ਸ਼ਾਹੀ', en: 'Royal', hi: 'शाही' },
     gradient: ['#581c87', '#7c3aed'],
     textColor: '#ffffff',
   },
   {
     id: 'night',
-    name: { pa: 'ਰਾਤ', en: 'Night' },
+    name: { pa: 'ਰਾਤ', en: 'Night', hi: 'रात' },
     gradient: ['#1e293b', '#0f172a'],
     textColor: '#f1f5f9',
   },
@@ -71,6 +71,8 @@ export function ShareVerseCard({
   const [isGenerating, setIsGenerating] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const canvasRef = useRef<HTMLCanvasElement>(null);
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   const generateImage = useCallback(async () => {
     const canvas = canvasRef.current;
@@ -256,7 +258,7 @@ export function ShareVerseCard({
           'bg-neela-100 dark:bg-neela-900 text-neela-700 dark:text-neela-300',
           'hover:bg-neela-200 dark:hover:bg-neela-800'
         )}
-        aria-label={language === 'pa' ? 'ਸਾਂਝਾ ਕਰੋ' : 'Share'}
+        aria-label={isPunjabi ? 'ਸਾਂਝਾ ਕਰੋ' : isHindi ? 'साझा करें' : 'Share'}
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} 
@@ -264,7 +266,7 @@ export function ShareVerseCard({
           />
         </svg>
         <span className="hidden sm:inline">
-          {language === 'pa' ? 'ਸਾਂਝਾ ਕਰੋ' : 'Share'}
+          {isPunjabi ? 'ਸਾਂਝਾ ਕਰੋ' : isHindi ? 'साझा करें' : 'Share'}
         </span>
       </button>
 
@@ -280,7 +282,7 @@ export function ShareVerseCard({
             {/* Modal Header */}
             <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
               <h3 className="text-lg font-semibold text-neutral-900 dark:text-neutral-100">
-                {language === 'pa' ? 'ਪੰਗਤੀ ਸਾਂਝੀ ਕਰੋ' : 'Share Verse'}
+                {isPunjabi ? 'ਪੰਗਤੀ ਸਾਂਝੀ ਕਰੋ' : isHindi ? 'पंक्ति साझा करें' : 'Share Verse'}
               </h3>
               <button
                 onClick={() => setShowModal(false)}
@@ -310,7 +312,7 @@ export function ShareVerseCard({
             {/* Theme Selector */}
             <div className="px-4 pb-4">
               <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2">
-                {language === 'pa' ? 'ਥੀਮ ਚੁਣੋ' : 'Select Theme'}
+                {isPunjabi ? 'ਥੀਮ ਚੁਣੋ' : isHindi ? 'थीम चुनें' : 'Select Theme'}
               </p>
               <div className="flex gap-2 flex-wrap">
                 {CARD_THEMES.map((theme) => (
@@ -327,7 +329,7 @@ export function ShareVerseCard({
                     style={{
                       background: `linear-gradient(135deg, ${theme.gradient[0]}, ${theme.gradient[1]})`,
                     }}
-                    title={language === 'pa' ? theme.name.pa : theme.name.en}
+                    title={isPunjabi ? theme.name.pa : isHindi ? (theme.name.hi ?? theme.name.pa) : theme.name.en}
                   />
                 ))}
               </div>
@@ -347,7 +349,7 @@ export function ShareVerseCard({
                     className="w-4 h-4 rounded border-neutral-300 dark:border-neutral-600 text-neela-600 focus:ring-neela-500"
                   />
                   <span className="text-sm text-neutral-700 dark:text-neutral-300">
-                    {language === 'pa' ? 'ਅਰਥ ਸ਼ਾਮਲ ਕਰੋ' : 'Include Translation'}
+                    {isPunjabi ? 'ਅਰਥ ਸ਼ਾਮਲ ਕਰੋ' : isHindi ? 'अर्थ शामिल करें' : 'Include Translation'}
                   </span>
                 </label>
               </div>
@@ -364,7 +366,7 @@ export function ShareVerseCard({
                     d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" 
                   />
                 </svg>
-                <span>{language === 'pa' ? 'ਸਾਂਝਾ ਕਰੋ' : 'Share'}</span>
+                <span>{isPunjabi ? 'ਸਾਂਝਾ ਕਰੋ' : isHindi ? 'साझा करें' : 'Share'}</span>
               </button>
               <button
                 onClick={downloadImage}
@@ -375,7 +377,7 @@ export function ShareVerseCard({
                     d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" 
                   />
                 </svg>
-                <span>{language === 'pa' ? 'ਡਾਊਨਲੋਡ' : 'Download'}</span>
+                <span>{isPunjabi ? 'ਡਾਊਨਲੋਡ' : isHindi ? 'डाउनलोड' : 'Download'}</span>
               </button>
             </div>
           </div>
@@ -392,6 +394,8 @@ export function ShareTextButton({
   source,
   language,
 }: Omit<ShareVerseCardProps, 'transliteration'>) {
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const [copied, setCopied] = useState(false);
 
   const handleCopy = useCallback(async () => {
@@ -426,7 +430,7 @@ export function ShareTextButton({
           <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
           </svg>
-          <span>{language === 'pa' ? 'ਕਾਪੀ ਹੋ ਗਈ' : 'Copied!'}</span>
+          <span>{isPunjabi ? 'ਕਾਪੀ ਹੋ ਗਈ' : isHindi ? 'कॉपी हो गई' : 'Copied!'}</span>
         </>
       ) : (
         <>
@@ -435,7 +439,7 @@ export function ShareTextButton({
               d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" 
             />
           </svg>
-          <span>{language === 'pa' ? 'ਕਾਪੀ' : 'Copy'}</span>
+          <span>{isPunjabi ? 'ਕਾਪੀ' : isHindi ? 'कॉपी' : 'Copy'}</span>
         </>
       )}
     </button>

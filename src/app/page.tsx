@@ -7,10 +7,10 @@
 // Respectful presentation of Gurbani and History sections
 // ============================================================================
 
-import { useState } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { HukamnamaSection } from '@/components/common/Hukamnama';
 import { WaheguruSimran } from '@/components/common/WaheguruSimran';
@@ -29,7 +29,8 @@ function KhandaIcon({ className }: { className?: string }) {
 }
 
 export default function HomePage() {
-  const [language, setLanguage] = useState<Language>('pa');
+  const { language, isPunjabi } = useLanguage();
+  const isHindi = language === 'hi';
 
   const content = {
     pa: {
@@ -99,14 +100,10 @@ export default function HomePage() {
 
   const langKey = language === 'pa-roman' ? 'pa' : language;
   const t = content[langKey as keyof typeof content] || content.pa;
-  const isPunjabi = language === 'pa';
 
   return (
     <div className="min-h-screen flex flex-col bg-white dark:bg-neutral-950">
-      <MainNavigation
-        currentLanguage={language}
-        onLanguageChange={setLanguage}
-      />
+      <MainNavigation />
 
       <main id="main-content" className="flex-1">
         {/* Hero Section */}
@@ -123,7 +120,8 @@ export default function HomePage() {
             {/* Main Title */}
             <h1 className={cn(
               'text-4xl md:text-6xl lg:text-7xl font-bold text-white mb-4 animate-in fade-in slide-in-from-bottom-4 duration-500',
-              isPunjabi && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}>
               {t.welcome}
             </h1>
@@ -131,7 +129,8 @@ export default function HomePage() {
             {/* Tagline */}
             <p className={cn(
               'text-xl md:text-2xl text-blue-100/90 max-w-3xl mx-auto mb-10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-100',
-              isPunjabi && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}>
               {t.tagline}
             </p>
@@ -146,7 +145,7 @@ export default function HomePage() {
             {/* CTA Buttons */}
             <div className="flex flex-col sm:flex-row gap-4 justify-center mt-10 animate-in fade-in slide-in-from-bottom-4 duration-500 delay-300">
               <Link href="/gurbani" className="btn-neela inline-flex items-center gap-2 shadow-lg shadow-blue-900/30 hover:shadow-xl hover:shadow-blue-900/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                <span className={isPunjabi ? 'font-gurmukhi' : ''}>
+                <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
                   {t.gurbaniTitle}
                 </span>
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -154,7 +153,7 @@ export default function HomePage() {
                 </svg>
               </Link>
               <Link href="/itihaas" className="btn-kesri inline-flex items-center gap-2 shadow-lg shadow-orange-900/30 hover:shadow-xl hover:shadow-orange-900/40 transition-all hover:scale-[1.02] active:scale-[0.98]">
-                <span className={isPunjabi ? 'font-gurmukhi' : ''}>
+                <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
                   {t.itihaasTitle}
                 </span>
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -162,8 +161,8 @@ export default function HomePage() {
                 </svg>
               </Link>
               <Link href="/community" className="inline-flex items-center gap-2 px-6 py-3 bg-white/15 hover:bg-white/25 backdrop-blur text-white rounded-xl border border-white/20 font-medium transition-all hover:scale-[1.02] active:scale-[0.98] shadow-lg">
-                <span className={isPunjabi ? 'font-gurmukhi' : ''}>
-                  {isPunjabi ? 'ਸੰਗਤ' : 'Community'}
+                <span className={isPunjabi ? 'font-gurmukhi' : language === 'hi' ? 'font-devanagari' : ''}>
+                  {isPunjabi ? 'ਸੰਗਤ' : language === 'hi' ? 'संगत' : 'Community'}
                 </span>
                 <span className="relative flex h-2 w-2">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
@@ -194,14 +193,16 @@ export default function HomePage() {
                 
                 <h2 className={cn(
                   'text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-4',
-                  isPunjabi && 'font-gurmukhi'
+                  isPunjabi && 'font-gurmukhi',
+                  isHindi && 'font-devanagari'
                 )}>
                   {t.gurbaniTitle}
                 </h2>
                 
                 <p className={cn(
                   'text-gray-600 dark:text-gray-400 text-lg mb-4',
-                  isPunjabi && 'font-gurmukhi'
+                  isPunjabi && 'font-gurmukhi',
+                  isHindi && 'font-devanagari'
                 )}>
                   {t.gurbaniDesc}
                 </p>
@@ -209,7 +210,8 @@ export default function HomePage() {
                 <div className="bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl px-4 py-3 mb-6">
                   <p className={cn(
                     'text-blue-800 dark:text-blue-300 text-sm flex items-center gap-2',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
                   )}>
                     <span>📖</span> {t.gurbaniNote}
                   </p>
@@ -219,7 +221,7 @@ export default function HomePage() {
                   href="/gurbani"
                   className="btn-neela inline-flex items-center gap-2 w-full justify-center sm:w-auto group/btn"
                 >
-                  <span className={isPunjabi ? 'font-gurmukhi' : ''}>
+                  <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
                     {t.explore} {t.gurbaniTitle}
                   </span>
                   <svg className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -236,14 +238,16 @@ export default function HomePage() {
                 
                 <h2 className={cn(
                   'text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-4',
-                  isPunjabi && 'font-gurmukhi'
+                  isPunjabi && 'font-gurmukhi',
+                  isHindi && 'font-devanagari'
                 )}>
                   {t.itihaasTitle}
                 </h2>
                 
                 <p className={cn(
                   'text-gray-600 dark:text-gray-400 text-lg mb-4',
-                  isPunjabi && 'font-gurmukhi'
+                  isPunjabi && 'font-gurmukhi',
+                  isHindi && 'font-devanagari'
                 )}>
                   {t.itihaasDesc}
                 </p>
@@ -251,7 +255,8 @@ export default function HomePage() {
                 <div className="bg-orange-50 dark:bg-orange-900/20 border border-orange-200 dark:border-orange-800 rounded-xl px-4 py-3 mb-6">
                   <p className={cn(
                     'text-orange-800 dark:text-orange-300 text-sm flex items-center gap-2',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
                   )}>
                     <span>📜</span> {t.itihaasNote}
                   </p>
@@ -261,7 +266,7 @@ export default function HomePage() {
                   href="/itihaas"
                   className="btn-kesri inline-flex items-center gap-2 w-full justify-center sm:w-auto group/btn"
                 >
-                  <span className={isPunjabi ? 'font-gurmukhi' : ''}>
+                  <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
                     {t.explore} {t.itihaasTitle}
                   </span>
                   <svg className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -283,9 +288,10 @@ export default function HomePage() {
                   <div className="flex items-center gap-2 mb-4">
                     <h2 className={cn(
                       'text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white',
-                      isPunjabi && 'font-gurmukhi'
+                      isPunjabi && 'font-gurmukhi',
+                      language === 'hi' && 'font-devanagari'
                     )}>
-                      {isPunjabi ? 'ਸੰਗਤ' : 'Sangat'}
+                      {isPunjabi ? 'ਸੰਗਤ' : language === 'hi' ? 'संगत' : 'Sangat'}
                     </h2>
                     <span className="relative flex h-2.5 w-2.5">
                       <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
@@ -295,19 +301,23 @@ export default function HomePage() {
                   
                   <p className={cn(
                     'text-gray-600 dark:text-gray-400 text-lg mb-4',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    language === 'hi' && 'font-devanagari'
                   )}>
                     {isPunjabi
                       ? 'ਸਿੱਖ ਸੰਗਤ ਨਾਲ ਜੁੜੋ, ਵਿਚਾਰ ਕਰੋ ਅਤੇ ਸਿੱਖੋ'
+                      : language === 'hi'
+                        ? 'सिख संगत से जुड़ें, विचार करें और सीखें'
                       : 'Connect with the Sikh community, discuss and learn together'}
                   </p>
                   
                   <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-200 dark:border-emerald-800 rounded-xl px-4 py-3 mb-6">
                     <p className={cn(
                       'text-emerald-800 dark:text-emerald-300 text-sm flex items-center gap-2',
-                      isPunjabi && 'font-gurmukhi'
+                      isPunjabi && 'font-gurmukhi',
+                      isHindi && 'font-devanagari'
                     )}>
-                      <span>💬</span> {isPunjabi ? 'ਲਾਈਵ ਚੈਟ ਕਮਰੇ' : 'Live chat rooms'}
+                      <span>💬</span> {isPunjabi ? 'ਲਾਈਵ ਚੈਟ ਕਮਰੇ' : language === 'hi' ? 'लाइव चैट रूम' : 'Live chat rooms'}
                     </p>
                   </div>
                   
@@ -315,8 +325,8 @@ export default function HomePage() {
                     href="/community"
                     className="inline-flex items-center gap-2 w-full justify-center sm:w-auto px-6 py-3 bg-gradient-to-r from-emerald-500 to-emerald-600 hover:from-emerald-600 hover:to-emerald-700 text-white rounded-xl font-medium transition-all shadow-md shadow-emerald-500/20 hover:shadow-lg hover:shadow-emerald-500/30 group/btn"
                   >
-                    <span className={isPunjabi ? 'font-gurmukhi' : ''}>
-                      {isPunjabi ? 'ਸੰਗਤ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ' : 'Join Sangat'}
+                    <span className={isPunjabi ? 'font-gurmukhi' : language === 'hi' ? 'font-devanagari' : ''}>
+                      {isPunjabi ? 'ਸੰਗਤ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ' : language === 'hi' ? 'संगत में शामिल हों' : 'Join Sangat'}
                     </span>
                     <svg className="w-5 h-5 transition-transform group-hover/btn:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -348,9 +358,10 @@ export default function HomePage() {
             <div className="text-center mb-8">
               <h2 className={cn(
                 'text-2xl lg:text-3xl font-bold text-amber-900 dark:text-[#daa520]',
-                isPunjabi && 'font-gurmukhi'
+                isPunjabi && 'font-gurmukhi',
+                isHindi && 'font-devanagari'
               )}>
-                {isPunjabi ? 'ਅੱਜ ਦਾ ਹੁਕਮਨਾਮਾ' : "Today's Hukamnama"}
+                {isPunjabi ? 'ਅੱਜ ਦਾ ਹੁਕਮਨਾਮਾ' : isHindi ? 'आज का हुकमनामा' : "Today's Hukamnama"}
               </h2>
             </div>
             
@@ -364,8 +375,8 @@ export default function HomePage() {
                 className="inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r from-neela-600 to-neela-700 text-white rounded-xl hover:from-neela-700 hover:to-neela-800 transition-all shadow-lg hover:shadow-xl"
               >
                 <span className="text-xl">🙏</span>
-                <span className={cn('font-medium', isPunjabi && 'font-gurmukhi')}>
-                  {isPunjabi ? 'ਨਿਤਨੇਮ ਬਾਣੀਆਂ ਪੜ੍ਹੋ' : 'Read Nitnem Banis'}
+                <span className={cn('font-medium', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                  {isPunjabi ? 'ਨਿਤਨੇਮ ਬਾਣੀਆਂ ਪੜ੍ਹੋ' : isHindi ? 'नितनेम बाणियाँ पढ़ें' : 'Read Nitnem Banis'}
                 </span>
                 <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
@@ -381,7 +392,8 @@ export default function HomePage() {
             <div className="text-center mb-12">
               <h2 className={cn(
                 'text-2xl lg:text-3xl font-bold text-gray-900 dark:text-white mb-3',
-                isPunjabi && 'font-gurmukhi'
+                isPunjabi && 'font-gurmukhi',
+                isHindi && 'font-devanagari'
               )}>
                 {t.principles}
               </h2>
@@ -431,13 +443,15 @@ export default function HomePage() {
                   </div>
                   <h3 className={cn(
                     'font-semibold text-gray-900 dark:text-white mb-2 text-lg',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
                   )}>
                     {item.title}
                   </h3>
                   <p className={cn(
                     'text-gray-600 dark:text-gray-400 text-sm',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
                   )}>
                     {item.desc}
                   </p>
@@ -474,15 +488,17 @@ export default function HomePage() {
             <div className="text-center mb-8">
               <h2 className={cn(
                 'text-2xl lg:text-3xl font-bold text-neela-800 dark:text-blue-300',
-                isPunjabi && 'font-gurmukhi'
+                isPunjabi && 'font-gurmukhi',
+                isHindi && 'font-devanagari'
               )}>
-                {isPunjabi ? 'ਵਾਹਿਗੁਰੂ ਸਿਮਰਨ' : 'Waheguru Simran'}
+                {isPunjabi ? 'ਵਾਹਿਗੁਰੂ ਸਿਮਰਨ' : isHindi ? 'वाहेगुरू सिमरन' : 'Waheguru Simran'}
               </h2>
               <p className={cn(
                 'text-neutral-600 dark:text-neutral-400 mt-2',
-                isPunjabi && 'font-gurmukhi'
+                isPunjabi && 'font-gurmukhi',
+                isHindi && 'font-devanagari'
               )}>
-                {isPunjabi ? 'ਨਾਮ ਜਪੋ — ਡਿਜੀਟਲ ਮਾਲਾ' : 'Naam Japo — Digital Mala Counter'}
+                {isPunjabi ? 'ਨਾਮ ਜਪੋ — ਡਿਜੀਟਲ ਮਾਲਾ' : isHindi ? 'नाम जपो — डिजिटल माला काउंटर' : 'Naam Japo — Digital Mala Counter'}
               </p>
             </div>
             <WaheguruSimran language={language} />
@@ -498,7 +514,7 @@ export default function HomePage() {
       </main>
 
       <ScrollToTop />
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

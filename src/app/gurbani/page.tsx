@@ -11,6 +11,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn, toGurmukhiNumeral, fromGurmukhiNumeral, hasGurmukhiNumerals } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { GurbaniDisclaimer } from '@/components/common/Disclaimer';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { ReadingProgress } from '@/components/common/ReadingProgress';
@@ -95,7 +96,9 @@ function getPunjabiMeaning(verse: BaniDBVerse): { text: string; source: string }
 }
 
 export default function GurbaniPage() {
-  const [language, setLanguage] = useState<Language>('pa');
+  const { language } = useLanguage();
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const [hasAcknowledged, setHasAcknowledged] = useState(false);
   const [sidebarOpen, setSidebarOpen] = useState(true);
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -226,10 +229,7 @@ export default function GurbaniPage() {
 
   return (
     <div className="min-h-screen flex flex-col" style={{ background: 'linear-gradient(135deg, #fefce8 0%, #fef9c3 50%, #fef3c7 100%)' }}>
-      <MainNavigation
-        currentLanguage={language}
-        onLanguageChange={setLanguage}
-      />
+      <MainNavigation />
 
       {/* Maryada Disclaimer - Must be acknowledged */}
       {!hasAcknowledged && (
@@ -260,8 +260,8 @@ export default function GurbaniPage() {
                 <div className="sticky top-24 space-y-4">
                   {/* Search Component */}
                   <div className="bg-white rounded-xl border border-amber-200 p-4 shadow-sm">
-                    <h3 className="font-gurmukhi text-amber-900 font-medium mb-3">
-                      {language === 'pa' ? '🔍 ਖੋਜੋ' : '🔍 Search'}
+                    <h3 className={cn("text-amber-900 font-medium mb-3", isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                      {isPunjabi ? '🔍 ਖੋਜੋ' : isHindi ? '🔍 खोजें' : '🔍 Search'}
                     </h3>
                     <GurbaniSearch
                       onResultSelect={(angNumber) => handleAngChange(angNumber)}
@@ -317,10 +317,12 @@ export default function GurbaniPage() {
                   </button>
 
                   <div className="saroop-ang-display text-sm sm:text-base">
-                    <span className="text-amber-800 font-gurmukhi">ਅੰਗ</span>
+                    <span className={cn("text-amber-800", isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                      {isPunjabi ? 'ਅੰਗ' : isHindi ? 'अंग' : 'Ang'}
+                    </span>
                     <input
                       type="text"
-                      value={language === 'pa' ? toGurmukhiNumeral(currentAng) : currentAng}
+                      value={isPunjabi ? toGurmukhiNumeral(currentAng) : currentAng}
                       onChange={(e) => {
                         const val = fromGurmukhiNumeral(e.target.value);
                         if (val !== null && val >= 1 && val <= 1430) {
@@ -333,7 +335,7 @@ export default function GurbaniPage() {
                       )}
                       aria-label="Ang number"
                     />
-                    <span className="text-amber-700">/ {language === 'pa' ? '੧੪੩੦' : '1430'}</span>
+                    <span className="text-amber-700">/ {isPunjabi ? '੧੪੩੦' : '1430'}</span>
                   </div>
 
                   <button
@@ -352,8 +354,8 @@ export default function GurbaniPage() {
 
               {/* Source Attribution - Compact on mobile */}
               <div className="mb-4 sm:mb-6 p-3 sm:p-4 bg-gradient-to-r from-amber-50 to-yellow-50 rounded-lg border border-amber-200/50 text-xs sm:text-sm">
-                <p className={cn("text-amber-900", language === 'pa' && 'font-gurmukhi')}>
-                  {language === 'pa'
+                <p className={cn("text-amber-900", isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                  {isPunjabi
                     ? 'ℹ️ ਅੰਗਰੇਜ਼ੀ ਅਰਥ ਟੀਕਾ-ਆਧਾਰਿਤ ਵਿਆਖਿਆ ਹੈ। ਮੂਲ ਗੁਰਮੁਖੀ ਪ੍ਰਮਾਣਿਕ ਹੈ।'
                     : 'ℹ️ English meanings are teeka-based interpretations. The original Gurmukhi is authoritative.'}
                 </p>
@@ -413,7 +415,7 @@ export default function GurbaniPage() {
                       <p className="raag-title">{getCurrentRaag(currentAng)}</p>
                       <div className="mt-3">
                         <span className="ang-number">
-                          ਅੰਗ {language === 'pa' ? toGurmukhiNumeral(currentAng) : currentAng}
+                        {isPunjabi ? 'ਅੰਗ' : isHindi ? 'अंग' : 'Ang'} {isPunjabi ? toGurmukhiNumeral(currentAng) : currentAng}
                         </span>
                       </div>
                     </div>
@@ -425,8 +427,8 @@ export default function GurbaniPage() {
                         className="arth-toggle"
                       >
                         <span>◉</span>
-                        <span className={language === 'pa' ? 'font-gurmukhi' : ''}>
-                          {language === 'pa' ? 'ਸਾਰੇ ਅਰਥ' : 'All Meanings'}
+                        <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
+                          {isPunjabi ? 'ਸਾਰੇ ਅਰਥ' : isHindi ? 'सारे अर्थ' : 'All Meanings'}
                         </span>
                       </button>
                       <button
@@ -434,8 +436,8 @@ export default function GurbaniPage() {
                         className="arth-toggle"
                       >
                         <span>○</span>
-                        <span className={language === 'pa' ? 'font-gurmukhi' : ''}>
-                          {language === 'pa' ? 'ਛੁਪਾਓ' : 'Hide'}
+                        <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
+                          {isPunjabi ? 'ਛੁਪਾਓ' : isHindi ? 'छुपाओ' : 'Hide'}
                         </span>
                       </button>
                     </div>
@@ -469,8 +471,8 @@ export default function GurbaniPage() {
                               {(translation || punjabiMeaning) && (
                                 <p className="arth-toggle justify-center mt-2">
                                   <span>{isExpanded ? '▼' : '▶'}</span>
-                                  <span className={language === 'pa' ? 'font-gurmukhi' : ''}>
-                                    {language === 'pa' ? 'ਅਰਥ' : 'Meaning'}
+                                  <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
+                                    {isPunjabi ? 'ਅਰਥ' : isHindi ? 'अर्थ' : 'Meaning'}
                                   </span>
                                 </p>
                               )}
@@ -548,7 +550,7 @@ export default function GurbaniPage() {
       <button
         onClick={() => setMobileNavOpen(true)}
         className="lg:hidden fixed bottom-6 right-4 z-40 w-12 h-12 rounded-full bg-amber-600 text-white shadow-lg flex items-center justify-center hover:bg-amber-700 active:scale-95 transition-all"
-        aria-label={language === 'pa' ? 'ਖੋਜੋ ਅਤੇ ਨੈਵੀਗੇਟ ਕਰੋ' : 'Search and Navigate'}
+        aria-label={isPunjabi ? 'ਖੋਜੋ ਅਤੇ ਨੈਵੀਗੇਟ ਕਰੋ' : isHindi ? 'खोजें और नेविगेट करें' : 'Search and Navigate'}
       >
         <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -570,8 +572,8 @@ export default function GurbaniPage() {
             <div className="sticky top-0 bg-white pt-3 pb-2 px-4 border-b border-amber-100">
               <div className="w-12 h-1 bg-amber-300 rounded-full mx-auto mb-3" />
               <div className="flex items-center justify-between">
-                <h3 className={cn("font-semibold text-lg", language === 'pa' && 'font-gurmukhi')}>
-                  {language === 'pa' ? 'ਖੋਜੋ ਅਤੇ ਨੈਵੀਗੇਟ ਕਰੋ' : 'Search & Navigate'}
+                <h3 className={cn("font-semibold text-lg", isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                  {isPunjabi ? 'ਖੋਜੋ ਅਤੇ ਨੈਵੀਗੇਟ ਕਰੋ' : isHindi ? 'खोजें और नेविगेट करें' : 'Search & Navigate'}
                 </h3>
                 <button
                   onClick={() => setMobileNavOpen(false)}
@@ -589,8 +591,8 @@ export default function GurbaniPage() {
             <div className="p-4 space-y-6">
               {/* Search */}
               <div>
-                <h4 className={cn("font-medium text-amber-900 mb-3", language === 'pa' && 'font-gurmukhi')}>
-                  {language === 'pa' ? '🔍 ਗੁਰਬਾਣੀ ਖੋਜੋ' : '🔍 Search Gurbani'}
+                <h4 className={cn("font-medium text-amber-900 mb-3", isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                  {isPunjabi ? '🔍 ਗੁਰਬਾਣੀ ਖੋਜੋ' : isHindi ? '🔍 गुरबाणी खोजें' : '🔍 Search Gurbani'}
                 </h4>
                 <GurbaniSearch
                   onResultSelect={(angNumber) => {
@@ -603,8 +605,8 @@ export default function GurbaniPage() {
               
               {/* Quick Jump */}
               <div>
-                <h4 className={cn("font-medium text-amber-900 mb-3", language === 'pa' && 'font-gurmukhi')}>
-                  {language === 'pa' ? '⚡ ਝੱਟ ਜਾਓ' : '⚡ Quick Jump'}
+                <h4 className={cn("font-medium text-amber-900 mb-3", isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                  {isPunjabi ? '⚡ ਝੱਟ ਜਾਓ' : isHindi ? '⚡ तुरंत जाएँ' : '⚡ Quick Jump'}
                 </h4>
                 <QuickJump
                   onJump={(ang) => {
@@ -617,8 +619,8 @@ export default function GurbaniPage() {
               
               {/* Raag List */}
               <div>
-                <h4 className={cn("font-medium text-amber-900 mb-3", language === 'pa' && 'font-gurmukhi')}>
-                  {language === 'pa' ? '🎵 ਰਾਗ ਸੂਚੀ' : '🎵 Raag List'}
+                <h4 className={cn("font-medium text-amber-900 mb-3", isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                  {isPunjabi ? '🎵 ਰਾਗ ਸੂਚੀ' : isHindi ? '🎵 राग सूची' : '🎵 Raag List'}
                 </h4>
                 <RaagNavigator
                   raags={RAAGS}
@@ -636,7 +638,7 @@ export default function GurbaniPage() {
 
       <ReadingProgress variant="neela" />
       <ScrollToTop />
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

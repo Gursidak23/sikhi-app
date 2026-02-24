@@ -8,6 +8,7 @@ import { FontSizeProvider } from '@/components/common/FontSizeControls';
 import { ServiceWorkerRegistrar } from '@/components/common/ServiceWorkerRegistrar';
 import { AmritVelaProvider } from '@/components/common/AmritVelaMode';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
+import { LanguageProvider } from '@/components/common/LanguageProvider';
 
 const inter = Inter({ 
   subsets: ['latin'],
@@ -116,17 +117,19 @@ export default function RootLayout({
       </head>
       <body className="min-h-screen bg-neutral-50 antialiased font-sans transition-colors">
         <ErrorBoundary>
-          <ThemeProvider>
-            <AmritVelaProvider>
-              <BookmarkProvider>
-                <FontSizeProvider>
-                  <SkipLink />
-                  <ServiceWorkerRegistrar />
-                  {children}
-                </FontSizeProvider>
-              </BookmarkProvider>
-            </AmritVelaProvider>
-          </ThemeProvider>
+          <LanguageProvider>
+            <ThemeProvider>
+              <AmritVelaProvider>
+                <BookmarkProvider>
+                  <FontSizeProvider>
+                    <SkipLink />
+                    <ServiceWorkerRegistrar />
+                    {children}
+                  </FontSizeProvider>
+                </BookmarkProvider>
+              </AmritVelaProvider>
+            </ThemeProvider>
+          </LanguageProvider>
         </ErrorBoundary>
       </body>
     </html>

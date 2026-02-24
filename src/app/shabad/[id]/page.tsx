@@ -11,6 +11,7 @@ import { useState, useEffect, useCallback } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { ReadingProgress } from '@/components/common/ReadingProgress';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
@@ -22,7 +23,8 @@ import type { Language } from '@/types';
 export default function ShabadPage({ params }: { params: { id: string } }) {
   const shabadId = parseInt(params.id, 10);
 
-  const [language, setLanguage] = useState<Language>('pa');
+  const { language, isPunjabi } = useLanguage();
+  const isHindi = language === 'hi';
   const [shabad, setShabad] = useState<BaniDBShabadResponse | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -31,8 +33,6 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
   const [showTeeka, setShowTeeka] = useState(false);
   const [showLarivaar, setShowLarivaar] = useState(false);
   const [highlightedLine, setHighlightedLine] = useState<number | null>(null);
-
-  const isPunjabi = language === 'pa';
 
   const loadShabad = useCallback(async () => {
     if (isNaN(shabadId)) {
@@ -108,7 +108,7 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#fef9e7] via-white to-[#fef9e7] dark:from-[#1a1a1a] dark:via-[#1e1e1e] dark:to-[#1a1a1a]">
-      <MainNavigation currentLanguage={language} onLanguageChange={setLanguage} />
+      <MainNavigation />
       <ReadingProgress />
 
       <main id="main-content" className="flex-1">
@@ -117,8 +117,8 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
           <div className="flex-1 flex items-center justify-center py-32">
             <div className="text-center">
               <div className="text-6xl animate-pulse text-amber-600 dark:text-[#daa520] font-gurmukhi">ੴ</div>
-              <p className="text-amber-700 dark:text-amber-400 mt-4 font-gurmukhi text-lg">
-                {isPunjabi ? 'ਸ਼ਬਦ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : 'Loading Shabad...'}
+              <p className={cn("text-amber-700 dark:text-amber-400 mt-4 text-lg", isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                {isPunjabi ? 'ਸ਼ਬਦ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : isHindi ? 'शबद लोड हो रहा है...' : 'Loading Shabad...'}
               </p>
             </div>
           </div>
@@ -129,13 +129,13 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
           <div className="flex-1 flex items-center justify-center py-32">
             <div className="text-center max-w-md">
               <div className="text-4xl mb-4">❌</div>
-              <p className="text-red-700 dark:text-red-300 text-lg">{isPunjabi ? 'ਡਾਟਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' : error}</p>
+              <p className="text-red-700 dark:text-red-300 text-lg">{isPunjabi ? 'ਡਾਟਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' : isHindi ? 'डेटा लोड नहीं हो सका' : error}</p>
               <div className="flex gap-3 justify-center mt-6">
                 <button onClick={loadShabad} className="px-6 py-3 bg-neela-600 text-white rounded-xl hover:bg-neela-700 transition-colors">
-                  {isPunjabi ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼' : 'Try Again'}
+                  {isPunjabi ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼' : isHindi ? 'दोबारा कोशिश' : 'Try Again'}
                 </button>
                 <Link href="/search" className="px-6 py-3 bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors">
-                  {isPunjabi ? 'ਖੋਜੋ' : 'Search'}
+                  {isPunjabi ? 'ਖੋਜੋ' : isHindi ? 'खोजें' : 'Search'}
                 </Link>
               </div>
             </div>
@@ -182,7 +182,7 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
                 </div>
 
                 <p className="text-sm text-neutral-500">
-                  {shabad.count} {isPunjabi ? 'ਪੰਕਤੀਆਂ' : 'lines'} • Shabad #{shabadId}
+                  {shabad.count} {isPunjabi ? 'ਪੰਕਤੀਆਂ' : isHindi ? 'पंक्तियाँ' : 'lines'} • Shabad #{shabadId}
                 </p>
               </div>
             </section>
@@ -194,10 +194,10 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
                   <FontSizeControls />
                   <div className="flex gap-1.5">
                     {[
-                      { key: 'translation', active: showTranslation, toggle: () => setShowTranslation(!showTranslation), label: isPunjabi ? 'ਅਰਥ' : 'Translation' },
-                      { key: 'transliteration', active: showTransliteration, toggle: () => setShowTransliteration(!showTransliteration), label: isPunjabi ? 'ਉਚਾਰਨ' : 'Pronunciation' },
-                      { key: 'teeka', active: showTeeka, toggle: () => setShowTeeka(!showTeeka), label: isPunjabi ? 'ਟੀਕਾ' : 'Teeka' },
-                      { key: 'larivaar', active: showLarivaar, toggle: () => setShowLarivaar(!showLarivaar), label: isPunjabi ? 'ਲੜੀਵਾਰ' : 'Larivaar' },
+                      { key: 'translation', active: showTranslation, toggle: () => setShowTranslation(!showTranslation), label: isPunjabi ? 'ਅਰਥ' : isHindi ? 'अर्थ' : 'Translation' },
+                      { key: 'transliteration', active: showTransliteration, toggle: () => setShowTransliteration(!showTransliteration), label: isPunjabi ? 'ਉਚਾਰਨ' : isHindi ? 'उच्चारण' : 'Pronunciation' },
+                      { key: 'teeka', active: showTeeka, toggle: () => setShowTeeka(!showTeeka), label: isPunjabi ? 'ਟੀਕਾ' : isHindi ? 'टीका' : 'Teeka' },
+                      { key: 'larivaar', active: showLarivaar, toggle: () => setShowLarivaar(!showLarivaar), label: isPunjabi ? 'ਲੜੀਵਾਰ' : isHindi ? 'लड़ीवार' : 'Larivaar' },
                     ].map((ctrl) => (
                       <button
                         key={ctrl.key}
@@ -297,7 +297,7 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
                       href={`/shabad/${shabad.navigation.previous}`}
                       className="px-4 py-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors text-sm"
                     >
-                      ← {isPunjabi ? 'ਪਿਛਲਾ ਸ਼ਬਦ' : 'Previous Shabad'}
+                      ← {isPunjabi ? 'ਪਿਛਲਾ ਸ਼ਬਦ' : isHindi ? 'पिछला शबद' : 'Previous Shabad'}
                     </Link>
                   )}
                   <Link
@@ -310,14 +310,14 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
                     href="/search"
                     className="px-4 py-2 bg-neela-100 dark:bg-neela-900/30 text-neela-800 dark:text-neela-300 rounded-lg hover:bg-neela-200 transition-colors text-sm"
                   >
-                    🔍 {isPunjabi ? 'ਖੋਜ' : 'Search'}
+                    🔍 {isPunjabi ? 'ਖੋਜ' : isHindi ? 'खोज' : 'Search'}
                   </Link>
                   {shabad.navigation?.next && (
                     <Link
                       href={`/shabad/${shabad.navigation.next}`}
                       className="px-4 py-2 bg-neutral-200 dark:bg-neutral-700 rounded-lg hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors text-sm"
                     >
-                      {isPunjabi ? 'ਅਗਲਾ ਸ਼ਬਦ' : 'Next Shabad'} →
+                      {isPunjabi ? 'ਅਗਲਾ ਸ਼ਬਦ' : isHindi ? 'अगला शबद' : 'Next Shabad'} →
                     </Link>
                   )}
                 </div>
@@ -338,7 +338,7 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
       </main>
 
       <ScrollToTop />
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }

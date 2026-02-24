@@ -5,48 +5,29 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import { MainNavigation } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { ChatView } from '@/modules/community/components/ChatView';
 import type { Language } from '@/types';
 
 export default function CommunityPage() {
-  const [language, setLanguage] = useState<Language>('pa');
-
-  // Sync language from localStorage
-  useEffect(() => {
-    const stored = localStorage.getItem('sikhi-language');
-    if (stored && ['pa', 'en', 'hi', 'pa-roman'].includes(stored)) {
-      setLanguage(stored as Language);
-    }
-
-    const handler = () => {
-      const lang = localStorage.getItem('sikhi-language');
-      if (lang) setLanguage(lang as Language);
-    };
-
-    window.addEventListener('storage', handler);
-    return () => window.removeEventListener('storage', handler);
-  }, []);
-
-  const isPunjabi = language === 'pa';
+  const { language, isPunjabi } = useLanguage();
+  const isHindi = language === 'hi';
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#FDF8F0] via-white to-[#fef9e7] dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
-      <MainNavigation
-        currentLanguage={language}
-        onLanguageChange={setLanguage}
-      />
+      <MainNavigation />
 
       {/* Ephemeral chat info banner - more subtle */}
       <div className="w-full bg-amber-50/80 border-b border-amber-200/50 text-amber-800 text-xs py-1.5 px-4 flex items-center justify-center gap-2 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/30">
         <svg className="w-3.5 h-3.5 text-amber-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <span className={cn(isPunjabi && 'font-gurmukhi text-sm')}>
+        <span className={cn(isPunjabi && 'font-gurmukhi text-sm', isHindi && 'font-devanagari text-sm')}>
           {isPunjabi
             ? 'ℹ️ ਚੈਟ ਡੇਟਾ ਅਸਥਾਈ ਹੈ ਅਤੇ ਸਮੇਂ-ਸਮੇਂ ਰੀਸੈਟ ਹੋ ਸਕਦਾ ਹੈ'
+            : isHindi ? 'ℹ️ चैट डेटा अस्थायी है और समय-समय पर रीसेट हो सकता है'
             : 'ℹ️ Chat data is temporary and may reset periodically'}
         </span>
       </div>
@@ -72,16 +53,19 @@ export default function CommunityPage() {
                 <div>
                   <h1 className={cn(
                     'text-xl sm:text-2xl font-bold text-white',
-                    isPunjabi && 'font-gurmukhi text-2xl sm:text-3xl'
+                    isPunjabi && 'font-gurmukhi text-2xl sm:text-3xl',
+                    isHindi && 'font-devanagari text-2xl sm:text-3xl'
                   )}>
-                    {isPunjabi ? 'ਸੰਗਤ' : 'Sangat Community'}
+                    {isPunjabi ? 'ਸੰਗਤ' : isHindi ? 'संगत समुदाय' : 'Sangat Community'}
                   </h1>
                   <p className={cn(
                     'text-xs sm:text-sm text-amber-100/90 mt-0.5',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
                   )}>
                     {isPunjabi
                       ? 'ਸਿੱਖ ਸੰਗਤ ਨਾਲ ਜੁੜੋ, ਸਿੱਖੋ ਤੇ ਸਾਂਝ ਪਾਓ'
+                      : isHindi ? 'सिख संगत से जुड़ें, सीखें और साझा करें'
                       : 'Connect, learn, and share with the Sikh community'}
                   </p>
                 </div>
@@ -101,9 +85,10 @@ export default function CommunityPage() {
                   </div>
                   <span className={cn(
                     'text-xs font-medium text-white/95',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
                   )}>
-                    {isPunjabi ? 'ਲਾਈਵ' : 'Live'}
+                    {isPunjabi ? 'ਲਾਈਵ' : isHindi ? 'लाइव' : 'Live'}
                   </span>
                 </div>
 
@@ -111,9 +96,10 @@ export default function CommunityPage() {
                   <span className="text-xs">🙏</span>
                   <span className={cn(
                     'text-xs text-white/80',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
                   )}>
-                    {isPunjabi ? 'ਸਤਿਕਾਰ ਨਾਲ' : 'With respect'}
+                    {isPunjabi ? 'ਸਤਿਕਾਰ ਨਾਲ' : isHindi ? 'सम्मान सहित' : 'With respect'}
                   </span>
                 </div>
               </div>
@@ -144,12 +130,12 @@ export default function CommunityPage() {
               </p>
             </div>
             <div className="flex items-center gap-4 text-xs text-gray-400">
-              <span className={cn(isPunjabi && 'font-gurmukhi text-sm')}>
-                {isPunjabi ? '🙏 ਸਤਿਕਾਰ ਨਾਲ ਗੱਲਬਾਤ ਕਰੋ' : '🙏 Communicate with respect'}
+              <span className={cn(isPunjabi && 'font-gurmukhi text-sm', isHindi && 'font-devanagari text-sm')}>
+                {isPunjabi ? '🙏 ਸਤਿਕਾਰ ਨਾਲ ਗੱਲਬਾਤ ਕਰੋ' : isHindi ? '🙏 सम्मान से बात करें' : '🙏 Communicate with respect'}
               </span>
               <span className="hidden sm:inline">•</span>
-              <span className={cn('hidden sm:inline', isPunjabi && 'font-gurmukhi text-sm')}>
-                {isPunjabi ? 'ਭੁੱਲ ਚੁੱਕ ਮਾਫ਼ ਕਰਨਾ' : 'Please forgive any errors'}
+              <span className={cn('hidden sm:inline', isPunjabi && 'font-gurmukhi text-sm', isHindi && 'font-devanagari text-sm')}>
+                {isPunjabi ? 'ਭੁੱਲ ਚੁੱਕ ਮਾਫ਼ ਕਰਨਾ' : isHindi ? 'भूल चूक माफ़ करना' : 'Please forgive any errors'}
               </span>
             </div>
           </div>

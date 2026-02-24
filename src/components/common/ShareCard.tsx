@@ -46,6 +46,8 @@ export function ShareCard({
   const [isOpen, setIsOpen] = useState(false);
   const [copied, setCopied] = useState(false);
   const [canShare, setCanShare] = useState(false);
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   useEffect(() => {
     setCanShare(typeof navigator !== 'undefined' && typeof navigator.share === 'function');
@@ -220,7 +222,7 @@ export function ShareCard({
         )}
         title="Create shareable card"
       >
-        🎨 {language === 'pa' ? 'ਕਾਰਡ' : 'Card'}
+        🎨 {isPunjabi ? 'ਕਾਰਡ' : isHindi ? 'कार्ड' : 'Card'}
       </button>
 
       {/* Modal */}
@@ -230,7 +232,7 @@ export function ShareCard({
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-neutral-200 dark:border-neutral-700">
               <h3 className="font-bold text-lg text-neutral-900 dark:text-white">
-                {language === 'pa' ? '📤 ਸ਼ੇਅਰ ਕਾਰਡ' : '📤 Share Card'}
+                {isPunjabi ? '📤 ਸ਼ੇਅਰ ਕਾਰਡ' : isHindi ? '📤 शेअर कार्ड' : '📤 Share Card'}
               </h3>
               <button onClick={() => setIsOpen(false)} className="p-2 min-h-[44px] min-w-[44px] flex items-center justify-center hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded-lg transition-colors">
                 ✕
@@ -268,20 +270,20 @@ export function ShareCard({
                 onClick={handleDownload}
                 className="flex-1 px-4 py-2.5 bg-neela-600 text-white rounded-xl hover:bg-neela-700 transition-colors text-sm font-medium"
               >
-                📥 {language === 'pa' ? 'ਡਾਊਨਲੋਡ' : 'Download'}
+                📥 {isPunjabi ? 'ਡਾਊਨਲੋਡ' : isHindi ? 'डाउनलोड' : 'Download'}
               </button>
               <button
                 onClick={handleCopyText}
                 className="flex-1 px-4 py-2.5 bg-amber-500 text-white rounded-xl hover:bg-amber-600 transition-colors text-sm font-medium"
               >
-                {copied ? '✓' : '📋'} {language === 'pa' ? 'ਟੈਕਸਟ' : 'Copy Text'}
+                {copied ? '✓' : '📋'} {isPunjabi ? 'ਟੈਕਸਟ' : isHindi ? 'टेक्स्ट' : 'Copy Text'}
               </button>
               {canShare && (
                 <button
                   onClick={handleNativeShare}
                   className="flex-1 px-4 py-2.5 bg-emerald-600 text-white rounded-xl hover:bg-emerald-700 transition-colors text-sm font-medium"
                 >
-                  📤 {language === 'pa' ? 'ਸ਼ੇਅਰ' : 'Share'}
+                  📤 {isPunjabi ? 'ਸ਼ੇਅਰ' : isHindi ? 'शेअर' : 'Share'}
                 </button>
               )}
             </div>

@@ -14,11 +14,13 @@ interface ShareButtonProps {
   title: string;
   text: string;
   url?: string;
-  language?: 'pa' | 'en';
+  language?: 'pa' | 'en' | 'hi';
   className?: string;
 }
 
 export function ShareButton({ title, text, url, language = 'pa', className }: ShareButtonProps) {
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const [showMenu, setShowMenu] = useState(false);
   const [copied, setCopied] = useState(false);
 
@@ -74,15 +76,15 @@ export function ShareButton({ title, text, url, language = 'pa', className }: Sh
           'flex items-center gap-2 px-3 py-2 rounded-lg',
           'bg-neela-50 text-neela-700 hover:bg-neela-100',
           'transition-colors text-sm font-medium',
-          language === 'pa' && 'font-gurmukhi'
+          isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''
         )}
-        aria-label={language === 'pa' ? 'ਸਾਂਝਾ ਕਰੋ' : 'Share'}
+        aria-label={isPunjabi ? 'ਸਾਂਝਾ ਕਰੋ' : isHindi ? 'साझा करें' : 'Share'}
       >
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
         </svg>
         <span className="hidden sm:inline">
-          {language === 'pa' ? 'ਸਾਂਝਾ ਕਰੋ' : 'Share'}
+          {isPunjabi ? 'ਸਾਂਝਾ ਕਰੋ' : isHindi ? 'साझा करें' : 'Share'}
         </span>
       </button>
 
@@ -98,14 +100,14 @@ export function ShareButton({ title, text, url, language = 'pa', className }: Sh
                 <svg className="w-4 h-4 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
-                <span>{language === 'pa' ? 'ਕਾਪੀ ਹੋ ਗਿਆ!' : 'Copied!'}</span>
+                <span>{isPunjabi ? 'ਕਾਪੀ ਹੋ ਗਿਆ!' : isHindi ? 'कॉपी हो गया!' : 'Copied!'}</span>
               </>
             ) : (
               <>
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
                 </svg>
-                <span>{language === 'pa' ? 'ਕਾਪੀ ਕਰੋ' : 'Copy'}</span>
+                <span>{isPunjabi ? 'ਕਾਪੀ ਕਰੋ' : isHindi ? 'कॉपी करें' : 'Copy'}</span>
               </>
             )}
           </button>
@@ -148,10 +150,12 @@ interface CopyVerseButtonProps {
   verse: string;
   translation?: string;
   source?: string;
-  language?: 'pa' | 'en';
+  language?: 'pa' | 'en' | 'hi';
 }
 
 export function CopyVerseButton({ verse, translation, source, language = 'pa' }: CopyVerseButtonProps) {
+  const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const [copied, setCopied] = useState(false);
 
   const handleCopy = async () => {
@@ -181,7 +185,7 @@ export function CopyVerseButton({ verse, translation, source, language = 'pa' }:
           ? 'bg-green-100 text-green-600'
           : 'hover:bg-neutral-100 text-neutral-500 hover:text-neutral-700'
       )}
-      title={language === 'pa' ? 'ਕਾਪੀ ਕਰੋ' : 'Copy'}
+      title={isPunjabi ? 'ਕਾਪੀ ਕਰੋ' : isHindi ? 'कॉपी करें' : 'Copy'}
     >
       {copied ? (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

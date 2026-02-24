@@ -10,7 +10,7 @@
 
 export interface RaagRange {
   id: string;
-  name: { pa: string; en: string };
+  name: { pa: string; en: string; hi?: string };
   angStart: number;
   angEnd: number;
 }

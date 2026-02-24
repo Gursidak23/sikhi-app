@@ -10,6 +10,7 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { SourceAttributionNotice, ContemporaryHistoryDisclaimer } from '@/components/common/Disclaimer';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { ReadingProgress } from '@/components/common/ReadingProgress';
@@ -617,26 +618,22 @@ const SAMPLE_GURUS: HistoricalFigure[] = [
 type TabType = 'timeline' | 'gurus' | 'sources';
 
 export default function ItihaasPage() {
-  const [language, setLanguage] = useState<Language>('pa');
+  const { language, isPunjabi } = useLanguage();
+  const isHindi = language === 'hi';
   const [activeTab, setActiveTab] = useState<TabType>('timeline');
   const [showContemporaryWarning, setShowContemporaryWarning] = useState(true);
   const [selectedGuruId, setSelectedGuruId] = useState<string | null>(null);
   const [selectedEvent, setSelectedEvent] = useState<EventDetail | null>(null);
 
-  const isPunjabi = language === 'pa';
-
-  const tabs: { id: TabType; labelPa: string; labelEn: string; icon: string }[] = [
-    { id: 'timeline', labelPa: 'ਸਮਾਂ-ਰੇਖਾ', labelEn: 'Timeline', icon: '📅' },
-    { id: 'gurus', labelPa: 'ਗੁਰੂ ਸਾਹਿਬਾਨ', labelEn: 'Guru Sahibaan', icon: '🙏' },
-    { id: 'sources', labelPa: 'ਸਰੋਤ', labelEn: 'Sources', icon: '📚' },
+  const tabs: { id: TabType; labelPa: string; labelEn: string; labelHi?: string; icon: string }[] = [
+    { id: 'timeline', labelPa: 'ਸਮਾਂ-ਰੇਖਾ', labelEn: 'Timeline', labelHi: 'समय-रेखा', icon: '📅' },
+    { id: 'gurus', labelPa: 'ਗੁਰੂ ਸਾਹਿਬਾਨ', labelEn: 'Guru Sahibaan', labelHi: 'गुरु साहिबान', icon: '🙏' },
+    { id: 'sources', labelPa: 'ਸਰੋਤ', labelEn: 'Sources', labelHi: 'स्रोत', icon: '📚' },
   ];
 
   return (
     <div className="min-h-screen flex flex-col">
-      <MainNavigation
-        currentLanguage={language}
-        onLanguageChange={setLanguage}
-      />
+      <MainNavigation />
 
       <main id="main-content" className="flex-1">
         {/* Hero Header */}
@@ -652,16 +649,19 @@ export default function ItihaasPage() {
             
             <h1 className={cn(
               'text-4xl md:text-5xl font-bold text-white mb-4',
-              isPunjabi && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}>
-              {isPunjabi ? 'ਸਿੱਖ ਇਤਿਹਾਸ' : 'Sikh History'}
+              {isPunjabi ? 'ਸਿੱਖ ਇਤਿਹਾਸ' : isHindi ? 'सिख इतिहास' : 'Sikh History'}
             </h1>
             <p className={cn(
               'text-xl text-orange-100 max-w-2xl mx-auto',
-              isPunjabi && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}>
               {isPunjabi
                 ? 'ਸਰੋਤ-ਆਧਾਰਿਤ ਇਤਿਹਾਸਕ ਦਸਤਾਵੇਜ਼ (੧੪੬੯ - ਅੱਜ ਤੱਕ)'
+                : isHindi ? 'स्रोत-आधारित ऐतिहासिक दस्तावेज़ (१४६९ - वर्तमान)'
                 : 'Source-attributed historical documentation (1469 - Present)'}
             </p>
           </div>
@@ -692,6 +692,7 @@ export default function ItihaasPage() {
                   className={cn(
                     'flex items-center gap-2 px-5 py-3 rounded-lg text-sm font-medium transition-all whitespace-nowrap',
                     isPunjabi && 'font-gurmukhi text-base',
+                    isHindi && 'font-devanagari text-base',
                     activeTab === tab.id
                       ? 'bg-gradient-to-r from-orange-500 to-orange-600 text-white shadow-md'
                       : 'bg-white text-gray-600 hover:bg-orange-50 border border-orange-200'
@@ -699,7 +700,7 @@ export default function ItihaasPage() {
                   aria-current={activeTab === tab.id ? 'page' : undefined}
                 >
                   <span>{tab.icon}</span>
-                  {isPunjabi ? tab.labelPa : tab.labelEn}
+                  {isPunjabi ? tab.labelPa : isHindi ? (tab.labelHi || tab.labelEn) : tab.labelEn}
                 </button>
               ))}
             </nav>
@@ -714,10 +715,12 @@ export default function ItihaasPage() {
               <div className="max-w-4xl">
                 <p className={cn(
                   'text-neutral-600 mb-6',
-                  isPunjabi && 'font-gurmukhi'
+                  isPunjabi && 'font-gurmukhi',
+                  isHindi && 'font-devanagari'
                 )}>
                   {isPunjabi 
                     ? 'ਕਿਸੇ ਵੀ ਯੁੱਗ ਜਾਂ ਘਟਨਾ ਤੇ ਕਲਿੱਕ ਕਰੋ ਵਿਸਤਾਰਿਤ ਜਾਣਕਾਰੀ ਵੇਖਣ ਲਈ'
+                    : isHindi ? 'किसी भी युग या घटना पर क्लिक करें विस्तृत जानकारी देखने के लिए'
                     : 'Click on any era or event to view detailed information'}
                 </p>
                 <Timeline
@@ -749,12 +752,13 @@ export default function ItihaasPage() {
               <div className="max-w-4xl">
                 <h2 className={cn(
                   'text-xl font-semibold text-gray-900 mb-6 flex items-center gap-3',
-                  isPunjabi && 'font-gurmukhi text-2xl'
+                  isPunjabi && 'font-gurmukhi text-2xl',
+                  isHindi && 'font-devanagari text-2xl'
                 )}>
                   <div className="sikhi-icon sikhi-icon-kesri">
                     <span>📚</span>
                   </div>
-                  {isPunjabi ? 'ਪ੍ਰਮਾਣਿਕ ਸਰੋਤ' : 'Authoritative Sources'}
+                  {isPunjabi ? 'ਪ੍ਰਮਾਣਿਕ ਸਰੋਤ' : isHindi ? 'प्रामाणिक स्रोत' : 'Authoritative Sources'}
                 </h2>
                 
                 <div className="space-y-6">
@@ -762,10 +766,11 @@ export default function ItihaasPage() {
                   <div className="sikhi-card p-6">
                     <h3 className={cn(
                       'font-semibold text-gray-800 mb-4 flex items-center gap-2',
-                      isPunjabi && 'font-gurmukhi'
+                      isPunjabi && 'font-gurmukhi',
+                      isHindi && 'font-devanagari'
                     )}>
                       <span className="w-3 h-3 rounded-full bg-blue-500" />
-                      {isPunjabi ? 'ਮੁੱਖ ਸਰੋਤ' : 'Primary Sources'}
+                      {isPunjabi ? 'ਮੁੱਖ ਸਰੋਤ' : isHindi ? 'मुख्य स्रोत' : 'Primary Sources'}
                     </h3>
                     <ul className="space-y-3">
                       <li className="flex items-start gap-3">
@@ -796,10 +801,11 @@ export default function ItihaasPage() {
                   <div className="sikhi-card p-6">
                     <h3 className={cn(
                       'font-semibold text-gray-800 mb-4 flex items-center gap-2',
-                      isPunjabi && 'font-gurmukhi'
+                      isPunjabi && 'font-gurmukhi',
+                      isHindi && 'font-devanagari'
                     )}>
                       <span className="w-3 h-3 rounded-full bg-gray-400" />
-                      {isPunjabi ? 'ਸਹਾਇਕ ਸਰੋਤ' : 'Secondary Sources'}
+                      {isPunjabi ? 'ਸਹਾਇਕ ਸਰੋਤ' : isHindi ? 'सहायक स्रोत' : 'Secondary Sources'}
                     </h3>
                     <ul className="space-y-3">
                       <li className="flex items-start gap-3">
@@ -829,10 +835,11 @@ export default function ItihaasPage() {
                   <div className="sikhi-card sikhi-card-neela p-6">
                     <h3 className={cn(
                       'font-semibold text-gray-800 mb-4 flex items-center gap-2',
-                      isPunjabi && 'font-gurmukhi'
+                      isPunjabi && 'font-gurmukhi',
+                      isHindi && 'font-devanagari'
                     )}>
                       <span className="w-3 h-3 rounded-full bg-orange-500" />
-                      {isPunjabi ? 'ਟੀਕੇ ਅਤੇ ਵਿਆਖਿਆ' : 'Teekas & Interpretations'}
+                      {isPunjabi ? 'ਟੀਕੇ ਅਤੇ ਵਿਆਖਿਆ' : isHindi ? 'टीके और व्याख्या' : 'Teekas & Interpretations'}
                     </h3>
                     <ul className="space-y-3">
                       <li className="flex items-start gap-3">
@@ -876,10 +883,12 @@ export default function ItihaasPage() {
                   <span className="text-xl">⚠️</span>
                   <p className={cn(
                     'text-sm text-amber-800',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
                   )}>
                     {isPunjabi
                       ? 'ਸਮਕਾਲੀ ਘਟਨਾਵਾਂ ਵਿਕਾਸਸ਼ੀਲ ਇਤਿਹਾਸ ਹਨ ਅਤੇ ਅੰਤਿਮ ਨਹੀਂ ਹਨ।'
+                      : isHindi ? 'समकालीन घटनाएँ विकासशील इतिहास हैं और अंतिम नहीं हैं।'
                       : 'Contemporary events are evolving history and not final.'}
                   </p>
                 </div>
@@ -899,7 +908,7 @@ export default function ItihaasPage() {
 
       <ReadingProgress variant="kesri" />
       <ScrollToTop />
-      <Footer language={language} />
+      <Footer />
 
       {/* Detail Modals */}
       <GuruDetailModal

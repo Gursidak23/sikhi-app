@@ -13,19 +13,19 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LanguageSwitcher, LanguageSwitcherMobile } from '@/components/common/LanguageSwitcher';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { NanakshahiCalendarFull, gregorianToNanakshahi, NANAKSHAHI_MONTHS } from '@/components/common/NanakshahiCalendar';
 import { BookmarksPanel, useBookmarks } from '@/components/common/BookmarkSystem';
 import type { Language } from '@/types';
 
+// Props kept optional for backward-compat; context is primary source
 interface MainNavigationProps {
-  currentLanguage: Language;
-  onLanguageChange: (language: Language) => void;
+  currentLanguage?: Language;
+  onLanguageChange?: (language: Language) => void;
 }
 
-export function MainNavigation({
-  currentLanguage,
-  onLanguageChange,
-}: MainNavigationProps) {
+export function MainNavigation(_props?: MainNavigationProps) {
+  const { language: currentLanguage, setLanguage: onLanguageChange, isPunjabi: _isPa } = useLanguage();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -205,7 +205,7 @@ export function MainNavigation({
                   href={item.href}
                   className={cn(
                     'relative sikhi-nav-link px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-                    currentLanguage === 'pa' && 'font-gurmukhi text-base',
+                    currentLanguage === 'pa' && 'font-gurmukhi',
                     isActive && 'active',
                     isActive && activeStyles[item.activeColor],
                     !isActive && 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -232,14 +232,14 @@ export function MainNavigation({
                 onClick={() => setShowExplore(!showExplore)}
                 className={cn(
                   'sikhi-nav-link px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1',
-                  currentLanguage === 'pa' && 'font-gurmukhi text-base',
+                  currentLanguage === 'pa' && 'font-gurmukhi',
                   isExploreSection
                     ? 'bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 ring-1 ring-purple-200 dark:ring-purple-800'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800',
                 )}
               >
                 <span className="opacity-70 text-sm">✨</span>
-                {currentLanguage === 'pa' ? 'ਹੋਰ' : 'Explore'}
+                {currentLanguage === 'pa' ? 'ਹੋਰ' : currentLanguage === 'hi' ? 'और देखें' : 'Explore'}
                 <svg className={cn('w-3.5 h-3.5 transition-transform', showExplore && 'rotate-180')} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
@@ -255,7 +255,7 @@ export function MainNavigation({
                         onClick={() => setShowExplore(false)}
                         className={cn(
                           'flex items-center gap-2.5 px-4 py-2.5 text-sm transition-colors',
-                          currentLanguage === 'pa' && 'font-gurmukhi text-base',
+                          currentLanguage === 'pa' && 'font-gurmukhi',
                           isActive
                             ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-800 dark:text-amber-300'
                             : 'text-neutral-700 dark:text-neutral-300 hover:bg-neutral-50 dark:hover:bg-neutral-700'
@@ -351,7 +351,7 @@ export function MainNavigation({
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
                       'flex items-center gap-3 px-4 py-3.5 rounded-xl font-medium transition-all',
-                      currentLanguage === 'pa' && 'font-gurmukhi text-lg',
+                      currentLanguage === 'pa' && 'font-gurmukhi',
                       isActive
                         ? activeStyles[item.activeColor]
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50'
@@ -378,8 +378,8 @@ export function MainNavigation({
               
               {/* Explore Section Divider */}
               <div className="pt-3 pb-1 px-4">
-                <p className={cn('text-xs uppercase tracking-wider text-neutral-400 dark:text-neutral-500 font-semibold', currentLanguage === 'pa' && 'font-gurmukhi text-sm tracking-normal normal-case')}>
-                  {currentLanguage === 'pa' ? '✨ ਹੋਰ ਖੋਜੋ' : '✨ Explore'}
+                <p className={cn('text-xs uppercase tracking-wider text-neutral-400 dark:text-neutral-500 font-semibold', currentLanguage === 'pa' && 'font-gurmukhi tracking-normal normal-case')}>
+                  {currentLanguage === 'pa' ? '✨ ਹੋਰ ਖੋਜੋ' : currentLanguage === 'hi' ? '✨ और देखें' : '✨ Explore'}
                 </p>
               </div>
               {exploreItems.map((item) => {
@@ -391,7 +391,7 @@ export function MainNavigation({
                     onClick={() => setMobileMenuOpen(false)}
                     className={cn(
                       'flex items-center gap-3 px-4 py-3 rounded-xl font-medium transition-all',
-                      currentLanguage === 'pa' && 'font-gurmukhi text-lg',
+                      currentLanguage === 'pa' && 'font-gurmukhi',
                       isActive
                         ? activeStyles[item.activeColor]
                         : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50 dark:hover:bg-gray-800/50'
@@ -428,7 +428,7 @@ export function MainNavigation({
                     )}
                   </div>
                   <span className="text-xs font-medium">
-                    {currentLanguage === 'pa' ? 'ਬੁੱਕਮਾਰਕ' : 'Bookmarks'}
+                    {currentLanguage === 'pa' ? 'ਬੁੱਕਮਾਰਕ' : currentLanguage === 'hi' ? 'बुकमार्क' : 'Bookmarks'}
                   </span>
                 </button>
                 
@@ -508,8 +508,10 @@ interface FooterProps {
   language?: Language;
 }
 
-export function Footer({ language = 'pa' }: FooterProps) {
+export function Footer(_props?: FooterProps) {
+  const { language } = useLanguage();
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   
   return (
     <footer className="relative sikhi-footer py-16 mt-16 overflow-hidden">
@@ -538,11 +540,14 @@ export function Footer({ language = 'pa' }: FooterProps) {
             </div>
             <p className={cn(
               'text-sm text-gray-400 leading-relaxed',
-              isPunjabi && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}>
               {isPunjabi
                 ? 'ਸਿੱਖ ਇਤਿਹਾਸ ਅਤੇ ਗੁਰਬਾਣੀ ਦੀ ਸਿੱਖਿਆ ਲਈ ਪਵਿੱਤਰ ਪਲੇਟਫਾਰਮ।'
-                : 'A sacred platform for Sikh learning, history documentation, and Gurbani study.'}
+                : isHindi
+                  ? 'सिख इतिहास और गुरबाणी की शिक्षा के लिए एक पवित्र मंच।'
+                  : 'A sacred platform for Sikh learning, history documentation, and Gurbani study.'}
             </p>
             
             {/* Three pillars */}
@@ -559,30 +564,31 @@ export function Footer({ language = 'pa' }: FooterProps) {
           <div>
             <h3 className={cn(
               'text-sm font-semibold text-white mb-5 uppercase tracking-wider',
-              isPunjabi && 'font-gurmukhi text-base tracking-normal normal-case'
+              isPunjabi && 'font-gurmukhi text-base tracking-normal normal-case',
+              isHindi && 'font-devanagari text-base tracking-normal normal-case'
             )}>
-              {isPunjabi ? 'ਤੁਰੰਤ ਲਿੰਕ' : 'Quick Links'}
+              {isPunjabi ? 'ਤੁਰੰਤ ਲਿੰਕ' : isHindi ? 'त्वरित लिंक' : 'Quick Links'}
             </h3>
             <ul className="space-y-2.5">
               {[
-                { href: '/gurbani', icon: '📖', pa: 'ਗੁਰਬਾਣੀ', en: 'Gurbani' },
-                { href: '/nitnem', icon: '🙏', pa: 'ਨਿਤਨੇਮ', en: 'Nitnem' },
-                { href: '/hukamnama', icon: '📜', pa: 'ਹੁਕਮਨਾਮਾ', en: 'Hukamnama' },
-                { href: '/search', icon: '🔍', pa: 'ਖੋਜ', en: 'Search' },
-                { href: '/learn', icon: '🎓', pa: 'ਸਿੱਖੋ', en: 'Learn Gurmukhi' },
-                { href: '/kirtan', icon: '🎵', pa: 'ਕੀਰਤਨ', en: 'Kirtan' },
-                { href: '/calendar', icon: '📅', pa: 'ਕੈਲੰਡਰ', en: 'Calendar' },
-                { href: '/itihaas', icon: '📜', pa: 'ਇਤਿਹਾਸ', en: 'History' },
-                { href: '/community', icon: '🤝', pa: 'ਸੰਗਤ', en: 'Community' },
-                { href: '/about', icon: 'ℹ️', pa: 'ਬਾਰੇ', en: 'About' },
+                { href: '/gurbani', icon: '📖', pa: 'ਗੁਰਬਾਣੀ', hi: 'गुरबाणी', en: 'Gurbani' },
+                { href: '/nitnem', icon: '🙏', pa: 'ਨਿਤਨੇਮ', hi: 'नितनेम', en: 'Nitnem' },
+                { href: '/hukamnama', icon: '📜', pa: 'ਹੁਕਮਨਾਮਾ', hi: 'हुकमनामा', en: 'Hukamnama' },
+                { href: '/search', icon: '🔍', pa: 'ਖੋਜ', hi: 'खोज', en: 'Search' },
+                { href: '/learn', icon: '🎓', pa: 'ਸਿੱਖੋ', hi: 'गुरमुखी सीखें', en: 'Learn Gurmukhi' },
+                { href: '/kirtan', icon: '🎵', pa: 'ਕੀਰਤਨ', hi: 'कीर्तन', en: 'Kirtan' },
+                { href: '/calendar', icon: '📅', pa: 'ਕੈਲੰਡਰ', hi: 'कैलेंडर', en: 'Calendar' },
+                { href: '/itihaas', icon: '📜', pa: 'ਇਤਿਹਾਸ', hi: 'इतिहास', en: 'History' },
+                { href: '/community', icon: '🤝', pa: 'ਸੰਗਤ', hi: 'संगत', en: 'Community' },
+                { href: '/about', icon: 'ℹ️', pa: 'ਬਾਰੇ', hi: 'परिचय', en: 'About' },
               ].map((link) => (
                 <li key={link.href}>
                   <Link href={link.href} className="group text-gray-400 hover:text-amber-400 transition-colors text-sm flex items-center gap-2.5">
                     <span className="w-7 h-7 rounded-lg bg-gray-800 group-hover:bg-amber-500/10 flex items-center justify-center transition-colors text-xs">
                       {link.icon}
                     </span>
-                    <span className={isPunjabi ? 'font-gurmukhi' : ''}>
-                      {isPunjabi ? link.pa : link.en}
+                    <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
+                      {isPunjabi ? link.pa : isHindi ? (link.hi || link.en) : link.en}
                     </span>
                   </Link>
                 </li>
@@ -594,18 +600,22 @@ export function Footer({ language = 'pa' }: FooterProps) {
           <div>
             <h3 className={cn(
               'text-sm font-semibold text-white mb-5 uppercase tracking-wider',
-              isPunjabi && 'font-gurmukhi text-base tracking-normal normal-case'
+              isPunjabi && 'font-gurmukhi text-base tracking-normal normal-case',
+              isHindi && 'font-devanagari text-base tracking-normal normal-case'
             )}>
-              {isPunjabi ? 'ਮਹੱਤਵਪੂਰਨ ਨੋਟ' : 'Important Note'}
+              {isPunjabi ? 'ਮਹੱਤਵਪੂਰਨ ਨੋਟ' : isHindi ? 'महत्वपूर्ण नोट' : 'Important Note'}
             </h3>
             <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
               <p className={cn(
                 'text-xs text-gray-400 leading-relaxed',
-                isPunjabi && 'font-gurmukhi text-sm'
+                isPunjabi && 'font-gurmukhi text-sm',
+                isHindi && 'font-devanagari text-sm'
               )}>
                 {isPunjabi
                   ? 'ਇਹ ਪਲੇਟਫਾਰਮ ਸਿੱਖਿਆ ਅਤੇ ਵਿਚਾਰ ਲਈ ਹੈ। ਇਹ ਧਾਰਮਿਕ ਅਭਿਆਸ ਦਾ ਬਦਲ ਨਹੀਂ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਆਪਣੇ ਸਥਾਨਕ ਗੁਰਦੁਆਰਾ ਸਾਹਿਬ ਵਿੱਚ ਜਾਓ।'
-                  : 'This platform supports learning and reflection. It is not a replacement for religious practice. Please attend your local Gurdwara Sahib.'}
+                  : isHindi
+                    ? 'यह मंच शिक्षा और चिंतन के लिए है। यह धार्मिक अभ्यास का विकल्प नहीं है। कृपया अपने स्थानीय गुरुद्वारा साहिब में जाएँ।'
+                    : 'This platform supports learning and reflection. It is not a replacement for religious practice. Please attend your local Gurdwara Sahib.'}
               </p>
             </div>
             
@@ -631,12 +641,13 @@ export function Footer({ language = 'pa' }: FooterProps) {
           <div className="text-center space-y-2">
             <p className={cn(
               'text-sm text-gray-500',
-              isPunjabi && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}>
-              {isPunjabi ? 'ਭੁੱਲ ਚੁੱਕ ਮਾਫ਼ ਕਰਨਾ' : 'Please forgive any errors'}
+              {isPunjabi ? 'ਭੁੱਲ ਚੁੱਕ ਮਾਫ਼ ਕਰਨਾ' : isHindi ? 'भूल चूक माफ़ करना' : 'Please forgive any errors'}
             </p>
             <p className="text-xs text-gray-600">
-              © {new Date().getFullYear()} Sikhi Vidhya — {isPunjabi ? 'ਸਾਰੇ ਹੱਕ ਰਾਖਵੇਂ' : 'All rights reserved'}
+              © {new Date().getFullYear()} Sikhi Vidhya — {isPunjabi ? 'ਸਾਰੇ ਹੱਕ ਰਾਖਵੇਂ' : isHindi ? 'सर्वाधिकार सुरक्षित' : 'All rights reserved'}
             </p>
           </div>
         </div>

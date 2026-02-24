@@ -9,6 +9,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
+import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { ReadingProgress } from '@/components/common/ReadingProgress';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
@@ -42,7 +43,8 @@ interface HukamnamaData {
 }
 
 export default function HukamnamaPage() {
-  const [language, setLanguage] = useState<Language>('pa');
+  const { language, isPunjabi } = useLanguage();
+  const isHindi = language === 'hi';
   const [hukamnama, setHukamnama] = useState<HukamnamaData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -50,8 +52,6 @@ export default function HukamnamaPage() {
   const [showTransliteration, setShowTransliteration] = useState(false);
   const [showLarivaar, setShowLarivaar] = useState(false);
   const [copied, setCopied] = useState(false);
-
-  const isPunjabi = language === 'pa';
 
   const fetchHukamnama = useCallback(async () => {
     setLoading(true);
@@ -96,7 +96,7 @@ export default function HukamnamaPage() {
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#fef9e7] via-[#fdf6e3] to-[#fef3c7] dark:from-[#1a1a1a] dark:via-[#1f1a14] dark:to-[#231a0f]">
-      <MainNavigation currentLanguage={language} onLanguageChange={setLanguage} />
+      <MainNavigation />
       <ReadingProgress />
 
       <main id="main-content" className="flex-1">
@@ -109,18 +109,20 @@ export default function HukamnamaPage() {
             <div className="text-6xl md:text-7xl text-amber-700 dark:text-[#daa520] font-gurmukhi mb-3">ੴ</div>
             <h1 className={cn(
               'text-3xl md:text-4xl lg:text-5xl font-bold text-amber-900 dark:text-[#daa520]',
-              isPunjabi && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}>
-              {isPunjabi ? 'ਅੱਜ ਦਾ ਹੁਕਮਨਾਮਾ' : "Today's Hukamnama"}
+              {isPunjabi ? 'ਅੱਜ ਦਾ ਹੁਕਮਨਾਮਾ' : isHindi ? 'आज का हुकमनामा' : "Today's Hukamnama"}
             </h1>
             <p className={cn(
               'text-amber-700 dark:text-amber-400 mt-3 text-lg',
-              isPunjabi && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}>
-              {isPunjabi ? 'ਸ੍ਰੀ ਹਰਿਮੰਦਰ ਸਾਹਿਬ ਤੋਂ' : 'From Sri Harmandir Sahib'}
+              {isPunjabi ? 'ਸ੍ਰੀ ਹਰਿਮੰਦਰ ਸਾਹਿਬ ਤੋਂ' : isHindi ? 'श्री हरिमंदर साहिब से' : 'From Sri Harmandir Sahib'}
             </p>
             <p className="text-amber-600 dark:text-amber-500 mt-1 text-sm">
-              {new Date().toLocaleDateString(isPunjabi ? 'pa-IN' : 'en-US', {
+              {new Date().toLocaleDateString(isPunjabi ? 'pa-IN' : isHindi ? 'hi-IN' : 'en-US', {
                 weekday: 'long', year: 'numeric', month: 'long', day: 'numeric',
               })}
             </p>
@@ -133,17 +135,17 @@ export default function HukamnamaPage() {
             {loading && (
               <div className="text-center py-20">
                 <div className="text-6xl animate-pulse text-amber-600 dark:text-[#daa520] font-gurmukhi">ੴ</div>
-                <p className="text-amber-700 dark:text-amber-400 mt-6 font-gurmukhi text-lg">
-                  {isPunjabi ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : 'Loading Hukamnama...'}
+                <p className={cn('text-amber-700 dark:text-amber-400 mt-6 text-lg', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                  {isPunjabi ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : isHindi ? 'हुकमनामा लोड हो रहा है...' : 'Loading Hukamnama...'}
                 </p>
               </div>
             )}
 
             {error && (
               <div className="text-center py-16 bg-red-50 dark:bg-red-900/20 rounded-2xl">
-                <p className="text-red-700 dark:text-red-300 text-lg">{isPunjabi ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' : error}</p>
+                <p className="text-red-700 dark:text-red-300 text-lg">{isPunjabi ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' : isHindi ? 'हुकमनामा लोड नहीं हो सका' : error}</p>
                 <button onClick={fetchHukamnama} className="mt-4 px-6 py-3 bg-red-600 text-white rounded-xl hover:bg-red-700 transition-colors">
-                  {isPunjabi ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : 'Try Again'}
+                  {isPunjabi ? 'ਦੁਬਾਰਾ ਕੋਸ਼ਿਸ਼ ਕਰੋ' : isHindi ? 'दोबारा कोशिश करें' : 'Try Again'}
                 </button>
               </div>
             )}
@@ -192,7 +194,7 @@ export default function HukamnamaPage() {
                         showTranslation ? 'bg-neela-600 text-white' : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
                       )}
                     >
-                      {isPunjabi ? 'ਅਰਥ' : 'Translation'}
+                      {isPunjabi ? 'ਅਰਥ' : isHindi ? 'अर्थ' : 'Translation'}
                     </button>
                     <button
                       onClick={() => setShowTransliteration(!showTransliteration)}
@@ -200,7 +202,7 @@ export default function HukamnamaPage() {
                         showTransliteration ? 'bg-neela-600 text-white' : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
                       )}
                     >
-                      {isPunjabi ? 'ਉਚਾਰਨ' : 'Transliteration'}
+                      {isPunjabi ? 'ਉਚਾਰਨ' : isHindi ? 'उच्चारण' : 'Transliteration'}
                     </button>
                     <button
                       onClick={() => setShowLarivaar(!showLarivaar)}
@@ -208,14 +210,14 @@ export default function HukamnamaPage() {
                         showLarivaar ? 'bg-amber-600 text-white' : 'bg-neutral-200 dark:bg-neutral-700 text-neutral-700 dark:text-neutral-300'
                       )}
                     >
-                      {isPunjabi ? 'ਲੜੀਵਾਰ' : 'Larivaar'}
+                      {isPunjabi ? 'ਲੜੀਵਾਰ' : isHindi ? 'लड़ीवार' : 'Larivaar'}
                     </button>
                   </div>
                   <button
                     onClick={handleShare}
                     className="px-3 py-1.5 rounded-lg text-sm bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200 dark:hover:bg-emerald-900/50 transition-colors min-h-[36px]"
                   >
-                    {copied ? '✓ Copied!' : (isPunjabi ? '📤 ਸ਼ੇਅਰ' : '📤 Share')}
+                    {copied ? '✓ Copied!' : (isPunjabi ? '📤 ਸ਼ੇਅਰ' : isHindi ? '📤 शेअर' : '📤 Share')}
                   </button>
                 </div>
 
@@ -225,7 +227,7 @@ export default function HukamnamaPage() {
                     <div key={verse.verseId} className="text-center group">
                       {/* Line number */}
                       <div className="text-xs text-amber-500 dark:text-amber-600 mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                        {isPunjabi ? `ਪੰਕਤੀ ${index + 1}` : `Line ${index + 1}`}
+                        {isPunjabi ? `ਪੰਕਤੀ ${index + 1}` : isHindi ? `पंक्ति ${index + 1}` : `Line ${index + 1}`}
                       </div>
 
                       {/* Gurmukhi */}
@@ -270,10 +272,11 @@ export default function HukamnamaPage() {
                   <p className="text-xs text-amber-600 dark:text-amber-500 mt-1">
                     {isPunjabi
                       ? 'ਸ੍ਰੀ ਹਰਿਮੰਦਰ ਸਾਹਿਬ ਤੋਂ ਅੱਜ ਦਾ ਹੁਕਮਨਾਮਾ • ਡਾਟਾ: BaniDB (Khalis Foundation)'
+                      : isHindi ? 'श्री हरिमंदर साहिब से आज का हुकमनामा • डेटा: BaniDB (Khalis Foundation)'
                       : "Today's Hukamnama from Sri Harmandir Sahib • Data: BaniDB (Khalis Foundation)"}
                   </p>
                   <p className="text-xs text-neutral-500 mt-1">
-                    {hukamnama.verses.length} {isPunjabi ? 'ਪੰਕਤੀਆਂ' : 'lines'} • ਅੰਗ {hukamnama.shabadInfo.pageNo}
+                    {hukamnama.verses.length} {isPunjabi ? 'ਪੰਕਤੀਆਂ' : isHindi ? 'पंक्तियाँ' : 'lines'} • ਅੰਗ {hukamnama.shabadInfo.pageNo}
                   </p>
                 </div>
               </div>
@@ -283,7 +286,7 @@ export default function HukamnamaPage() {
       </main>
 
       <ScrollToTop />
-      <Footer language={language} />
+      <Footer />
     </div>
   );
 }
