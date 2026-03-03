@@ -89,8 +89,17 @@ export function AmritVelaProvider({ children }: { children: ReactNode }) {
       document.documentElement.setAttribute('data-theme', 'dark');
     } else {
       document.documentElement.classList.remove('amrit-vela');
-      // Restore the user's actual theme preference (managed by ThemeProvider)
-      // Don't remove 'dark' here — ThemeProvider handles it
+      // Restore user's theme preference from localStorage
+      const userTheme = localStorage.getItem('sikhi-theme');
+      if (userTheme === 'dark') {
+        document.documentElement.classList.add('dark');
+        document.documentElement.classList.remove('light');
+        document.documentElement.setAttribute('data-theme', 'dark');
+      } else {
+        document.documentElement.classList.remove('dark');
+        document.documentElement.classList.add('light');
+        document.documentElement.setAttribute('data-theme', 'light');
+      }
     }
     return () => {
       document.documentElement.classList.remove('amrit-vela');
