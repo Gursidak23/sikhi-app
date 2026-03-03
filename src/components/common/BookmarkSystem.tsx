@@ -7,7 +7,8 @@
 // Persists in localStorage for offline access
 // ============================================================================
 
-import { createContext, useContext, useEffect, useState, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
+import { createPortal } from 'react-dom';
 
 export interface Bookmark {
   id: string;
@@ -256,8 +257,29 @@ interface BookmarksPanelProps {
 
 export function BookmarksPanel({ isOpen, onClose, language = 'en' }: BookmarksPanelProps) {
   const { bookmarks, removeBookmark, clearAllBookmarks } = useBookmarks();
+  const [portalRoot, setPortalRoot] = useState<HTMLElement | null>(null);
+  const panelRef = useRef<HTMLDivElement>(null);
+
+  // Set up portal root
+  useEffect(() => {
+    setPortalRoot(document.body);
+  }, []);
+
+  // ESC key + body scroll lock
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    document.addEventListener('keydown', handleKey);
+    document.body.style.overflow = 'hidden';
+    return () => {
+      document.removeEventListener('keydown', handleKey);
+      document.body.style.overflow = '';
+    };
+  }, [isOpen, onClose]);
   
-  if (!isOpen) return null;
+  if (!isOpen || !portalRoot) return null;
 
   // Treat pa-roman same as pa for display labels
   const displayLang = language === 'pa-roman' ? 'pa' : language;
@@ -288,12 +310,16 @@ export function BookmarksPanel({ isOpen, onClose, language = 'en' }: BookmarksPa
 
   const t = labels[displayLang];
 
-  return (
+  const panel = (
     <div 
-      className="fixed inset-0 z-[100] flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm"
+      className="fixed inset-0 z-[9999] flex items-start sm:items-center justify-center p-2 sm:p-4 bg-black/60 backdrop-blur-sm"
       onClick={onClose}
+      role="dialog"
+      aria-modal="true"
+      aria-label="Bookmarks"
     >
       <div 
+        ref={panelRef}
         className="w-full max-w-lg max-h-[90vh] overflow-hidden bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 mt-16 sm:mt-0"
         onClick={(e) => e.stopPropagation()}
       >
@@ -403,4 +429,6 @@ export function BookmarksPanel({ isOpen, onClose, language = 'en' }: BookmarksPa
       </div>
     </div>
   );
+
+  return createPortal(panel, portalRoot);
 }

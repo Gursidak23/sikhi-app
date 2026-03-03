@@ -192,10 +192,24 @@ export function NitnemStreakTracker({ language, onMarkComplete }: NitnemStreakTr
             <button
               key={baniId}
               onClick={() => {
-                if (!done) {
-                  const today = getTodayKey();
-                  const newLogs = [...streakData.logs];
-                  const idx = newLogs.findIndex(l => l.date === today);
+                const today = getTodayKey();
+                const newLogs = [...streakData.logs];
+                const idx = newLogs.findIndex(l => l.date === today);
+                if (done) {
+                  // Unselect: remove bani from today's completed
+                  if (idx >= 0) {
+                    newLogs[idx] = { ...newLogs[idx], completed: newLogs[idx].completed.filter(b => b !== baniId) };
+                  }
+                  const newStats = calculateStreak(newLogs);
+                  const newData: StreakData = {
+                    logs: newLogs,
+                    currentStreak: newStats.current,
+                    longestStreak: newStats.longest,
+                    totalDaysCompleted: newStats.totalDays,
+                  };
+                  setStreakData(newData);
+                  saveStreak(newData);
+                } else {
                   if (idx >= 0) {
                     newLogs[idx] = { ...newLogs[idx], completed: [...newLogs[idx].completed, baniId] };
                   } else {

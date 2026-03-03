@@ -14,6 +14,7 @@ import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { LanguageSwitcher, LanguageSwitcherMobile } from '@/components/common/LanguageSwitcher';
 import { useLanguage } from '@/components/common/LanguageProvider';
+import { useTheme } from '@/components/common/ThemeProvider';
 import { NanakshahiCalendarFull, gregorianToNanakshahi, NANAKSHAHI_MONTHS } from '@/components/common/NanakshahiCalendar';
 import { BookmarksPanel, useBookmarks } from '@/components/common/BookmarkSystem';
 import type { Language } from '@/types';
@@ -26,6 +27,7 @@ interface MainNavigationProps {
 
 export function MainNavigation(_props?: MainNavigationProps) {
   const { language: currentLanguage, setLanguage: onLanguageChange, isPunjabi: _isPa } = useLanguage();
+  const { resolvedTheme, toggleTheme } = useTheme();
   const pathname = usePathname();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [showCalendar, setShowCalendar] = useState(false);
@@ -285,6 +287,24 @@ export function MainNavigation(_props?: MainNavigationProps) {
               currentLanguage={currentLanguage}
               onLanguageChange={onLanguageChange}
             />
+
+            {/* Dark/Light Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-lg text-amber-600 hover:text-amber-700 hover:bg-amber-50 dark:text-amber-400 dark:hover:text-amber-300 dark:hover:bg-amber-900/20 transition-all hover:scale-105"
+              aria-label={`Switch to ${resolvedTheme === 'light' ? 'dark' : 'light'} mode`}
+              title={resolvedTheme === 'light' ? 'Dark mode' : 'Light mode'}
+            >
+              {resolvedTheme === 'light' ? (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                </svg>
+              ) : (
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                </svg>
+              )}
+            </button>
             
             {/* Desktop only - Bookmarks Button */}
             <button
@@ -431,7 +451,27 @@ export function MainNavigation(_props?: MainNavigationProps) {
                     {currentLanguage === 'pa' ? 'ਬੁੱਕਮਾਰਕ' : currentLanguage === 'hi' ? 'बुकमार्क' : 'Bookmarks'}
                   </span>
                 </button>
-                
+
+                {/* Mobile Theme Toggle */}
+                <button
+                  onClick={toggleTheme}
+                  className="flex items-center justify-center gap-2 w-full p-3 mt-2 rounded-xl bg-amber-50 dark:bg-amber-900/20 hover:bg-amber-100 dark:hover:bg-amber-900/30 text-amber-700 dark:text-amber-400 transition-all active:scale-95"
+                >
+                  {resolvedTheme === 'light' ? (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
+                    </svg>
+                  ) : (
+                    <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z" />
+                    </svg>
+                  )}
+                  <span className="text-xs font-medium">
+                    {resolvedTheme === 'light'
+                      ? (currentLanguage === 'pa' ? 'ਡਾਰਕ ਮੋਡ' : currentLanguage === 'hi' ? 'डार्क मोड' : 'Dark Mode')
+                      : (currentLanguage === 'pa' ? 'ਲਾਈਟ ਮੋਡ' : currentLanguage === 'hi' ? 'लाइट मोड' : 'Light Mode')}
+                  </span>
+                </button>
 
               </div>
               
@@ -514,7 +554,7 @@ export function Footer(_props?: FooterProps) {
   const isHindi = language === 'hi';
   
   return (
-    <footer className="relative sikhi-footer py-16 mt-16 overflow-hidden">
+    <footer className="relative sikhi-footer py-12 sm:py-16 mt-16 overflow-hidden">
       {/* Decorative top wave */}
       <div className="absolute top-0 left-0 right-0 -translate-y-[99%]">
         <svg viewBox="0 0 1440 60" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-full">
@@ -523,10 +563,11 @@ export function Footer(_props?: FooterProps) {
       </div>
       
       <div className="container-content relative z-10">
-        <div className="grid md:grid-cols-3 gap-10">
+        {/* Top section: About + Quick Links */}
+        <div className="grid sm:grid-cols-2 gap-8 sm:gap-10">
           {/* About */}
           <div>
-            <div className="flex items-center gap-3 mb-5">
+            <div className="flex items-center gap-3 mb-4">
               <div className="relative w-11 h-11 rounded-xl flex items-center justify-center bg-gradient-to-br from-amber-500 to-amber-600 shadow-lg shadow-amber-500/20">
                 <span className="text-white font-gurmukhi font-bold text-xl">ੴ</span>
                 <div className="absolute inset-0 rounded-xl bg-gradient-to-br from-white/20 to-transparent" />
@@ -551,7 +592,7 @@ export function Footer(_props?: FooterProps) {
             </p>
             
             {/* Three pillars */}
-            <div className="mt-5 flex flex-wrap gap-2 sm:gap-3">
+            <div className="mt-4 flex flex-wrap gap-2">
               {['ਕਿਰਤ ਕਰੋ', 'ਨਾਮ ਜਪੋ', 'ਵੰਡ ਛਕੋ'].map((pillar) => (
                 <span key={pillar} className="font-gurmukhi text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-400 border border-amber-500/20">
                   {pillar}
@@ -560,52 +601,51 @@ export function Footer(_props?: FooterProps) {
             </div>
           </div>
 
-          {/* Quick Links */}
+          {/* Quick Links — 2 sub-columns */}
           <div>
             <h3 className={cn(
-              'text-sm font-semibold text-white mb-5 uppercase tracking-wider',
+              'text-sm font-semibold text-white mb-4 uppercase tracking-wider',
               isPunjabi && 'font-gurmukhi text-base tracking-normal normal-case',
               isHindi && 'font-devanagari text-base tracking-normal normal-case'
             )}>
               {isPunjabi ? 'ਤੁਰੰਤ ਲਿੰਕ' : isHindi ? 'त्वरित लिंक' : 'Quick Links'}
             </h3>
-            <ul className="space-y-2.5">
+            <div className="grid grid-cols-2 gap-x-4 gap-y-2">
               {[
                 { href: '/gurbani', icon: '📖', pa: 'ਗੁਰਬਾਣੀ', hi: 'गुरबाणी', en: 'Gurbani' },
                 { href: '/nitnem', icon: '🙏', pa: 'ਨਿਤਨੇਮ', hi: 'नितनेम', en: 'Nitnem' },
                 { href: '/hukamnama', icon: '📜', pa: 'ਹੁਕਮਨਾਮਾ', hi: 'हुकमनामा', en: 'Hukamnama' },
                 { href: '/search', icon: '🔍', pa: 'ਖੋਜ', hi: 'खोज', en: 'Search' },
-                { href: '/learn', icon: '🎓', pa: 'ਸਿੱਖੋ', hi: 'गुरमुखी सीखें', en: 'Learn Gurmukhi' },
+                { href: '/learn', icon: '🎓', pa: 'ਸਿੱਖੋ', hi: 'गुरमुखी सीखें', en: 'Learn' },
                 { href: '/kirtan', icon: '🎵', pa: 'ਕੀਰਤਨ', hi: 'कीर्तन', en: 'Kirtan' },
                 { href: '/calendar', icon: '📅', pa: 'ਕੈਲੰਡਰ', hi: 'कैलेंडर', en: 'Calendar' },
                 { href: '/itihaas', icon: '📜', pa: 'ਇਤਿਹਾਸ', hi: 'इतिहास', en: 'History' },
                 { href: '/community', icon: '🤝', pa: 'ਸੰਗਤ', hi: 'संगत', en: 'Community' },
                 { href: '/about', icon: 'ℹ️', pa: 'ਬਾਰੇ', hi: 'परिचय', en: 'About' },
               ].map((link) => (
-                <li key={link.href}>
-                  <Link href={link.href} className="group text-gray-400 hover:text-amber-400 transition-colors text-sm flex items-center gap-2.5">
-                    <span className="w-7 h-7 rounded-lg bg-gray-800 group-hover:bg-amber-500/10 flex items-center justify-center transition-colors text-xs">
-                      {link.icon}
-                    </span>
-                    <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
-                      {isPunjabi ? link.pa : isHindi ? (link.hi || link.en) : link.en}
-                    </span>
-                  </Link>
-                </li>
+                <Link key={link.href} href={link.href} className="group text-gray-400 hover:text-amber-400 transition-colors text-sm flex items-center gap-2">
+                  <span className="text-xs">{link.icon}</span>
+                  <span className={isPunjabi ? 'font-gurmukhi' : isHindi ? 'font-devanagari' : ''}>
+                    {isPunjabi ? link.pa : isHindi ? (link.hi || link.en) : link.en}
+                  </span>
+                </Link>
               ))}
-            </ul>
+            </div>
           </div>
+        </div>
 
-          {/* Disclaimer */}
-          <div>
-            <h3 className={cn(
-              'text-sm font-semibold text-white mb-5 uppercase tracking-wider',
-              isPunjabi && 'font-gurmukhi text-base tracking-normal normal-case',
-              isHindi && 'font-devanagari text-base tracking-normal normal-case'
-            )}>
-              {isPunjabi ? 'ਮਹੱਤਵਪੂਰਨ ਨੋਟ' : isHindi ? 'महत्वपूर्ण नोट' : 'Important Note'}
-            </h3>
-            <div className="bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+        {/* Disclaimer bar */}
+        <div className="mt-8 bg-gray-800/50 rounded-xl p-4 border border-gray-700/50">
+          <div className="flex items-start gap-3">
+            <span className="text-amber-500/60 text-lg mt-0.5">☬</span>
+            <div>
+              <h4 className={cn(
+                'text-xs font-semibold text-white mb-1 uppercase tracking-wider',
+                isPunjabi && 'font-gurmukhi text-sm tracking-normal normal-case',
+                isHindi && 'font-devanagari text-sm tracking-normal normal-case'
+              )}>
+                {isPunjabi ? 'ਮਹੱਤਵਪੂਰਨ ਨੋਟ' : isHindi ? 'महत्वपूर्ण नोट' : 'Important Note'}
+              </h4>
               <p className={cn(
                 'text-xs text-gray-400 leading-relaxed',
                 isPunjabi && 'font-gurmukhi text-sm',
@@ -618,27 +658,20 @@ export function Footer(_props?: FooterProps) {
                     : 'This platform supports learning and reflection. It is not a replacement for religious practice. Please attend your local Gurdwara Sahib.'}
               </p>
             </div>
-            
-            {/* Decorative Khanda */}
-            <div className="mt-6 flex items-center gap-3 text-gray-700">
-              <div className="h-px flex-1 bg-gradient-to-r from-transparent to-gray-700" />
-              <span className="font-gurmukhi text-xl text-amber-500/40">☬</span>
-              <div className="h-px flex-1 bg-gradient-to-l from-transparent to-gray-700" />
-            </div>
           </div>
         </div>
 
         {/* Bottom Bar */}
-        <div className="mt-12 pt-8 border-t border-gray-800/80">
+        <div className="mt-8 pt-6 border-t border-gray-800/80">
           {/* Waheguru Ji Ka Khalsa */}
-          <div className="text-center mb-5">
+          <div className="text-center mb-4">
             <p className="font-gurmukhi text-lg bg-gradient-to-r from-amber-300 via-amber-400 to-amber-300 bg-clip-text text-transparent">
               ਵਾਹਿਗੁਰੂ ਜੀ ਕਾ ਖਾਲਸਾ, ਵਾਹਿਗੁਰੂ ਜੀ ਕੀ ਫਤਿਹ
             </p>
           </div>
           
           {/* Bhul Chuk Maaf */}
-          <div className="text-center space-y-2">
+          <div className="text-center space-y-1.5">
             <p className={cn(
               'text-sm text-gray-500',
               isPunjabi && 'font-gurmukhi',
