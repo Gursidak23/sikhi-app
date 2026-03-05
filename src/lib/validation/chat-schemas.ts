@@ -77,8 +77,16 @@ export const sendMessageSchema = z.object({
   content: z
     .string()
     .min(1, 'Message cannot be empty')
-    .max(2000, 'Message must be at most 2000 characters')
-    .transform((val) => val.trim()),
+    .transform((val) => val.trim())
+    .refine(
+      (val) => {
+        // Image messages (contain base64 data) can be up to 150KB
+        const isImage = val.startsWith('[IMG]') && val.includes('[/IMG]');
+        const maxLen = isImage ? 150_000 : 2000;
+        return val.length <= maxLen;
+      },
+      { message: 'Message is too large' }
+    ),
   userId: z.string().min(1, 'User ID is required'),
   roomId: z.string().min(1, 'Room ID is required'),
   replyToId: z.string().optional(),

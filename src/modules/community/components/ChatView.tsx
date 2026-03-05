@@ -6,19 +6,42 @@
  * - Unread badges on rooms
  * - Mobile-first responsive design
  * - Glass-morphism design elements
+ * - Search, Saved Messages, Admin, Profile, Threads panels
+ * - Image attachment support
+ * - Virtual scrolling for messages
+ * - ExpiryTimerProvider for shared timer
  */
 
 'use client';
 
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useRef, useEffect, useState, useCallback, lazy, Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 import { useChat } from '../hooks/useChat';
+import type { ChatMessage } from '../store/chatStore';
+import { useChatAdmin } from '../hooks/useChatAdmin';
 import { ChatRegistration } from './ChatRegistration';
 import { RoomSidebar } from './RoomSidebar';
-import { MessageBubble, DateDivider } from './MessageBubble';
 import { ChatInput } from './ChatInput';
-import { MembersPanel } from './MembersPanel';
+import { ExpiryTimerProvider } from './ExpiryTimerProvider';
+import { ImageAttachment } from './ImageAttachment';
+import { VirtualMessageList } from './VirtualMessageList';
+
+// Lazy-loaded panels
+const MembersPanel = lazy(() => import('./MembersPanel').then(m => ({ default: m.MembersPanel })));
+const SearchPanel = lazy(() => import('./SearchPanel').then(m => ({ default: m.SearchPanel })));
+const SavedMessagesPanel = lazy(() => import('./SavedMessagesPanel').then(m => ({ default: m.SavedMessagesPanel })));
+const AdminPanel = lazy(() => import('./AdminPanel').then(m => ({ default: m.AdminPanel })));
+const ProfileEditor = lazy(() => import('./ProfileEditor').then(m => ({ default: m.ProfileEditor })));
+const ThreadView = lazy(() => import('./ThreadView').then(m => ({ default: m.ThreadView })));
+
+function PanelFallback() {
+  return (
+    <div className="flex items-center justify-center h-full">
+      <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin" />
+    </div>
+  );
+}
 
 interface ChatViewProps {
   language: Language;
@@ -56,19 +79,76 @@ export function ChatView({ language }: ChatViewProps) {
     unsaveMessage,
   } = useChat();
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const messagesContainerRef = useRef<HTMLDivElement>(null);
   const userMenuBtnRef = useRef<HTMLButtonElement>(null);
   const [showMobileSidebar, setShowMobileSidebar] = useState(false);
   const [showMembers, setShowMembers] = useState(false);
-  const [showNewMsgButton, setShowNewMsgButton] = useState(false);
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [hydrated, setHydrated] = useState(false);
-  const prevMessageCountRef = useRef(0);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // New panel states
+  const [showSearch, setShowSearch] = useState(false);
+  const [showSaved, setShowSaved] = useState(false);
+  const [showAdmin, setShowAdmin] = useState(false);
+  const [showProfile, setShowProfile] = useState(false);
+  const [showImagePicker, setShowImagePicker] = useState(false);
+  const [threadMessage, setThreadMessage] = useState<ChatMessage | null>(null);
+  const { isAdmin } = useChatAdmin();
+
   const isPunjabi = language === 'pa';
   const isHindi = language === 'hi';
+
+  // Close all side panels
+  const closeAllPanels = useCallback(() => {
+    setShowSearch(false);
+    setShowSaved(false);
+    setShowAdmin(false);
+    setShowProfile(false);
+    setShowMembers(false);
+    setThreadMessage(null);
+  }, []);
+
+  // Toggle a panel (close others first)
+  const togglePanel = useCallback((panel: 'search' | 'saved' | 'admin' | 'profile' | 'members' | 'thread') => {
+    const setters: Record<string, (v: boolean) => void> = {
+      search: setShowSearch,
+      saved: setShowSaved,
+      admin: setShowAdmin,
+      profile: setShowProfile,
+      members: setShowMembers,
+    };
+    const currentlyOpen = {
+      search: showSearch,
+      saved: showSaved,
+      admin: showAdmin,
+      profile: showProfile,
+      members: showMembers,
+      thread: threadMessage !== null,
+    }[panel];
+    closeAllPanels();
+    if (!currentlyOpen && panel !== 'thread') {
+      setters[panel]?.(true);
+    }
+  }, [showSearch, showSaved, showAdmin, showProfile, showMembers, threadMessage, closeAllPanels]);
+
+  // Open a thread view for a message
+  const openThread = useCallback((msg: ChatMessage) => {
+    closeAllPanels();
+    setThreadMessage(msg);
+  }, [closeAllPanels]);
+
+  // Scroll to a specific message by ID
+  const scrollToMessage = useCallback((messageId: string) => {
+    const el = document.getElementById(`msg-${messageId}`);
+    if (el) {
+      el.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      el.classList.add('ring-2', 'ring-amber-400', 'ring-offset-2', 'dark:ring-offset-gray-900');
+      setTimeout(() => {
+        el.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-2', 'dark:ring-offset-gray-900');
+      }, 2000);
+    }
+  }, []);
 
   // Mark component as hydrated after first mount (prevents flash of wrong state)
   useEffect(() => { setHydrated(true); }, []);
@@ -79,41 +159,6 @@ export function ChatView({ language }: ChatViewProps) {
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
     };
   }, []);
-
-  // Smart auto-scroll: scroll if near bottom, else show "New messages" button
-  useEffect(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 200;
-    if (messages.length > prevMessageCountRef.current) {
-      const latestMsg = messages[messages.length - 1];
-      const isOwnMessage = latestMsg?.userId === user?.id;
-      if (isNearBottom || isOwnMessage) {
-        requestAnimationFrame(() => {
-          messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-        });
-        setShowNewMsgButton(false);
-      } else if (!isOwnMessage) {
-        setShowNewMsgButton(true);
-      }
-    }
-    prevMessageCountRef.current = messages.length;
-  }, [messages, user?.id]);
-
-  const onScroll = useCallback(() => {
-    const container = messagesContainerRef.current;
-    if (!container) return;
-    const isNearBottom = container.scrollHeight - container.scrollTop - container.clientHeight < 100;
-    if (isNearBottom && showNewMsgButton) setShowNewMsgButton(false);
-  }, [showNewMsgButton]);
-
-  const scrollToBottom = useCallback(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    setShowNewMsgButton(false);
-  }, []);
-
-  // Group messages by date for dividers
-  const getMessageDate = (dateStr: string) => new Date(dateStr).toDateString();
 
   // If user is not registered, show registration form
   // Wait for hydration to avoid flashing the registration form when user is in localStorage
@@ -142,6 +187,7 @@ export function ChatView({ language }: ChatViewProps) {
   }
 
   return (
+    <ExpiryTimerProvider>
     <div className="flex h-[calc(100dvh-10rem)] sm:h-[calc(100dvh-9rem)] rounded-2xl shadow-2xl border border-amber-200/30 dark:border-gray-700/50 overflow-hidden bg-white dark:bg-gray-900">
       {/* Mobile Room Sidebar Overlay */}
       {showMobileSidebar && (
@@ -250,9 +296,59 @@ export function ChatView({ language }: ChatViewProps) {
               </button>
             )}
 
+            {/* Search Toggle */}
+            <button
+              onClick={() => togglePanel('search')}
+              className={cn(
+                'p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all',
+                showSearch
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 shadow-sm'
+                  : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600'
+              )}
+              aria-label={isPunjabi ? 'ਖੋਜ' : isHindi ? 'खोज' : 'Search'}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+              </svg>
+            </button>
+
+            {/* Saved Messages Toggle */}
+            <button
+              onClick={() => togglePanel('saved')}
+              className={cn(
+                'p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all',
+                showSaved
+                  ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 shadow-sm'
+                  : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600'
+              )}
+              aria-label={isPunjabi ? 'ਸੇਵ ਕੀਤੇ' : isHindi ? 'सेव किए' : 'Saved'}
+            >
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
+              </svg>
+            </button>
+
+            {/* Admin Panel Toggle (only for admins) */}
+            {isAdmin && (
+              <button
+                onClick={() => togglePanel('admin')}
+                className={cn(
+                  'p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all',
+                  showAdmin
+                    ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400 shadow-sm'
+                    : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600'
+                )}
+                aria-label="Admin"
+              >
+                <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                </svg>
+              </button>
+            )}
+
             {/* Members Toggle */}
             <button
-              onClick={() => setShowMembers(!showMembers)}
+              onClick={() => togglePanel('members')}
               className={cn(
                 'p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-xl transition-all',
                 showMembers
@@ -315,6 +411,22 @@ export function ChatView({ language }: ChatViewProps) {
                     <button
                       onClick={() => {
                         setShowUserMenu(false);
+                        togglePanel('profile');
+                      }}
+                      className={cn(
+                        'w-full text-left px-3 py-2.5 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors flex items-center gap-2',
+                        isPunjabi && 'font-gurmukhi',
+                        isHindi && 'font-devanagari'
+                      )}
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                      </svg>
+                      {isPunjabi ? 'ਪ੍ਰੋਫਾਈਲ ਸੋਧੋ' : isHindi ? 'प्रोफ़ाइल संपादित करें' : 'Edit Profile'}
+                    </button>
+                    <button
+                      onClick={() => {
+                        setShowUserMenu(false);
                         logout();
                       }}
                       className="w-full text-left px-3 py-2.5 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors flex items-center gap-2"
@@ -351,144 +463,29 @@ export function ChatView({ language }: ChatViewProps) {
           </div>
         )}
 
-        {/* Messages Area */}
-        <div
-          ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto scroll-smooth relative overscroll-contain"
-          onClick={markActive}
-          onScroll={onScroll}
-        >
-          {isLoading ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center">
-                <div className="relative w-12 h-12 mx-auto mb-4">
-                  <div className="absolute inset-0 border-2 border-amber-200 dark:border-amber-800 rounded-full" />
-                  <div className="absolute inset-0 border-2 border-amber-500 border-t-transparent rounded-full animate-spin" />
-                </div>
-                <p className={cn(
-                  'text-sm text-gray-400',
-                  isPunjabi && 'font-gurmukhi',
-                  isHindi && 'font-devanagari'
-                )}>
-                  {isPunjabi ? 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : isHindi ? 'संदेश लोड हो रहे हैं...' : 'Loading messages...'}
-                </p>
-              </div>
-            </div>
-          ) : messages.length === 0 ? (
-            <div className="flex items-center justify-center h-full">
-              <div className="text-center px-6 max-w-sm">
-                <div className="w-20 h-20 mx-auto mb-5 rounded-2xl bg-gradient-to-br from-amber-100 to-amber-200 dark:from-amber-900/20 dark:to-amber-800/20 flex items-center justify-center">
-                  <span className="text-4xl">💬</span>
-                </div>
-                <h3 className={cn(
-                  'text-lg font-bold text-gray-900 dark:text-white mb-2',
-                  isPunjabi && 'font-gurmukhi text-xl',
-                  isHindi && 'font-devanagari text-xl'
-                )}>
-                  {isPunjabi ? 'ਗੱਲਬਾਤ ਸ਼ੁਰੂ ਕਰੋ' : isHindi ? 'बातचीत शुरू करें' : 'Start the conversation'}
-                </h3>
-                <p className={cn(
-                  'text-sm text-gray-400 leading-relaxed mb-5',
-                  isPunjabi && 'font-gurmukhi'
-                )}>
-                  {isPunjabi
-                    ? 'ਪਹਿਲਾ ਸੁਨੇਹਾ ਭੇਜ ਕੇ ਗੱਲਬਾਤ ਸ਼ੁਰੂ ਕਰੋ!'
-                    : isHindi ? 'पहला संदेश भेजकर बातचीत शुरू करें!'
-                    : 'Be the first to send a message!'}
-                </p>
-
-                {/* Quick tips */}
-                <div className="text-left space-y-2">
-                  {(isPunjabi ? [
-                    { icon: '🙏', text: 'ਸਤਿਕਾਰ ਨਾਲ ਗੱਲ ਕਰੋ' },
-                    { icon: '📚', text: 'ਗੁਰਬਾਣੀ ਅਤੇ ਇਤਿਹਾਸ ਬਾਰੇ ਸਿੱਖੋ' },
-                    { icon: '💡', text: 'ਸਵਾਲ ਪੁੱਛੋ ਅਤੇ ਜਵਾਬ ਦਿਓ' },
-                  ] : isHindi ? [
-                    { icon: '🙏', text: 'सम्मान से बात करें' },
-                    { icon: '📚', text: 'गुरबाणी और सिख इतिहास पर चर्चा करें' },
-                    { icon: '💡', text: 'सवाल पूछें और ज्ञान साझा करें' },
-                  ] : [
-                    { icon: '🙏', text: 'Communicate with respect' },
-                    { icon: '📚', text: 'Discuss Gurbani & Sikh history' },
-                    { icon: '💡', text: 'Ask questions & share knowledge' },
-                  ]).map((tip, i) => (
-                    <div key={i} className="flex items-center gap-2.5 px-3 py-2 rounded-lg bg-gray-50 dark:bg-gray-800/50">
-                      <span className="text-sm flex-shrink-0">{tip.icon}</span>
-                      <span className={cn(
-                        'text-xs text-gray-500 dark:text-gray-400',
-                        isPunjabi && 'font-gurmukhi text-sm',
-                        isHindi && 'font-devanagari text-sm'
-                      )}>
-                        {tip.text}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="py-2 sm:py-4 space-y-0.5">
-              {/* Load More */}
-              {hasMore && (
-                <div className="text-center py-3">
-                  <button
-                    onClick={loadMore}
-                    className={cn(
-                      'inline-flex items-center gap-2 px-5 py-2 text-sm text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:hover:bg-amber-900/30 rounded-xl transition-all font-medium',
-                      isPunjabi && 'font-gurmukhi'
-                    )}
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
-                    </svg>
-                    {isPunjabi ? 'ਹੋਰ ਲੋਡ ਕਰੋ' : isHindi ? 'पुराने संदेश लोड करें' : 'Load earlier messages'}
-                  </button>
-                </div>
-              )}
-
-              {/* Messages with Date Dividers */}
-              {messages.map((msg, idx) => {
-                const showDivider =
-                  idx === 0 ||
-                  getMessageDate(msg.createdAt) !== getMessageDate(messages[idx - 1].createdAt);
-
-                return (
-                  <div key={msg.id}>
-                    {showDivider && (
-                      <DateDivider date={msg.createdAt} language={language} />
-                    )}
-                    <MessageBubble
-                      message={msg}
-                      currentUser={user}
-                      language={language}
-                      onReply={setReplyingTo}
-                      onDelete={deleteMessage}
-                      onSave={saveMessage}
-                      onUnsave={unsaveMessage}
-                      onEdit={editMessage}
-                      onToggleReaction={toggleReaction}
-                    />
-                  </div>
-                );
-              })}
-
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-
-          {/* "New messages" scroll button */}
-          {showNewMsgButton && (
-            <button
-              onClick={scrollToBottom}
-              className="sticky bottom-3 left-1/2 -translate-x-1/2 z-20 flex items-center gap-1.5 px-4 py-2 bg-amber-500 hover:bg-amber-600 text-white text-xs sm:text-sm font-medium rounded-full shadow-lg shadow-amber-500/30 transition-all"
-            >
-              <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
-              </svg>
-              {isPunjabi ? 'ਨਵੇਂ ਸੁਨੇਹੇ' : isHindi ? 'नए संदेश' : 'New messages'}
-            </button>
-          )}
-        </div>
+        {/* Messages Area (Virtual Scrolling) */}
+        <VirtualMessageList
+          messages={messages}
+          currentUser={user}
+          language={language}
+          hasMore={hasMore}
+          isLoading={isLoading}
+          onLoadMore={loadMore}
+          onReply={(m) => {
+            const replyCount = messages.filter(r => r.replyToId === m.id).length;
+            if (replyCount > 0) {
+              openThread(m);
+            } else {
+              setReplyingTo(m);
+            }
+          }}
+          onDelete={deleteMessage}
+          onSave={saveMessage}
+          onUnsave={unsaveMessage}
+          onEdit={editMessage}
+          onToggleReaction={toggleReaction}
+          onMarkActive={markActive}
+        />
 
         {/* Typing Indicator */}
         {typingNames.length > 0 && (
@@ -517,61 +514,207 @@ export function ChatView({ language }: ChatViewProps) {
             : '⏱ Messages auto-delete after 12h • 🔖 Save to keep'}
         </div>
 
-        {/* Chat Input */}
-        <ChatInput
-          onSend={sendMessage}
-          replyingTo={replyingTo}
-          onCancelReply={() => setReplyingTo(null)}
-          language={language}
-          disabled={!activeRoom}
-          onActivity={() => {
-            markActive();
-            setIsTyping(true);
-            // Debounce: clear previous timer so we don't fire stop prematurely
-            if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
-            typingTimerRef.current = setTimeout(() => setIsTyping(false), 3000);
-          }}
-        />
-      </div>
-
-      {/* Members Panel (Desktop) */}
-      {showMembers && (
-        <div className="hidden md:block w-64 lg:w-72 flex-shrink-0 border-l border-gray-100 dark:border-gray-800">
-          <MembersPanel
-            members={members}
+        {/* Image Attachment Picker */}
+        {showImagePicker && (
+          <ImageAttachment
             language={language}
-            currentUserId={user.id}
+            onImageReady={(content) => {
+              setShowImagePicker(false);
+              sendMessage(content);
+            }}
+            onCancel={() => setShowImagePicker(false)}
+          />
+        )}
+
+        {/* Chat Input */}
+        <div className="relative">
+          {/* Image attachment button */}
+          {!showImagePicker && (
+            <button
+              onClick={() => setShowImagePicker(true)}
+              className="absolute left-14 sm:left-16 bottom-[18px] sm:bottom-[22px] z-10 p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+              aria-label={isPunjabi ? 'ਤਸਵੀਰ ਭੇਜੋ' : isHindi ? 'तस्वीर भेजें' : 'Send image'}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+              </svg>
+            </button>
+          )}
+          <ChatInput
+            onSend={sendMessage}
+            replyingTo={replyingTo}
+            onCancelReply={() => setReplyingTo(null)}
+            language={language}
+            disabled={!activeRoom}
+            onActivity={() => {
+              markActive();
+              setIsTyping(true);
+              // Debounce: clear previous timer so we don't fire stop prematurely
+              if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+              typingTimerRef.current = setTimeout(() => setIsTyping(false), 3000);
+            }}
           />
         </div>
-      )}
+      </div>
 
-      {/* Members Panel (Mobile Overlay) */}
-      {showMembers && (
-        <div className="fixed inset-0 z-50 md:hidden">
-          <div
-            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-            onClick={() => setShowMembers(false)}
-          />
-          <div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-80 animate-in slide-in-from-right shadow-2xl">
-            <div className="h-full relative">
-              <button
-                onClick={() => setShowMembers(false)}
-                className="absolute top-3 right-3 z-10 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-500"
-                aria-label="Close members"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+      {/* Side Panel (Desktop) */}
+      {(showMembers || showSearch || showSaved || showAdmin || showProfile || threadMessage) && (
+        <div className="hidden md:block w-64 lg:w-80 flex-shrink-0 border-l border-gray-100 dark:border-gray-800">
+          <Suspense fallback={<PanelFallback />}>
+            {showMembers && (
               <MembersPanel
                 members={members}
                 language={language}
                 currentUserId={user.id}
               />
+            )}
+            {showSearch && (
+              <SearchPanel
+                language={language}
+                onClose={() => setShowSearch(false)}
+                onScrollToMessage={scrollToMessage}
+              />
+            )}
+            {showSaved && (
+              <SavedMessagesPanel
+                language={language}
+                onClose={() => setShowSaved(false)}
+                onScrollToMessage={scrollToMessage}
+              />
+            )}
+            {showAdmin && (
+              <AdminPanel
+                language={language}
+                onClose={() => setShowAdmin(false)}
+              />
+            )}
+            {showProfile && (
+              <ProfileEditor
+                language={language}
+                onClose={() => setShowProfile(false)}
+              />
+            )}
+            {threadMessage && (
+              <ThreadView
+                parentMessage={threadMessage}
+                allMessages={messages}
+                currentUser={user}
+                language={language}
+                onClose={() => setThreadMessage(null)}
+                onSendReply={async (content) => {
+                  setReplyingTo(threadMessage);
+                  await sendMessage(content);
+                  setReplyingTo(null);
+                }}
+                onDelete={deleteMessage}
+                onSave={saveMessage}
+                onUnsave={unsaveMessage}
+                onEdit={editMessage}
+                onToggleReaction={toggleReaction}
+                onReply={setReplyingTo}
+              />
+            )}
+          </Suspense>
+        </div>
+      )}
+
+      {/* Side Panel (Mobile Overlay) */}
+      {(showMembers || showSearch || showSaved || showAdmin || showProfile || threadMessage) && (
+        <div className="fixed inset-0 z-50 md:hidden">
+          <div
+            className="absolute inset-0 bg-black/50 backdrop-blur-sm"
+            onClick={closeAllPanels}
+          />
+          <div className="absolute right-0 top-0 bottom-0 w-[85vw] max-w-80 animate-in slide-in-from-right shadow-2xl">
+            <div className="h-full relative">
+              {!showMembers && (
+                <button
+                  onClick={closeAllPanels}
+                  className="absolute top-3 right-3 z-10 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-500"
+                  aria-label="Close panel"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  </svg>
+                </button>
+              )}
+              <Suspense fallback={<PanelFallback />}>
+                {showMembers && (
+                  <>
+                    <button
+                      onClick={() => setShowMembers(false)}
+                      className="absolute top-3 right-3 z-10 p-2.5 min-w-[44px] min-h-[44px] flex items-center justify-center rounded-lg bg-gray-100 dark:bg-gray-800 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors text-gray-500"
+                      aria-label="Close members"
+                    >
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                      </svg>
+                    </button>
+                    <MembersPanel
+                      members={members}
+                      language={language}
+                      currentUserId={user.id}
+                    />
+                  </>
+                )}
+                {showSearch && (
+                  <SearchPanel
+                    language={language}
+                    onClose={() => setShowSearch(false)}
+                    onScrollToMessage={(id) => {
+                      setShowSearch(false);
+                      setTimeout(() => scrollToMessage(id), 300);
+                    }}
+                  />
+                )}
+                {showSaved && (
+                  <SavedMessagesPanel
+                    language={language}
+                    onClose={() => setShowSaved(false)}
+                    onScrollToMessage={(id) => {
+                      setShowSaved(false);
+                      setTimeout(() => scrollToMessage(id), 300);
+                    }}
+                  />
+                )}
+                {showAdmin && (
+                  <AdminPanel
+                    language={language}
+                    onClose={() => setShowAdmin(false)}
+                  />
+                )}
+                {showProfile && (
+                  <ProfileEditor
+                    language={language}
+                    onClose={() => setShowProfile(false)}
+                  />
+                )}
+                {threadMessage && (
+                  <ThreadView
+                    parentMessage={threadMessage}
+                    allMessages={messages}
+                    currentUser={user}
+                    language={language}
+                    onClose={() => setThreadMessage(null)}
+                    onSendReply={async (content) => {
+                      setReplyingTo(threadMessage);
+                      await sendMessage(content);
+                      setReplyingTo(null);
+                    }}
+                    onDelete={deleteMessage}
+                    onSave={saveMessage}
+                    onUnsave={unsaveMessage}
+                    onEdit={editMessage}
+                    onToggleReaction={toggleReaction}
+                    onReply={setReplyingTo}
+                  />
+                )}
+              </Suspense>
             </div>
           </div>
         </div>
       )}
     </div>
+    </ExpiryTimerProvider>
   );
 }

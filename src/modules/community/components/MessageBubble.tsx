@@ -7,7 +7,9 @@
 import { useState, useCallback, useRef, useEffect, memo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
-import type { ChatMessage, ChatUser, MessageReaction } from '../hooks/useChat';
+import type { ChatMessage, ChatUser, MessageReaction } from '../store/chatStore';
+import { useExpiryTick } from './ExpiryTimerProvider';
+import { parseImageMessage } from './ImageAttachment';
 
 const QUICK_REACTIONS = ['🙏', '❤️', '👍', '✨', '😊'];
 
@@ -46,17 +48,9 @@ export const MessageBubble = memo(function MessageBubble({
   const isHindi = language === 'hi';
   const isOptimistic = (message as any)._optimistic;
 
-  // Live countdown: re-render periodically to update expiry label
-  const [, setTick] = useState(0);
-  useEffect(() => {
-    if (!message.expiresAt || message.isSaved) return;
-    const remaining = new Date(message.expiresAt).getTime() - Date.now();
-    if (remaining <= 0) return;
-    // Update every 30s normally, every 5s when < 5 min remaining
-    const interval = remaining < 300_000 ? 5_000 : 30_000;
-    const timer = setInterval(() => setTick((t) => t + 1), interval);
-    return () => clearInterval(timer);
-  }, [message.expiresAt, message.isSaved]);
+  // Shared expiry tick from ExpiryTimerProvider (single timer for all messages)
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const _tick = useExpiryTick();
 
   // Can edit within 15 minutes of creation
   const canEdit = isOwn && !isOptimistic && (() => {
@@ -321,16 +315,44 @@ export const MessageBubble = memo(function MessageBubble({
             </div>
           </div>
         ) : (
-        <div
-          className={cn(
-            'inline-block px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-sm leading-relaxed break-words whitespace-pre-wrap overflow-hidden',
-            isOwn
-              ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-2xl rounded-tr-md shadow-sm shadow-amber-500/20'
-              : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-tl-md'
-          )}
-        >
-          {message.content}
-        </div>
+        (() => {
+          const imageData = parseImageMessage(message.content);
+          if (imageData) {
+            return (
+              <div className={cn('inline-block', isOwn && 'ml-auto')}>
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={imageData.imageUrl}
+                  alt={imageData.caption || 'Shared image'}
+                  className="max-w-[240px] sm:max-w-[300px] max-h-[200px] rounded-2xl object-contain cursor-pointer hover:opacity-90 transition-opacity"
+                  loading="lazy"
+                />
+                {imageData.caption && (
+                  <p className={cn(
+                    'mt-1 text-xs text-gray-500 dark:text-gray-400 max-w-[240px] sm:max-w-[300px]',
+                    isOwn && 'text-right',
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
+                  )}>
+                    {imageData.caption}
+                  </p>
+                )}
+              </div>
+            );
+          }
+          return (
+            <div
+              className={cn(
+                'inline-block px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-sm leading-relaxed break-words whitespace-pre-wrap overflow-hidden',
+                isOwn
+                  ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-2xl rounded-tr-md shadow-sm shadow-amber-500/20'
+                  : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-tl-md'
+              )}
+            >
+              {message.content}
+            </div>
+          );
+        })()
         )}
 
         {/* Compact Floating Action Toolbar */}

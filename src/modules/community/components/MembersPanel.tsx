@@ -4,10 +4,12 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 import type { ChatUser } from '../hooks/useChat';
+
+const MEMBERS_PAGE_SIZE = 20;
 
 interface MembersPanelProps {
   members: ChatUser[];
@@ -19,6 +21,7 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
   const isPunjabi = language === 'pa';
   const isHindi = language === 'hi';
   const [search, setSearch] = useState('');
+  const [offlineVisible, setOfflineVisible] = useState(MEMBERS_PAGE_SIZE);
 
   const onlineMembers = members.filter((m) => m.isOnline);
   const offlineMembers = members.filter((m) => !m.isOnline);
@@ -34,6 +37,11 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
 
   const filteredOnline = filterMembers(onlineMembers);
   const filteredOffline = filterMembers(offlineMembers);
+  const paginatedOffline = useMemo(
+    () => filteredOffline.slice(0, offlineVisible),
+    [filteredOffline, offlineVisible]
+  );
+  const hasMoreOffline = filteredOffline.length > offlineVisible;
 
   const getInitials = (name: string) => name.slice(0, 2).toUpperCase();
 
@@ -157,7 +165,7 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
           </div>
         )}
 
-        {/* Offline */}
+        {/* Offline (paginated) */}
         {filteredOffline.length > 0 && (
           <div>
             <div className="px-4 py-1.5 flex items-center gap-2">
@@ -166,7 +174,23 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
                 {isPunjabi ? 'ਔਫ਼ਲਾਈਨ' : isHindi ? 'ऑफलाइन' : 'Offline'} — {filteredOffline.length}
               </span>
             </div>
-            {filteredOffline.map(renderMember)}
+            {paginatedOffline.map(renderMember)}
+            {hasMoreOffline && (
+              <div className="px-3 py-2">
+                <button
+                  onClick={() => setOfflineVisible((v) => v + MEMBERS_PAGE_SIZE)}
+                  className={cn(
+                    'w-full py-2 text-xs font-medium text-amber-600 hover:text-amber-700 bg-amber-50 hover:bg-amber-100 dark:bg-amber-900/20 dark:hover:bg-amber-900/30 rounded-lg transition-colors',
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
+                  )}
+                >
+                  {isPunjabi ? `ਹੋਰ ਦਿਖਾਓ (${filteredOffline.length - offlineVisible} ਬਾਕੀ)` :
+                   isHindi ? `और दिखाएं (${filteredOffline.length - offlineVisible} शेष)` :
+                   `Show more (${filteredOffline.length - offlineVisible} remaining)`}
+                </button>
+              </div>
+            )}
           </div>
         )}
 
