@@ -12,7 +12,7 @@ import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
-import { NanakshahiCalendarFull, gregorianToNanakshahi, NANAKSHAHI_MONTHS } from '@/components/common/NanakshahiCalendar';
+import { NanakshahiCalendarFull, gregorianToNanakshahi, NANAKSHAHI_MONTHS, GREGORIAN_MONTH_NAMES } from '@/components/common/NanakshahiCalendar';
 import type { Language } from '@/types';
 
 // Comprehensive Sikh events data
@@ -55,7 +55,7 @@ const GURPURAB_EVENTS: GurpurabEvent[] = [
       en: 'Sri Guru Nanak Dev Ji was born on April 15, 1469 at Rai Bhoi Di Talwandi (Nankana Sahib). He taught the message of One God, service, meditation, and equality.',
     },
     nanakshahiMonth: 7,
-    nanakshahiDay: 1,
+    nanakshahiDay: 15,
     icon: '🙏',
     color: 'from-amber-400 to-amber-600',
     year: 1469,
@@ -99,7 +99,7 @@ const GURPURAB_EVENTS: GurpurabEvent[] = [
       pa: 'ਸ੍ਰੀ ਗੁਰੂ ਅਰਜਨ ਦੇਵ ਜੀ ਸਿੱਖ ਧਰਮ ਦੇ ਪਹਿਲੇ ਸ਼ਹੀਦ ਗੁਰੂ ਹਨ। ੧੬੦੬ ਵਿੱਚ ਮੁਗਲ ਸ਼ਾਸਕ ਜਹਾਂਗੀਰ ਦੇ ਹੁਕਮ ਨਾਲ ਆਪ ਜੀ ਨੂੰ ਤੱਤੀ ਤਵੀ ਅਤੇ ਉਬਲਦੇ ਪਾਣੀ ਦੀ ਤਸੀਹੇ ਦਿੱਤੇ ਗਏ।',
       en: 'Guru Arjan Dev Ji was the first Sikh Guru to be martyred. In 1606, on the orders of Mughal emperor Jahangir, he was tortured with hot plates and boiling water.',
     },
-    nanakshahiMonth: 2,
+    nanakshahiMonth: 3,
     nanakshahiDay: 2,
     icon: '🕯️',
     color: 'from-red-500 to-red-700',
@@ -159,8 +159,8 @@ const GURPURAB_EVENTS: GurpurabEvent[] = [
       pa: 'ਹੋਲਾ ਮਹੱਲਾ ਗੁਰੂ ਗੋਬਿੰਦ ਸਿੰਘ ਜੀ ਨੇ ੧੭੦੧ ਵਿੱਚ ਅਨੰਦਪੁਰ ਸਾਹਿਬ ਵਿੱਚ ਸ਼ੁਰੂ ਕੀਤਾ। ਇਹ ਸਿੱਖ ਸ਼ਕਤੀ, ਯੁੱਧ ਕਲਾ ਅਤੇ ਕੀਰਤਨ ਦਾ ਤਿਉਹਾਰ ਹੈ।',
       en: 'Hola Mohalla was started by Guru Gobind Singh Ji in 1701 at Anandpur Sahib. It is a festival of Sikh martial arts, strength, and kirtan.',
     },
-    nanakshahiMonth: 11,
-    nanakshahiDay: 30,
+    nanakshahiMonth: 0,
+    nanakshahiDay: 1,
     icon: '🎭',
     color: 'from-purple-500 to-purple-700',
     year: 1701,
@@ -199,6 +199,7 @@ const typeLabels = {
 export default function CalendarPage() {
   const { language, isPunjabi } = useLanguage();
   const isHindi = language === 'hi';
+  const isEnglish = language === 'en';
   const [selectedEvent, setSelectedEvent] = useState<GurpurabEvent | null>(null);
   const [filter, setFilter] = useState<'all' | 'gurpurab' | 'shaheedi' | 'historical' | 'mela'>('all');
   const nanakshahiDate = useMemo(() => gregorianToNanakshahi(new Date()), []);
@@ -222,14 +223,14 @@ export default function CalendarPage() {
           <div className="container-content">
             <div className="text-5xl mb-3">📅</div>
             <h1 className={cn('text-3xl md:text-4xl font-bold text-amber-900 dark:text-[#daa520]', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
-              {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ ਕੈਲੰਡਰ' : isHindi ? 'नानकशाही कैलेंडर' : 'Nanakshahi Calendar'}
+              {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ ਕੈਲੰਡਰ' : isHindi ? 'नानकशाही कैलेंडर' : 'Sikh Calendar'}
             </h1>
             <p className={cn('text-amber-700 dark:text-amber-400 mt-2 text-lg', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
               {isPunjabi
                 ? `${nanakshahiDate.day} ${NANAKSHAHI_MONTHS[nanakshahiDate.month].pa} ${nanakshahiDate.year} ਨਾਨਕਸ਼ਾਹੀ`
                 : isHindi
-                  ? `${nanakshahiDate.day} ${NANAKSHAHI_MONTHS[nanakshahiDate.month].en} ${nanakshahiDate.year} नानकशाही`
-                  : `${nanakshahiDate.day} ${NANAKSHAHI_MONTHS[nanakshahiDate.month].en} ${nanakshahiDate.year} Nanakshahi`}
+                  ? `${nanakshahiDate.day} ${NANAKSHAHI_MONTHS[nanakshahiDate.month].hi || NANAKSHAHI_MONTHS[nanakshahiDate.month].en} ${nanakshahiDate.year} नानकशाही`
+                  : `${GREGORIAN_MONTH_NAMES[new Date().getMonth()]} ${new Date().getDate()}, ${new Date().getFullYear()}`}
             </p>
           </div>
         </section>
@@ -289,8 +290,14 @@ export default function CalendarPage() {
                     {isPunjabi ? event.description.pa : isHindi ? (event.description.hi || event.description.en) : event.description.en}
                   </p>
                   <div className="mt-3 flex items-center gap-2 text-xs text-amber-600 dark:text-amber-400">
-                    <span className="font-gurmukhi">
-                      {event.nanakshahiDay} {NANAKSHAHI_MONTHS[event.nanakshahiMonth].pa}
+                    <span className={cn(!isEnglish && 'font-gurmukhi')}>
+                      {isEnglish 
+                        ? (() => {
+                            const d = new Date(new Date().getFullYear(), NANAKSHAHI_MONTHS[event.nanakshahiMonth].gregorianStart.month, NANAKSHAHI_MONTHS[event.nanakshahiMonth].gregorianStart.day + event.nanakshahiDay - 1);
+                            return `${GREGORIAN_MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+                          })()
+                        : `${event.nanakshahiDay} ${NANAKSHAHI_MONTHS[event.nanakshahiMonth].pa}`
+                      }
                     </span>
                     {event.year && <span>• {event.year} CE</span>}
                   </div>
@@ -318,8 +325,14 @@ export default function CalendarPage() {
                   {isPunjabi ? selectedEvent.name.pa : isHindi ? (selectedEvent.name.hi || selectedEvent.name.en) : selectedEvent.name.en}
                 </h2>
                 <div className="flex items-center gap-3 mt-2 text-sm text-white/80">
-                  <span className="font-gurmukhi">
-                    {selectedEvent.nanakshahiDay} {NANAKSHAHI_MONTHS[selectedEvent.nanakshahiMonth].pa}
+                  <span className={cn(!isEnglish && 'font-gurmukhi')}>
+                    {isEnglish 
+                      ? (() => {
+                          const d = new Date(new Date().getFullYear(), NANAKSHAHI_MONTHS[selectedEvent.nanakshahiMonth].gregorianStart.month, NANAKSHAHI_MONTHS[selectedEvent.nanakshahiMonth].gregorianStart.day + selectedEvent.nanakshahiDay - 1);
+                          return `${GREGORIAN_MONTH_NAMES[d.getMonth()]} ${d.getDate()}`;
+                        })()
+                      : `${selectedEvent.nanakshahiDay} ${NANAKSHAHI_MONTHS[selectedEvent.nanakshahiMonth].pa}`
+                    }
                   </span>
                   {selectedEvent.year && <span>• {selectedEvent.year} CE</span>}
                 </div>

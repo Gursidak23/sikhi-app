@@ -6,7 +6,7 @@
 // Sikh Calendar with Gurpurabs, Shaheedi Divas, and important dates
 // ============================================================================
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import { cn } from '@/lib/utils';
 import type { Language } from '@/types';
 
@@ -20,18 +20,18 @@ interface NanakshahiMonth {
 }
 
 const NANAKSHAHI_MONTHS: NanakshahiMonth[] = [
-  { pa: 'ਚੇਤ', en: 'Chet', days: 31, gregorianStart: { month: 2, day: 14 } }, // March 14
-  { pa: 'ਵੈਸਾਖ', en: 'Vaisakh', days: 31, gregorianStart: { month: 3, day: 14 } }, // April 14
-  { pa: 'ਜੇਠ', en: 'Jeth', days: 31, gregorianStart: { month: 4, day: 15 } }, // May 15
-  { pa: 'ਹਾੜ', en: 'Harh', days: 31, gregorianStart: { month: 5, day: 15 } }, // June 15
-  { pa: 'ਸਾਵਣ', en: 'Sawan', days: 31, gregorianStart: { month: 6, day: 16 } }, // July 16
-  { pa: 'ਭਾਦੋਂ', en: 'Bhadon', days: 30, gregorianStart: { month: 7, day: 16 } }, // August 16
-  { pa: 'ਅੱਸੂ', en: 'Assu', days: 30, gregorianStart: { month: 8, day: 15 } }, // September 15
-  { pa: 'ਕੱਤਕ', en: 'Katak', days: 30, gregorianStart: { month: 9, day: 15 } }, // October 15
-  { pa: 'ਮੱਘਰ', en: 'Maghar', days: 30, gregorianStart: { month: 10, day: 14 } }, // November 14
-  { pa: 'ਪੋਹ', en: 'Poh', days: 30, gregorianStart: { month: 11, day: 14 } }, // December 14
-  { pa: 'ਮਾਘ', en: 'Magh', days: 30, gregorianStart: { month: 0, day: 13 } }, // January 13
-  { pa: 'ਫੱਗਣ', en: 'Phagan', days: 30, gregorianStart: { month: 1, day: 12 } }, // February 12
+  { pa: 'ਚੇਤ', en: 'Chet', hi: 'चेत', days: 31, gregorianStart: { month: 2, day: 14 } }, // March 14
+  { pa: 'ਵੈਸਾਖ', en: 'Vaisakh', hi: 'वैसाख', days: 31, gregorianStart: { month: 3, day: 14 } }, // April 14
+  { pa: 'ਜੇਠ', en: 'Jeth', hi: 'जेठ', days: 31, gregorianStart: { month: 4, day: 15 } }, // May 15
+  { pa: 'ਹਾੜ', en: 'Harh', hi: 'हाड़', days: 31, gregorianStart: { month: 5, day: 15 } }, // June 15
+  { pa: 'ਸਾਵਣ', en: 'Sawan', hi: 'सावण', days: 31, gregorianStart: { month: 6, day: 16 } }, // July 16
+  { pa: 'ਭਾਦੋਂ', en: 'Bhadon', hi: 'भादों', days: 30, gregorianStart: { month: 7, day: 16 } }, // August 16
+  { pa: 'ਅੱਸੂ', en: 'Assu', hi: 'अस्सू', days: 30, gregorianStart: { month: 8, day: 15 } }, // September 15
+  { pa: 'ਕੱਤਕ', en: 'Katak', hi: 'कत्तक', days: 30, gregorianStart: { month: 9, day: 15 } }, // October 15
+  { pa: 'ਮੱਘਰ', en: 'Maghar', hi: 'मघर', days: 30, gregorianStart: { month: 10, day: 14 } }, // November 14
+  { pa: 'ਪੋਹ', en: 'Poh', hi: 'पोह', days: 30, gregorianStart: { month: 11, day: 14 } }, // December 14
+  { pa: 'ਮਾਘ', en: 'Magh', hi: 'माघ', days: 30, gregorianStart: { month: 0, day: 13 } }, // January 13
+  { pa: 'ਫੱਗਣ', en: 'Phagan', hi: 'फागण', days: 30, gregorianStart: { month: 1, day: 12 } }, // February 12
 ];
 
 // Important Sikh dates (fixed in Nanakshahi calendar)
@@ -56,10 +56,10 @@ const SIKH_EVENTS: SikhEvent[] = [
   },
   {
     type: 'gurpurab',
-    name: { pa: 'ਗੁਰੂ ਨਾਨਕ ਦੇਵ ਜੀ ਪ੍ਰਕਾਸ਼ ਪੁਰਬ', en: 'Guru Nanak Dev Ji Prakash Purab' },
-    description: { pa: '੧੪੬੯ ਵਿੱਚ ਗੁਰੂ ਜੀ ਦਾ ਜਨਮ', en: 'Birth of Guru Ji in 1469' },
+    name: { pa: 'ਗੁਰੂ ਨਾਨਕ ਦੇਵ ਜੀ ਪ੍ਰਕਾਸ਼ ਪੁਰਬ', en: 'Guru Nanak Dev Ji Prakash Purab', hi: 'गुरु नानक देव जी प्रकाश पर्व' },
+    description: { pa: '੧੪੬੯ ਵਿੱਚ ਗੁਰੂ ਜੀ ਦਾ ਜਨਮ', en: 'Birth of Guru Ji in 1469', hi: '1469 में गुरु जी का जन्म' },
     nanakshahiMonth: 7, // Katak
-    nanakshahiDay: 1,
+    nanakshahiDay: 15,
     icon: '🙏',
   },
   {
@@ -83,7 +83,7 @@ const SIKH_EVENTS: SikhEvent[] = [
     type: 'shaheedi',
     name: { pa: 'ਗੁਰੂ ਅਰਜਨ ਦੇਵ ਜੀ ਸ਼ਹੀਦੀ ਦਿਵਸ', en: 'Shaheedi Divas - Guru Arjan Dev Ji' },
     description: { pa: '੧੬੦੬ ਵਿੱਚ ਪਹਿਲੇ ਸ਼ਹੀਦ ਗੁਰੂ', en: 'First martyred Guru in 1606' },
-    nanakshahiMonth: 2, // Jeth
+    nanakshahiMonth: 3, // Harh
     nanakshahiDay: 2,
     icon: '🕯️',
   },
@@ -132,8 +132,8 @@ const SIKH_EVENTS: SikhEvent[] = [
     type: 'historical',
     name: { pa: 'ਹੋਲਾ ਮਹੱਲਾ', en: 'Hola Mohalla' },
     description: { pa: 'ਸਿੱਖ ਯੁੱਧ ਕਲਾ ਦਾ ਤਿਉਹਾਰ', en: 'Sikh martial arts festival' },
-    nanakshahiMonth: 11, // Phagan
-    nanakshahiDay: 30,
+    nanakshahiMonth: 0, // Chet
+    nanakshahiDay: 1,
     icon: '🎭',
   },
   {
@@ -188,39 +188,90 @@ function getEventsForMonth(month: number): SikhEvent[] {
   return SIKH_EVENTS.filter(event => event.nanakshahiMonth === month);
 }
 
+// Gregorian calendar support for English mode
+const GREGORIAN_MONTH_NAMES = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
+function getGregorianEventsForMonth(gregorianMonth: number): (SikhEvent & { gregorianDay: number })[] {
+  const year = new Date().getFullYear();
+  const events: (SikhEvent & { gregorianDay: number })[] = [];
+  
+  SIKH_EVENTS.forEach(event => {
+    const nMonth = NANAKSHAHI_MONTHS[event.nanakshahiMonth];
+    for (const baseYear of [year, year - 1]) {
+      const d = new Date(baseYear, nMonth.gregorianStart.month, nMonth.gregorianStart.day + event.nanakshahiDay - 1);
+      if (d.getMonth() === gregorianMonth && d.getFullYear() === year) {
+        events.push({ ...event, gregorianDay: d.getDate() });
+        break;
+      }
+    }
+  });
+  
+  return events;
+}
+
+export { GREGORIAN_MONTH_NAMES };
+
 // Enhanced Full Calendar with month grid and festivals
 export function NanakshahiCalendarFull({ language, onClose }: { language: Language; onClose?: () => void }) {
   const today = new Date();
-  const [selectedMonth, setSelectedMonth] = useState(() => {
-    const nanakshahi = gregorianToNanakshahi(today);
-    return nanakshahi.month;
-  });
-  
-  const nanakshahiDate = useMemo(() => gregorianToNanakshahi(today), []);
-  const monthEvents = useMemo(() => getEventsForMonth(selectedMonth), [selectedMonth]);
-  
-  const currentMonth = NANAKSHAHI_MONTHS[selectedMonth];
+  const isEnglish = language === 'en';
   const isPunjabi = language === 'pa';
   const isHindi = language === 'hi';
   
-  // Generate days grid for the month
-  const daysInMonth = currentMonth.days;
+  const nanakshahiDate = useMemo(() => gregorianToNanakshahi(today), []);
+  
+  const [selectedMonth, setSelectedMonth] = useState(() => {
+    return isEnglish ? today.getMonth() : nanakshahiDate.month;
+  });
+  
+  // Reset month when language mode changes
+  useEffect(() => {
+    setSelectedMonth(isEnglish ? today.getMonth() : nanakshahiDate.month);
+  }, [isEnglish, nanakshahiDate.month]); // eslint-disable-line react-hooks/exhaustive-deps
+  
+  // Nanakshahi mode data
+  const currentNanakshahiMonth = !isEnglish ? NANAKSHAHI_MONTHS[selectedMonth] : null;
+  const nanakshahiMonthEvents = useMemo(() => !isEnglish ? getEventsForMonth(selectedMonth) : [], [selectedMonth, isEnglish]);
+  
+  // Gregorian mode data
+  const gregorianMonthEvents = useMemo(() => isEnglish ? getGregorianEventsForMonth(selectedMonth) : [], [selectedMonth, isEnglish]);
+  
+  // Unified display values
+  const displayMonthName = isEnglish
+    ? GREGORIAN_MONTH_NAMES[selectedMonth]
+    : isPunjabi ? currentNanakshahiMonth!.pa : isHindi ? (currentNanakshahiMonth!.hi || currentNanakshahiMonth!.pa) : currentNanakshahiMonth!.en;
+  
+  const displayDaysInMonth = isEnglish
+    ? new Date(today.getFullYear(), selectedMonth + 1, 0).getDate()
+    : currentNanakshahiMonth!.days;
+  
+  const displayYear = isEnglish ? today.getFullYear() : nanakshahiDate.year;
+  const displayEvents = isEnglish ? gregorianMonthEvents : nanakshahiMonthEvents;
+  
+  // Generate days grid (works for both modes)
   const weeksGrid = useMemo(() => {
+    const firstDayOfWeek = isEnglish
+      ? new Date(today.getFullYear(), selectedMonth, 1).getDay()
+      : (() => {
+          const m = NANAKSHAHI_MONTHS[selectedMonth];
+          return new Date(today.getFullYear(), m.gregorianStart.month, m.gregorianStart.day).getDay();
+        })();
+    
+    const totalDays = isEnglish
+      ? new Date(today.getFullYear(), selectedMonth + 1, 0).getDate()
+      : NANAKSHAHI_MONTHS[selectedMonth].days;
+    
     const weeks: (number | null)[][] = [];
     let currentWeek: (number | null)[] = [];
     
-    // Get the day of week for the first day of this Nanakshahi month
-    const gregorianYear = today.getFullYear();
-    const startDate = new Date(gregorianYear, currentMonth.gregorianStart.month, currentMonth.gregorianStart.day);
-    const startDayOfWeek = startDate.getDay(); // 0 = Sunday
-    
-    // Add empty cells for days before the 1st
-    for (let i = 0; i < startDayOfWeek; i++) {
+    for (let i = 0; i < firstDayOfWeek; i++) {
       currentWeek.push(null);
     }
     
-    // Add all days of the month
-    for (let day = 1; day <= daysInMonth; day++) {
+    for (let day = 1; day <= totalDays; day++) {
       currentWeek.push(day);
       if (currentWeek.length === 7) {
         weeks.push(currentWeek);
@@ -228,20 +279,28 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
       }
     }
     
-    // Fill remaining cells in last week
     if (currentWeek.length > 0) {
-      while (currentWeek.length < 7) {
-        currentWeek.push(null);
-      }
+      while (currentWeek.length < 7) currentWeek.push(null);
       weeks.push(currentWeek);
     }
     
     return weeks;
-  }, [selectedMonth, currentMonth, daysInMonth, today]);
+  }, [selectedMonth, isEnglish, today]);
   
-  // Check if a day has an event
+  // Get event for a day
   const getEventForDay = (day: number): SikhEvent | undefined => {
-    return monthEvents.find(event => event.nanakshahiDay === day);
+    if (isEnglish) {
+      return gregorianMonthEvents.find(e => e.gregorianDay === day);
+    }
+    return nanakshahiMonthEvents.find(e => e.nanakshahiDay === day);
+  };
+  
+  // Today check
+  const isDayToday = (day: number): boolean => {
+    if (isEnglish) {
+      return day === today.getDate() && selectedMonth === today.getMonth();
+    }
+    return day === nanakshahiDate.day && selectedMonth === nanakshahiDate.month;
   };
   
   const weekDays = isPunjabi 
@@ -270,16 +329,16 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
         <div className="flex items-start justify-between mb-4 pr-10">
           <div className="flex-1">
             <h2 className="text-xl sm:text-2xl font-gurmukhi font-bold">
-              {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ ਕੈਲੰਡਰ' : isHindi ? 'नानकशाही कैलेंडर' : 'Nanakshahi Calendar'}
+              {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ ਕੈਲੰਡਰ' : isHindi ? 'नानकशाही कैलेंडर' : 'Sikh Calendar'}
             </h2>
             <p className="text-amber-100 text-xs sm:text-sm mt-1">
-              {isPunjabi ? 'ਸਿੱਖ ਕੈਲੰਡਰ' : isHindi ? 'सिख कैलेंडर' : 'Sikh Calendar'}
+              {isPunjabi ? 'ਸਿੱਖ ਕੈਲੰਡਰ' : isHindi ? 'सिख कैलेंडर' : 'Festivals & Gurpurabs'}
             </p>
           </div>
           <div className="text-right">
-            <p className="text-3xl sm:text-4xl font-bold">{nanakshahiDate.year}</p>
+            <p className="text-3xl sm:text-4xl font-bold">{displayYear}</p>
             <p className="text-xs sm:text-sm text-amber-100">
-              {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ' : isHindi ? 'नानकशाही' : 'Nanakshahi'}
+              {isPunjabi ? 'ਨਾਨਕਸ਼ਾਹੀ' : isHindi ? 'नानकशाही' : ''}
             </p>
           </div>
         </div>
@@ -290,11 +349,14 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
             {isPunjabi ? 'ਅੱਜ ਦੀ ਤਾਰੀਖ' : isHindi ? 'आज की तारीख' : "Today's Date"}
           </p>
           <p className="text-lg sm:text-xl font-gurmukhi font-semibold">
-            {nanakshahiDate.day} {isPunjabi 
-              ? NANAKSHAHI_MONTHS[nanakshahiDate.month].pa 
-              : isHindi ? (NANAKSHAHI_MONTHS[nanakshahiDate.month].hi || NANAKSHAHI_MONTHS[nanakshahiDate.month].pa)
-              : NANAKSHAHI_MONTHS[nanakshahiDate.month].en
-            }, {nanakshahiDate.year}
+            {isEnglish 
+              ? `${GREGORIAN_MONTH_NAMES[today.getMonth()]} ${today.getDate()}, ${today.getFullYear()}`
+              : `${nanakshahiDate.day} ${isPunjabi 
+                  ? NANAKSHAHI_MONTHS[nanakshahiDate.month].pa 
+                  : isHindi ? (NANAKSHAHI_MONTHS[nanakshahiDate.month].hi || NANAKSHAHI_MONTHS[nanakshahiDate.month].pa)
+                  : NANAKSHAHI_MONTHS[nanakshahiDate.month].en
+                }, ${nanakshahiDate.year}`
+            }
           </p>
         </div>
       </div>
@@ -314,10 +376,10 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
           
           <div className="text-center">
             <h3 className="text-lg sm:text-xl font-gurmukhi font-bold text-amber-900 dark:text-amber-200">
-              {isPunjabi ? currentMonth.pa : isHindi ? (currentMonth.hi || currentMonth.pa) : currentMonth.en}
+              {displayMonthName}
             </h3>
             <p className="text-[10px] sm:text-xs text-amber-700 dark:text-amber-400">
-              {currentMonth.days} {isPunjabi ? 'ਦਿਨ' : isHindi ? 'दिन' : 'days'}
+              {displayDaysInMonth} {isPunjabi ? 'ਦਿਨ' : isHindi ? 'दिन' : 'days'}
             </p>
           </div>
           
@@ -350,7 +412,7 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
             <div key={weekIndex} className="grid grid-cols-7 gap-0.5">
               {week.map((day, dayIndex) => {
                 const event = day ? getEventForDay(day) : undefined;
-                const isToday = day === nanakshahiDate.day && selectedMonth === nanakshahiDate.month;
+                const isToday = day ? isDayToday(day) : false;
                 
                 return (
                   <div
@@ -383,9 +445,9 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
           {isPunjabi ? 'ਇਸ ਮਹੀਨੇ ਦੇ ਦਿਹਾੜੇ' : isHindi ? 'इस महीने के दिहाड़े' : 'Events This Month'}
         </h4>
         
-        {monthEvents.length > 0 ? (
+        {displayEvents.length > 0 ? (
           <div className="space-y-2">
-            {monthEvents.map((event, index) => (
+            {displayEvents.map((event, index) => (
               <div
                 key={index}
                 className={cn(
@@ -402,7 +464,10 @@ export function NanakshahiCalendarFull({ language, onClose }: { language: Langua
                       {isPunjabi ? event.name.pa : isHindi ? (event.name.hi || event.name.pa) : event.name.en}
                     </p>
                     <span className="text-[10px] sm:text-xs bg-white dark:bg-neutral-700 px-2 py-0.5 sm:py-1 rounded-full text-neutral-600 dark:text-neutral-300 whitespace-nowrap w-fit">
-                      {event.nanakshahiDay} {isPunjabi ? currentMonth.pa : isHindi ? (currentMonth.hi || currentMonth.pa) : currentMonth.en}
+                      {isEnglish 
+                        ? `${displayMonthName} ${'gregorianDay' in event ? (event as SikhEvent & { gregorianDay: number }).gregorianDay : event.nanakshahiDay}`
+                        : `${event.nanakshahiDay} ${displayMonthName}`
+                      }
                     </span>
                   </div>
                   {event.description && (

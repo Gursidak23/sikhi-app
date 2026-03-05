@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 import { LanguageSwitcher, LanguageSwitcherMobile } from '@/components/common/LanguageSwitcher';
 import { useLanguage } from '@/components/common/LanguageProvider';
 import { useTheme } from '@/components/common/ThemeProvider';
-import { NanakshahiCalendarFull, gregorianToNanakshahi, NANAKSHAHI_MONTHS } from '@/components/common/NanakshahiCalendar';
+import { NanakshahiCalendarFull, gregorianToNanakshahi, NANAKSHAHI_MONTHS, GREGORIAN_MONTH_NAMES } from '@/components/common/NanakshahiCalendar';
 import { BookmarksPanel, useBookmarks } from '@/components/common/BookmarkSystem';
 import type { Language } from '@/types';
 
@@ -335,7 +335,10 @@ export function MainNavigation(_props?: MainNavigationProps) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
               <span className="font-gurmukhi text-xs">
-                {nanakshahiDate.day} {NANAKSHAHI_MONTHS[nanakshahiDate.month].pa}
+                {currentLanguage === 'en' 
+                  ? `${GREGORIAN_MONTH_NAMES[new Date().getMonth()]} ${new Date().getDate()}`
+                  : `${nanakshahiDate.day} ${NANAKSHAHI_MONTHS[nanakshahiDate.month].pa}`
+                }
               </span>
             </button>
 
@@ -486,7 +489,10 @@ export function MainNavigation(_props?: MainNavigationProps) {
                 aria-label="Open Nanakshahi Calendar"
               >
                 <span className="font-gurmukhi text-white text-sm">
-                  📅 {nanakshahiDate.day} {NANAKSHAHI_MONTHS[nanakshahiDate.month].pa} {nanakshahiDate.year}
+                  {currentLanguage === 'en'
+                    ? `📅 ${GREGORIAN_MONTH_NAMES[new Date().getMonth()]} ${new Date().getDate()}, ${new Date().getFullYear()}`
+                    : `📅 ${nanakshahiDate.day} ${NANAKSHAHI_MONTHS[nanakshahiDate.month].pa} ${nanakshahiDate.year}`
+                  }
                 </span>
               </button>
             </div>
