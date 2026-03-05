@@ -154,7 +154,7 @@ export const MessageBubble = memo(function MessageBubble({
 
   if (message.isDeleted) {
     return (
-      <div className="flex items-center justify-center gap-2 px-4 py-2">
+      <div className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2">
         <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-gray-50 dark:bg-gray-800/50">
           <svg className="w-3.5 h-3.5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
@@ -173,7 +173,7 @@ export const MessageBubble = memo(function MessageBubble({
   return (
     <div
       className={cn(
-        'group relative flex gap-3 px-4 py-1.5 transition-colors',
+        'group relative flex gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-1.5 transition-colors',
         isOwn ? 'flex-row-reverse' : '',
         !isOptimistic && 'hover:bg-gray-50/80 dark:hover:bg-gray-800/30',
         isOptimistic && 'opacity-70'
@@ -193,7 +193,7 @@ export const MessageBubble = memo(function MessageBubble({
       {/* Avatar */}
       <div
         className={cn(
-          'w-9 h-9 rounded-xl flex items-center justify-center text-white text-xs font-bold flex-shrink-0 shadow-sm ring-2 ring-white dark:ring-gray-900',
+          'w-7 h-7 sm:w-9 sm:h-9 rounded-xl flex items-center justify-center text-white text-[10px] sm:text-xs font-bold flex-shrink-0 shadow-sm ring-2 ring-white dark:ring-gray-900 mt-0.5',
           isOptimistic && 'animate-pulse'
         )}
         style={{ backgroundColor: message.user.avatarColor }}
@@ -202,33 +202,33 @@ export const MessageBubble = memo(function MessageBubble({
       </div>
 
       {/* Message Content */}
-      <div className={cn('max-w-[75%] min-w-0 relative', isOwn && 'text-right')}>
+      <div className={cn('max-w-[85%] sm:max-w-[75%] min-w-0 relative', isOwn && 'text-right')}>
         {/* Header */}
         <div className={cn(
-          'flex items-center gap-2 mb-1',
+          'flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 mb-1',
           isOwn && 'flex-row-reverse'
         )}>
           <span className={cn(
-            'text-sm font-semibold text-gray-900 dark:text-white',
+            'text-[13px] sm:text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-none',
             isPunjabi && 'font-gurmukhi'
           )}>
             {displayName}
           </span>
-          <span className="text-[11px] text-gray-400 tabular-nums">
+          <span className="text-[10px] sm:text-[11px] text-gray-400 tabular-nums whitespace-nowrap">
             {isOptimistic ? (isPunjabi ? 'ਭੇਜ ਰਿਹਾ...' : 'Sending...') : formatTime(message.createdAt)}
           </span>
           {message.isSaved && (
-            <span className="text-[11px] text-amber-500" title={isPunjabi ? 'ਸੇਵ ਕੀਤਾ' : 'Saved'}>
+            <span className="text-[10px] sm:text-[11px] text-amber-500" title={isPunjabi ? 'ਸੇਵ ਕੀਤਾ' : 'Saved'}>
               🔖
             </span>
           )}
           {expiryLabel && !message.isSaved && (
-            <span className="text-[10px] text-gray-400/70 tabular-nums flex items-center gap-0.5" title={isPunjabi ? 'ਮਿਆਦ ਪੁੱਗਣ ਤੱਕ' : 'Expires in'}>
+            <span className="text-[10px] text-gray-400/70 tabular-nums hidden sm:flex items-center gap-0.5" title={isPunjabi ? 'ਮਿਆਦ ਪੁੱਗਣ ਤੱਕ' : 'Expires in'}>
               ⏱ {expiryLabel}
             </span>
           )}
           {message.isEdited && (
-            <span className="text-[11px] text-gray-400 italic">
+            <span className="text-[10px] sm:text-[11px] text-gray-400 italic">
               ({isPunjabi ? 'ਸੋਧਿਆ' : 'edited'})
             </span>
           )}
@@ -296,7 +296,7 @@ export const MessageBubble = memo(function MessageBubble({
         ) : (
         <div
           className={cn(
-            'inline-block px-4 py-2.5 text-sm leading-relaxed break-words whitespace-pre-wrap',
+            'inline-block px-3 sm:px-4 py-2 sm:py-2.5 text-[13px] sm:text-sm leading-relaxed break-words whitespace-pre-wrap overflow-hidden',
             isOwn
               ? 'bg-gradient-to-br from-amber-500 to-amber-600 text-white rounded-2xl rounded-tr-md shadow-sm shadow-amber-500/20'
               : 'bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-gray-100 rounded-2xl rounded-tl-md'
@@ -311,7 +311,7 @@ export const MessageBubble = memo(function MessageBubble({
           <div
             ref={actionsRef}
             className={cn(
-              'absolute z-30 -top-3',
+              'absolute z-30 bottom-full mb-1 sm:-top-3 sm:bottom-auto sm:mb-0',
               isOwn ? 'left-0' : 'right-0'
             )}
           >
@@ -469,7 +469,7 @@ export function DateDivider({ date, language }: DateDividerProps) {
   }
 
   return (
-    <div className="flex items-center gap-4 px-6 py-4">
+    <div className="flex items-center gap-3 sm:gap-4 px-4 sm:px-6 py-3 sm:py-4">
       <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
       <span className={cn(
         'text-xs font-semibold text-gray-400 dark:text-gray-500 px-3 py-1 rounded-full bg-gray-50 dark:bg-gray-800/50',
