@@ -950,6 +950,18 @@ export async function getMessages(roomId: string, cursor?: string, limit = 50) {
 }
 
 export async function pollNewMessages(roomId: string, since: Date) {
+  // Fast path: check if ANY messages exist since the timestamp before doing the heavy query
+  const count = await prisma.chatMessage.count({
+    where: {
+      roomId,
+      isDeleted: false,
+      createdAt: { gt: since },
+    },
+    // Stop counting after 1 — we only need to know if any exist
+  });
+
+  if (count === 0) return [];
+
   const msgs = await prisma.chatMessage.findMany({
     where: {
       roomId,

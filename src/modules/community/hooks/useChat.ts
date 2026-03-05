@@ -87,10 +87,16 @@ const CHAT_USER_KEY = 'sikhi-chat-user';
 const UNREAD_KEY = 'sikhi-chat-unread';
 
 // Adaptive polling intervals (ms)
-const POLL_MULTI_USER = 1000; // Multiple users are online – fastest
-const POLL_ACTIVE = 1500;     // User recently sent/received messages
-const POLL_IDLE = 4000;       // User is viewing but not active
-const POLL_BACKGROUND = 12000; // Tab is hidden/blurred
+const POLL_MULTI_USER = 1200;  // Multiple users online – fast but not wasteful
+const POLL_ACTIVE = 2000;      // User recently sent/received messages
+const POLL_IDLE = 5000;        // User is viewing but not active
+const POLL_BACKGROUND = 15000; // Tab is hidden/blurred
+
+// How often to prune expired messages from client state (ms)
+const EXPIRY_SWEEP_INTERVAL = 20000;
+
+// Only fetch full member list every Nth poll (saves DB+bandwidth)
+const MEMBER_POLL_FREQUENCY = 5;
 
 // ---- Notification Sound (Web Audio) ----
 let audioCtx: AudioContext | null = null;
@@ -144,14 +150,18 @@ export function useChat() {
   const isTabVisibleRef = useRef<boolean>(true);
   const failedPollsRef = useRef<number>(0);
   const mountedRef = useRef<boolean>(true);
+  const pollCountRef = useRef(0); // Tracks poll iterations for member refresh frequency
+  const lastPollETagRef = useRef<string>(''); // ETag for 304 skip
 
   // ---- Compute adaptive poll interval ----
   const getPollInterval = useCallback(() => {
     if (!isTabVisibleRef.current) return POLL_BACKGROUND;
     const idleTime = Date.now() - lastActivityRef.current;
-    // Fastest polling when multiple users are online
+    // Fastest polling when multiple users are online and user is active
     if (onlineCountRef.current > 1 && idleTime < 10000) return POLL_MULTI_USER;
     if (idleTime < 10000) return POLL_ACTIVE;
+    // Slow down further if idle for > 30s
+    if (idleTime > 30000) return POLL_BACKGROUND;
     return POLL_IDLE;
   }, []);
 
@@ -484,16 +494,45 @@ export function useChat() {
     }
   }, [user]);
 
+  // ---- Client-side message expiry sweep (Snapchat poof) ----
+  // Periodically remove expired messages from local state so they
+  // disappear in real-time without waiting for the next server poll.
+  useEffect(() => {
+    const sweep = () => {
+      const now = Date.now();
+      setMessages((prev) => {
+        const filtered = prev.filter((m) => {
+          // Keep saved messages regardless of expiry
+          if (m.isSaved) return true;
+          // Keep optimistic messages (they haven't hit the server yet)
+          if (m._optimistic) return true;
+          // Remove if past expiresAt
+          const expiresAt = new Date(m.expiresAt).getTime();
+          return expiresAt > now;
+        });
+        // Only update state if something actually changed (avoid re-renders)
+        return filtered.length === prev.length ? prev : filtered;
+      });
+    };
+
+    const timer = setInterval(sweep, EXPIRY_SWEEP_INTERVAL);
+    return () => clearInterval(timer);
+  }, []);
+
   // ---- Adaptive Polling for real-time updates ----
   useEffect(() => {
     if (!activeRoom) return;
 
     const poll = async () => {
       if (!mountedRef.current) return;
+      pollCountRef.current++;
 
       try {
         // Build poll URL with typing indicator params
+        // Skip full member list on most polls (only request every Nth)
+        const skipMembers = pollCountRef.current % MEMBER_POLL_FREQUENCY !== 0;
         let pollUrl = `/api/community/messages/poll?roomId=${activeRoom.id}&since=${encodeURIComponent(lastPollTimeRef.current)}`;
+        if (skipMembers) pollUrl += '&skipMembers=1';
         if (user?.id) {
           pollUrl += `&userId=${user.id}`;
           pollUrl += `&typing=${isTypingRef.current ? '1' : '0'}`;
@@ -503,7 +542,24 @@ export function useChat() {
         }
         const pollHeaders: Record<string, string> = {};
         if (user?.sessionToken) pollHeaders['X-Session-Token'] = user.sessionToken;
+        // Send ETag for 304 Not Modified optimization
+        if (lastPollETagRef.current) {
+          pollHeaders['If-None-Match'] = lastPollETagRef.current;
+        }
         const res = await fetch(pollUrl, { headers: pollHeaders });
+
+        // 304 Not Modified — nothing changed, skip all processing
+        if (res.status === 304) {
+          if (failedPollsRef.current > 0) {
+            failedPollsRef.current = 0;
+            setConnectionStatus('connected');
+          }
+          // Schedule next poll and return early
+          if (mountedRef.current) {
+            pollTimeoutRef.current = setTimeout(poll, getPollInterval());
+          }
+          return;
+        }
 
         if (!res.ok) {
           failedPollsRef.current++;
@@ -518,6 +574,10 @@ export function useChat() {
           failedPollsRef.current = 0;
           setConnectionStatus('connected');
         }
+
+        // Store ETag for next poll's If-None-Match
+        const etag = res.headers.get('ETag');
+        if (etag) lastPollETagRef.current = etag;
 
         const data = await res.json();
 
