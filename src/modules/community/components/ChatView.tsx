@@ -66,10 +66,18 @@ export function ChatView({ language }: ChatViewProps) {
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const prevMessageCountRef = useRef(0);
+  const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPunjabi = language === 'pa';
 
   // Mark component as hydrated after first mount (prevents flash of wrong state)
   useEffect(() => { setHydrated(true); }, []);
+
+  // Cleanup typing timer on unmount
+  useEffect(() => {
+    return () => {
+      if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+    };
+  }, []);
 
   // Smart auto-scroll: scroll if near bottom, else show "New messages" button
   useEffect(() => {
@@ -110,7 +118,7 @@ export function ChatView({ language }: ChatViewProps) {
   // Wait for hydration to avoid flashing the registration form when user is in localStorage
   if (!hydrated) {
     return (
-      <div className="flex items-center justify-center h-[calc(100vh-14rem)] rounded-2xl border border-amber-200/30 dark:border-gray-700/50 bg-white dark:bg-gray-900">
+      <div className="flex items-center justify-center h-[calc(100dvh-14rem)] rounded-2xl border border-amber-200/30 dark:border-gray-700/50 bg-white dark:bg-gray-900">
         <div className="text-center">
           <div className="relative w-12 h-12 mx-auto mb-4">
             <div className="absolute inset-0 border-2 border-amber-200 dark:border-amber-800 rounded-full" />
@@ -132,7 +140,7 @@ export function ChatView({ language }: ChatViewProps) {
   }
 
   return (
-    <div className="flex h-[calc(100vh-10rem)] sm:h-[calc(100vh-9rem)] rounded-2xl shadow-2xl border border-amber-200/30 dark:border-gray-700/50 overflow-hidden bg-white dark:bg-gray-900">
+    <div className="flex h-[calc(100dvh-10rem)] sm:h-[calc(100dvh-9rem)] rounded-2xl shadow-2xl border border-amber-200/30 dark:border-gray-700/50 overflow-hidden bg-white dark:bg-gray-900">
       {/* Mobile Room Sidebar Overlay */}
       {showMobileSidebar && (
         <div className="fixed inset-0 z-50 md:hidden">
@@ -342,7 +350,7 @@ export function ChatView({ language }: ChatViewProps) {
         {/* Messages Area */}
         <div
           ref={messagesContainerRef}
-          className="flex-1 overflow-y-auto scroll-smooth relative"
+          className="flex-1 overflow-y-auto scroll-smooth relative overscroll-contain"
           onClick={markActive}
           onScroll={onScroll}
         >
@@ -407,7 +415,7 @@ export function ChatView({ language }: ChatViewProps) {
               </div>
             </div>
           ) : (
-            <div className="py-4">
+            <div className="py-2 sm:py-4 space-y-0.5">
               {/* Load More */}
               {hasMore && (
                 <div className="text-center py-3">
@@ -502,7 +510,13 @@ export function ChatView({ language }: ChatViewProps) {
           onCancelReply={() => setReplyingTo(null)}
           language={language}
           disabled={!activeRoom}
-          onActivity={() => { markActive(); setIsTyping(true); setTimeout(() => setIsTyping(false), 3000); }}
+          onActivity={() => {
+            markActive();
+            setIsTyping(true);
+            // Debounce: clear previous timer so we don't fire stop prematurely
+            if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+            typingTimerRef.current = setTimeout(() => setIsTyping(false), 3000);
+          }}
         />
       </div>
 

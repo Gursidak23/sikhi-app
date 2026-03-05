@@ -30,8 +30,11 @@ export function ChatInput({
 }: ChatInputProps) {
   const [message, setMessage] = useState('');
   const [showEmojis, setShowEmojis] = useState(false);
+  const [isFocused, setIsFocused] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const activityTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   // Auto-focus when replying
   useEffect(() => {
@@ -40,12 +43,20 @@ export function ChatInput({
     }
   }, [replyingTo]);
 
-  // Auto-resize textarea
+  // Cleanup activity timer on unmount
+  useEffect(() => {
+    return () => {
+      if (activityTimerRef.current) clearTimeout(activityTimerRef.current);
+    };
+  }, []);
+
+  // Smooth auto-resize textarea
   useEffect(() => {
     const textarea = textareaRef.current;
     if (textarea) {
-      textarea.style.height = 'auto';
-      textarea.style.height = Math.min(textarea.scrollHeight, 120) + 'px';
+      textarea.style.height = '0';
+      const scrollH = textarea.scrollHeight;
+      textarea.style.height = Math.min(scrollH, 120) + 'px';
     }
   }, [message]);
 
@@ -54,6 +65,10 @@ export function ChatInput({
     const content = message;
     setMessage('');
     setShowEmojis(false);
+    // Reset textarea height immediately
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+    }
     onActivity?.();
     // Fire-and-forget: optimistic UI already shows the message instantly
     onSend(content);
@@ -75,11 +90,16 @@ export function ChatInput({
 
   const handleChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setMessage(e.target.value);
+    // Debounced activity tracking — clear previous timer to avoid spam
+    if (activityTimerRef.current) clearTimeout(activityTimerRef.current);
     onActivity?.();
+    activityTimerRef.current = setTimeout(() => {
+      activityTimerRef.current = null;
+    }, 2000);
   };
 
   return (
-    <div className="border-t border-gray-100 dark:border-gray-800 bg-white/90 dark:bg-gray-900/90 backdrop-blur-sm">
+    <div className="border-t border-gray-100 dark:border-gray-800 bg-white/95 dark:bg-gray-900/95 backdrop-blur-md" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
       {/* Reply Preview */}
       {replyingTo && (
         <div className="flex items-center gap-3 px-4 py-2.5 bg-amber-50/80 dark:bg-amber-900/10 border-b border-amber-100 dark:border-amber-800/30">
@@ -108,12 +128,12 @@ export function ChatInput({
 
       {/* Emoji Quick Picker */}
       {showEmojis && (
-        <div className="flex items-center gap-1 px-3 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30">
+        <div className="flex items-center gap-0.5 sm:gap-1 px-2 sm:px-3 py-2 border-b border-gray-100 dark:border-gray-800 bg-gray-50/50 dark:bg-gray-800/30 overflow-x-auto scrollbar-hide">
           {QUICK_EMOJIS.map((emoji) => (
             <button
               key={emoji}
               onClick={() => insertEmoji(emoji)}
-              className="p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg text-base hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:scale-110 transition-all"
+              className="p-1.5 sm:p-2 min-w-[36px] sm:min-w-[40px] min-h-[36px] sm:min-h-[40px] flex items-center justify-center rounded-lg text-base hover:bg-amber-100 dark:hover:bg-amber-900/30 hover:scale-110 active:scale-95 transition-all flex-shrink-0"
             >
               {emoji}
             </button>
@@ -122,12 +142,12 @@ export function ChatInput({
       )}
 
       {/* Input Area */}
-      <div className="flex items-end gap-2 p-3">
+      <div className="flex items-end gap-1.5 sm:gap-2 p-2 sm:p-3">
         {/* Emoji Toggle */}
         <button
           onClick={() => setShowEmojis(!showEmojis)}
           className={cn(
-            'p-2.5 rounded-xl transition-all flex-shrink-0 mb-0.5',
+            'p-2 sm:p-2.5 rounded-xl transition-all flex-shrink-0 mb-0.5',
             showEmojis
               ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
               : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'
@@ -145,22 +165,28 @@ export function ChatInput({
             value={message}
             onChange={handleChange}
             onKeyDown={handleKeyDown}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setIsFocused(false)}
             placeholder={
               disabled
-                ? (isPunjabi ? 'ਪਹਿਲਾਂ ਸ਼ਾਮਲ ਹੋਵੋ...' : 'Join to start chatting...')
-                : (isPunjabi ? 'ਸੁਨੇਹਾ ਲਿਖੋ...' : 'Type a message...')
+                ? (isPunjabi ? 'ਪਹਿਲਾਂ ਸ਼ਾਮਲ ਹੋਵੋ...' : isHindi ? 'पहले शामिल हों...' : 'Join to start chatting...')
+                : (isPunjabi ? 'ਸੁਨੇਹਾ ਲਿਖੋ...' : isHindi ? 'संदेश लिखें...' : 'Type a message...')
             }
             disabled={disabled}
             rows={1}
             maxLength={2000}
+            inputMode="text"
+            enterKeyHint="send"
+            autoComplete="off"
             className={cn(
-              'w-full px-4 py-3 bg-gray-50 dark:bg-gray-800/50 rounded-2xl',
-              'text-sm text-gray-900 dark:text-white placeholder-gray-400',
+              'w-full px-3 sm:px-4 py-2.5 sm:py-3 bg-gray-50 dark:bg-gray-800/50 rounded-2xl',
+              'text-[14px] sm:text-sm text-gray-900 dark:text-white placeholder-gray-400',
               'resize-none border border-gray-200 dark:border-gray-700',
               'focus:outline-none focus:ring-2 focus:ring-amber-500/40 focus:border-amber-400',
               'disabled:opacity-50 disabled:cursor-not-allowed',
-              'transition-all',
-              isPunjabi && 'font-gurmukhi'
+              'transition-[border-color,box-shadow] duration-150',
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}
           />
         </div>
@@ -168,9 +194,9 @@ export function ChatInput({
           onClick={handleSend}
           disabled={!message.trim() || disabled}
           className={cn(
-            'p-3 rounded-xl transition-all flex-shrink-0',
+            'p-2.5 sm:p-3 rounded-xl transition-all flex-shrink-0 active:scale-90',
             message.trim() && !disabled
-              ? 'bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30 active:scale-95'
+              ? 'bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30'
               : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
           )}
           aria-label={isPunjabi ? 'ਭੇਜੋ' : 'Send'}
