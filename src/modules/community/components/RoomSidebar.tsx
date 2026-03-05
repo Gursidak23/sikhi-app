@@ -20,6 +20,7 @@ interface RoomSidebarProps {
 
 export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose, unreadCounts = {} }: RoomSidebarProps) {
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const [search, setSearch] = useState('');
 
   const totalUnread = Object.values(unreadCounts).reduce((a, b) => a + b, 0);
@@ -49,13 +50,14 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
             <div>
               <h2 className={cn(
                 'text-base font-bold text-gray-900 dark:text-white',
-                isPunjabi && 'font-gurmukhi text-lg'
+                isPunjabi && 'font-gurmukhi text-lg',
+                isHindi && 'font-devanagari text-lg'
               )}>
-                {isPunjabi ? 'ਕਮਰੇ' : 'Rooms'}
+                {isPunjabi ? 'ਕਮਰੇ' : isHindi ? 'कमरे' : 'Rooms'}
               </h2>
               {totalUnread > 0 && (
                 <p className="text-xs text-amber-600 dark:text-amber-400 font-medium">
-                  {totalUnread} {isPunjabi ? 'ਨਵੇਂ' : 'unread'}
+                  {totalUnread} {isPunjabi ? 'ਨਵੇਂ' : isHindi ? 'नए' : 'unread'}
                 </p>
               )}
             </div>
@@ -81,7 +83,7 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
             </svg>
             {rooms.length === 0
               ? <span className="inline-block w-8 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              : <>{rooms.length} {isPunjabi ? 'ਕਮਰੇ' : 'rooms'}</>}
+              : <>{rooms.length} {isPunjabi ? 'ਕਮਰੇ' : isHindi ? 'कमरे' : 'rooms'}</>}
           </div>
           <div className="w-1 h-1 bg-gray-300 dark:bg-gray-600 rounded-full" />
           <div className="flex items-center gap-1.5 text-xs text-gray-400">
@@ -90,7 +92,7 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
             </svg>
             {rooms.length === 0
               ? <span className="inline-block w-8 h-3 bg-gray-200 dark:bg-gray-700 rounded animate-pulse" />
-              : <>{totalMembers} {isPunjabi ? 'ਮੈਂਬਰ' : 'members'}</>}
+              : <>{totalMembers} {isPunjabi ? 'ਮੈਂਬਰ' : isHindi ? 'सदस्य' : 'members'}</>}
           </div>
         </div>
 
@@ -106,11 +108,12 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={isPunjabi ? 'ਕਮਰਾ ਲੱਭੋ...' : 'Search rooms...'}
+              placeholder={isPunjabi ? 'ਕਮਰਾ ਲੱਭੋ...' : isHindi ? 'कमरा खोजें...' : 'Search rooms...'}
               className={cn(
                 'w-full pl-8 pr-3 py-2 text-xs bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg',
                 'text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50 focus:border-amber-400 transition-all',
-                isPunjabi && 'font-gurmukhi'
+                isPunjabi && 'font-gurmukhi',
+                isHindi && 'font-devanagari'
               )}
             />
           </div>
@@ -169,7 +172,8 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
                     <span className={cn(
                       'font-semibold text-sm truncate',
                       isActive ? 'text-amber-900 dark:text-amber-200' : 'text-gray-700 dark:text-gray-300',
-                      isPunjabi && 'font-gurmukhi text-base'
+                      isPunjabi && 'font-gurmukhi text-base',
+                      isHindi && 'font-devanagari text-base'
                     )}>
                       {displayName}
                     </span>
@@ -183,7 +187,8 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
                     <p className={cn(
                       'text-xs truncate mt-0.5',
                       isActive ? 'text-amber-700/70 dark:text-amber-300/60' : 'text-gray-400 dark:text-gray-500',
-                      isPunjabi && 'font-gurmukhi'
+                      isPunjabi && 'font-gurmukhi',
+                      isHindi && 'font-devanagari'
                     )}>
                       {displayDesc}
                     </p>
@@ -208,9 +213,10 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
           <div className="text-center py-6 px-3">
             <p className={cn(
               'text-xs text-gray-400',
-              isPunjabi && 'font-gurmukhi text-sm'
+              isPunjabi && 'font-gurmukhi text-sm',
+              isHindi && 'font-devanagari text-sm'
             )}>
-              {isPunjabi ? 'ਕੋਈ ਕਮਰਾ ਨਹੀਂ ਮਿਲਿਆ' : 'No rooms found'}
+              {isPunjabi ? 'ਕੋਈ ਕਮਰਾ ਨਹੀਂ ਮਿਲਿਆ' : isHindi ? 'कोई कमरा नहीं मिला' : 'No rooms found'}
             </p>
           </div>
         )}
@@ -222,9 +228,10 @@ export function RoomSidebar({ rooms, activeRoom, onSelectRoom, language, onClose
           <span className="text-xs">🙏</span>
           <span className={cn(
             'text-xs text-amber-700/80 dark:text-amber-400/70',
-            isPunjabi && 'font-gurmukhi'
+            isPunjabi && 'font-gurmukhi',
+            isHindi && 'font-devanagari'
           )}>
-            {isPunjabi ? 'ਸਤਿਕਾਰ ਨਾਲ ਗੱਲ ਕਰੋ' : 'Speak with respect'}
+            {isPunjabi ? 'ਸਤਿਕਾਰ ਨਾਲ ਗੱਲ ਕਰੋ' : isHindi ? 'सम्मान से बात करें' : 'Speak with respect'}
           </span>
         </div>
       </div>

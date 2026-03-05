@@ -109,7 +109,7 @@ export function ChatInput({
               <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
               </svg>
-              {isPunjabi ? 'ਜਵਾਬ ਦੇ ਰਹੇ ਹੋ' : 'Replying to'} {replyingTo.user.displayName}
+              {isPunjabi ? 'ਜਵਾਬ ਦੇ ਰਹੇ ਹੋ' : isHindi ? 'जवाब दे रहे हैं' : 'Replying to'} {replyingTo.user.displayName}
             </p>
             <p className="text-xs text-gray-500 dark:text-gray-400 truncate mt-0.5">
               {replyingTo.content}
@@ -152,7 +152,7 @@ export function ChatInput({
               ? 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400'
               : 'text-gray-400 hover:text-gray-600 hover:bg-gray-100 dark:hover:bg-gray-800'
           )}
-          aria-label={isPunjabi ? 'ਇਮੋਜੀ' : 'Emoji'}
+          aria-label={isPunjabi ? 'ਇਮੋਜੀ' : isHindi ? 'इमोजी' : 'Emoji'}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
@@ -199,7 +199,7 @@ export function ChatInput({
               ? 'bg-gradient-to-br from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white shadow-lg shadow-amber-500/25 hover:shadow-xl hover:shadow-amber-500/30'
               : 'bg-gray-100 dark:bg-gray-800 text-gray-400 cursor-not-allowed'
           )}
-          aria-label={isPunjabi ? 'ਭੇਜੋ' : 'Send'}
+          aria-label={isPunjabi ? 'ਭੇਜੋ' : isHindi ? 'भेजें' : 'Send'}
         >
           <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
