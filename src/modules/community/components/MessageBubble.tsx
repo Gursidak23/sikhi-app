@@ -45,6 +45,18 @@ export const MessageBubble = memo(function MessageBubble({
   const isPunjabi = language === 'pa';
   const isOptimistic = (message as any)._optimistic;
 
+  // Live countdown: re-render periodically to update expiry label
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    if (!message.expiresAt || message.isSaved) return;
+    const remaining = new Date(message.expiresAt).getTime() - Date.now();
+    if (remaining <= 0) return;
+    // Update every 30s normally, every 5s when < 5 min remaining
+    const interval = remaining < 300_000 ? 5_000 : 30_000;
+    const timer = setInterval(() => setTick((t) => t + 1), interval);
+    return () => clearInterval(timer);
+  }, [message.expiresAt, message.isSaved]);
+
   // Can edit within 15 minutes of creation
   const canEdit = isOwn && !isOptimistic && (() => {
     const createdAt = new Date(message.createdAt).getTime();
@@ -146,11 +158,17 @@ export const MessageBubble = memo(function MessageBubble({
     if (remaining <= 0) return isPunjabi ? 'ਮਿਆਦ ਪੁੱਗੀ' : 'Expired';
     const hours = Math.floor(remaining / 3600000);
     const mins = Math.floor((remaining % 3600000) / 60000);
+    const secs = Math.floor((remaining % 60000) / 1000);
     if (hours > 0) return `${hours}h ${mins}m`;
-    return `${mins}m`;
+    if (mins > 0) return `${mins}m ${secs}s`;
+    return `${secs}s`;
   };
 
   const expiryLabel = getExpiryLabel();
+  // Message is expiring within 2 minutes — show visual urgency
+  const isExpiringSoon = !!(message.expiresAt && !message.isSaved &&
+    new Date(message.expiresAt).getTime() - Date.now() < 120_000 &&
+    new Date(message.expiresAt).getTime() - Date.now() > 0);
 
   if (message.isDeleted) {
     return (
@@ -173,10 +191,11 @@ export const MessageBubble = memo(function MessageBubble({
   return (
     <div
       className={cn(
-        'group relative flex gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-1.5 transition-colors',
+        'group relative flex gap-2 sm:gap-3 px-3 sm:px-4 py-2 sm:py-1.5 transition-all duration-500',
         isOwn ? 'flex-row-reverse' : '',
         !isOptimistic && 'hover:bg-gray-50/80 dark:hover:bg-gray-800/30',
-        isOptimistic && 'opacity-70'
+        isOptimistic && 'opacity-70',
+        isExpiringSoon && 'opacity-50 scale-[0.98]'
       )}
       onMouseEnter={() => !isOptimistic && setShowActions(true)}
       onMouseLeave={() => { setShowActions(false); setShowReactions(false); }}
@@ -223,7 +242,12 @@ export const MessageBubble = memo(function MessageBubble({
             </span>
           )}
           {expiryLabel && !message.isSaved && (
-            <span className="text-[10px] text-gray-400/70 tabular-nums hidden sm:flex items-center gap-0.5" title={isPunjabi ? 'ਮਿਆਦ ਪੁੱਗਣ ਤੱਕ' : 'Expires in'}>
+            <span className={cn(
+              'text-[10px] tabular-nums flex items-center gap-0.5',
+              isExpiringSoon
+                ? 'text-red-500 animate-pulse font-medium'
+                : 'text-gray-400/70 hidden sm:flex'
+            )} title={isPunjabi ? 'ਮਿਆਦ ਪੁੱਗਣ ਤੱਕ' : 'Expires in'}>
               ⏱ {expiryLabel}
             </span>
           )}
