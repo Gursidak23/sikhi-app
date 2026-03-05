@@ -68,6 +68,7 @@ export function ChatView({ language }: ChatViewProps) {
   const prevMessageCountRef = useRef(0);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   // Mark component as hydrated after first mount (prevents flash of wrong state)
   useEffect(() => { setHydrated(true); }, []);
@@ -126,9 +127,10 @@ export function ChatView({ language }: ChatViewProps) {
           </div>
           <p className={cn(
             'text-sm text-gray-400',
-            isPunjabi && 'font-gurmukhi'
+            isPunjabi && 'font-gurmukhi',
+            isHindi && 'font-devanagari'
           )}>
-            {isPunjabi ? 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : 'Loading...'}
+            {isPunjabi ? 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : isHindi ? 'लोड हो रहा है...' : 'Loading...'}
           </p>
         </div>
       </div>
@@ -195,7 +197,8 @@ export function ChatView({ language }: ChatViewProps) {
                 <div className="min-w-0">
                   <h2 className={cn(
                     'text-sm font-bold text-gray-900 dark:text-white truncate',
-                    isPunjabi && 'font-gurmukhi text-base'
+                    isPunjabi && 'font-gurmukhi text-base',
+                    isHindi && 'font-devanagari text-base'
                   )}>
                     {isPunjabi && activeRoom.nameGurmukhi
                       ? activeRoom.nameGurmukhi
@@ -205,7 +208,7 @@ export function ChatView({ language }: ChatViewProps) {
                     {onlineCount > 0 && (
                       <span className="inline-flex items-center gap-1 text-green-600 dark:text-green-400 font-medium">
                         <span className="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse" />
-                        {onlineCount} {isPunjabi ? 'ਔਨਲਾਈਨ' : 'online'}
+                        {onlineCount} {isPunjabi ? 'ਔਨਲਾਈਨ' : isHindi ? 'ऑनलाइन' : 'online'}
                       </span>
                     )}
                     {onlineCount > 0 && <span>·</span>}
@@ -236,12 +239,12 @@ export function ChatView({ language }: ChatViewProps) {
                 {connectionStatus === 'reconnecting' ? (
                   <>
                     <div className="w-2 h-2 bg-yellow-500 rounded-full animate-pulse" />
-                    {isPunjabi ? 'ਜੋੜ ਰਿਹਾ...' : 'Reconnecting...'}
+                    {isPunjabi ? 'ਜੋੜ ਰਿਹਾ...' : isHindi ? 'जोड़ रहा है...' : 'Reconnecting...'}
                   </>
                 ) : (
                   <>
                     <div className="w-2 h-2 bg-red-500 rounded-full" />
-                    {isPunjabi ? 'ਮੁੜ ਜੋੜੋ' : 'Reconnect'}
+                    {isPunjabi ? 'ਮੁੜ ਜੋੜੋ' : isHindi ? 'पुनः जोड़ें' : 'Reconnect'}
                   </>
                 )}
               </button>
@@ -256,7 +259,7 @@ export function ChatView({ language }: ChatViewProps) {
                   ? 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 shadow-sm'
                   : 'text-gray-400 hover:bg-gray-100 dark:hover:bg-gray-800 hover:text-gray-600'
               )}
-              aria-label={isPunjabi ? 'ਮੈਂਬਰ ਦਿਖਾਓ' : 'Toggle members'}
+              aria-label={isPunjabi ? 'ਮੈਂਬਰ ਦਿਖਾਓ' : isHindi ? 'सदस्य दिखाएं' : 'Toggle members'}
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
@@ -297,7 +300,8 @@ export function ChatView({ language }: ChatViewProps) {
                     <div className="px-3 py-2.5 border-b border-gray-100 dark:border-gray-700">
                       <p className={cn(
                         'text-sm font-semibold text-gray-900 dark:text-white truncate',
-                        isPunjabi && 'font-gurmukhi'
+                        isPunjabi && 'font-gurmukhi',
+                        isHindi && 'font-devanagari'
                       )}>
                         {isPunjabi && user.displayNameGurmukhi
                           ? user.displayNameGurmukhi
@@ -305,7 +309,7 @@ export function ChatView({ language }: ChatViewProps) {
                       </p>
                       <div className="flex items-center gap-1.5 mt-0.5">
                         <div className="w-1.5 h-1.5 bg-green-500 rounded-full" />
-                        <span className="text-xs text-gray-400">{isPunjabi ? 'ਔਨਲਾਈਨ' : 'Online'}</span>
+                        <span className="text-xs text-gray-400">{isPunjabi ? 'ਔਨਲਾਈਨ' : isHindi ? 'ऑनलाइन' : 'Online'}</span>
                       </div>
                     </div>
                     <button
@@ -318,7 +322,7 @@ export function ChatView({ language }: ChatViewProps) {
                       <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
                       </svg>
-                      {isPunjabi ? 'ਬਾਹਰ ਜਾਓ' : 'Sign Out'}
+                      {isPunjabi ? 'ਬਾਹਰ ਜਾਓ' : isHindi ? 'साइन आउट' : 'Sign Out'}
                     </button>
                   </div>
                 </>
@@ -363,9 +367,10 @@ export function ChatView({ language }: ChatViewProps) {
                 </div>
                 <p className={cn(
                   'text-sm text-gray-400',
-                  isPunjabi && 'font-gurmukhi'
+                  isPunjabi && 'font-gurmukhi',
+                  isHindi && 'font-devanagari'
                 )}>
-                  {isPunjabi ? 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : 'Loading messages...'}
+                  {isPunjabi ? 'ਲੋਡ ਹੋ ਰਿਹਾ ਹੈ...' : isHindi ? 'संदेश लोड हो रहे हैं...' : 'Loading messages...'}
                 </p>
               </div>
             </div>
@@ -377,9 +382,10 @@ export function ChatView({ language }: ChatViewProps) {
                 </div>
                 <h3 className={cn(
                   'text-lg font-bold text-gray-900 dark:text-white mb-2',
-                  isPunjabi && 'font-gurmukhi text-xl'
+                  isPunjabi && 'font-gurmukhi text-xl',
+                  isHindi && 'font-devanagari text-xl'
                 )}>
-                  {isPunjabi ? 'ਗੱਲਬਾਤ ਸ਼ੁਰੂ ਕਰੋ' : 'Start the conversation'}
+                  {isPunjabi ? 'ਗੱਲਬਾਤ ਸ਼ੁਰੂ ਕਰੋ' : isHindi ? 'बातचीत शुरू करें' : 'Start the conversation'}
                 </h3>
                 <p className={cn(
                   'text-sm text-gray-400 leading-relaxed mb-5',
@@ -387,6 +393,7 @@ export function ChatView({ language }: ChatViewProps) {
                 )}>
                   {isPunjabi
                     ? 'ਪਹਿਲਾ ਸੁਨੇਹਾ ਭੇਜ ਕੇ ਗੱਲਬਾਤ ਸ਼ੁਰੂ ਕਰੋ!'
+                    : isHindi ? 'पहला संदेश भेजकर बातचीत शुरू करें!'
                     : 'Be the first to send a message!'}
                 </p>
 
@@ -396,6 +403,10 @@ export function ChatView({ language }: ChatViewProps) {
                     { icon: '🙏', text: 'ਸਤਿਕਾਰ ਨਾਲ ਗੱਲ ਕਰੋ' },
                     { icon: '📚', text: 'ਗੁਰਬਾਣੀ ਅਤੇ ਇਤਿਹਾਸ ਬਾਰੇ ਸਿੱਖੋ' },
                     { icon: '💡', text: 'ਸਵਾਲ ਪੁੱਛੋ ਅਤੇ ਜਵਾਬ ਦਿਓ' },
+                  ] : isHindi ? [
+                    { icon: '🙏', text: 'सम्मान से बात करें' },
+                    { icon: '📚', text: 'गुरबाणी और सिख इतिहास पर चर्चा करें' },
+                    { icon: '💡', text: 'सवाल पूछें और ज्ञान साझा करें' },
                   ] : [
                     { icon: '🙏', text: 'Communicate with respect' },
                     { icon: '📚', text: 'Discuss Gurbani & Sikh history' },
@@ -405,7 +416,8 @@ export function ChatView({ language }: ChatViewProps) {
                       <span className="text-sm flex-shrink-0">{tip.icon}</span>
                       <span className={cn(
                         'text-xs text-gray-500 dark:text-gray-400',
-                        isPunjabi && 'font-gurmukhi text-sm'
+                        isPunjabi && 'font-gurmukhi text-sm',
+                        isHindi && 'font-devanagari text-sm'
                       )}>
                         {tip.text}
                       </span>
@@ -429,7 +441,7 @@ export function ChatView({ language }: ChatViewProps) {
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 15l7-7 7 7" />
                     </svg>
-                    {isPunjabi ? 'ਹੋਰ ਲੋਡ ਕਰੋ' : 'Load earlier messages'}
+                    {isPunjabi ? 'ਹੋਰ ਲੋਡ ਕਰੋ' : isHindi ? 'पुराने संदेश लोड करें' : 'Load earlier messages'}
                   </button>
                 </div>
               )}
@@ -473,7 +485,7 @@ export function ChatView({ language }: ChatViewProps) {
               <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 14l-7 7m0 0l-7-7m7 7V3" />
               </svg>
-              {isPunjabi ? 'ਨਵੇਂ ਸੁਨੇਹੇ' : 'New messages'}
+              {isPunjabi ? 'ਨਵੇਂ ਸੁਨੇਹੇ' : isHindi ? 'नए संदेश' : 'New messages'}
             </button>
           )}
         </div>
@@ -486,12 +498,12 @@ export function ChatView({ language }: ChatViewProps) {
               <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
               <span className="w-1.5 h-1.5 bg-amber-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
             </span>
-            <span className={cn(isPunjabi && 'font-gurmukhi')}>
+            <span className={cn(isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
               {typingNames.length === 1
-                ? `${typingNames[0]} ${isPunjabi ? 'ਲਿਖ ਰਿਹਾ ਹੈ...' : 'is typing...'}`
+                ? `${typingNames[0]} ${isPunjabi ? 'ਲਿਖ ਰਿਹਾ ਹੈ...' : isHindi ? 'लिख रहा है...' : 'is typing...'}`
                 : typingNames.length === 2
-                  ? `${typingNames[0]} ${isPunjabi ? 'ਤੇ' : '&'} ${typingNames[1]} ${isPunjabi ? 'ਲਿਖ ਰਹੇ ਹਨ...' : 'are typing...'}`
-                  : `${typingNames.length} ${isPunjabi ? 'ਲੋਕ ਲਿਖ ਰਹੇ ਹਨ...' : 'people are typing...'}`}
+                  ? `${typingNames[0]} ${isPunjabi ? 'ਤੇ' : isHindi ? 'और' : '&'} ${typingNames[1]} ${isPunjabi ? 'ਲਿਖ ਰਹੇ ਹਨ...' : isHindi ? 'लिख रहे हैं...' : 'are typing...'}`
+                  : `${typingNames.length} ${isPunjabi ? 'ਲੋਕ ਲਿਖ ਰਹੇ ਹਨ...' : isHindi ? 'लोग लिख रहे हैं...' : 'people are typing...'}`}
             </span>
           </div>
         )}
@@ -500,6 +512,8 @@ export function ChatView({ language }: ChatViewProps) {
         <div className="px-4 py-1 text-[10px] text-gray-400/60 text-center border-t border-gray-100/50 dark:border-gray-800/30">
           {isPunjabi
             ? '⏱ ਸੁਨੇਹੇ 12 ਘੰਟਿਆਂ ਬਾਅਦ ਆਪਣੇ ਆਪ ਮਿਟ ਜਾਂਦੇ ਹਨ • 🔖 ਸੇਵ ਕਰੋ ਰੱਖਣ ਲਈ'
+            : isHindi
+            ? '⏱ संदेश 12 घंटे बाद स्वतः मिट जाते हैं • 🔖 रखने के लिए सेव करें'
             : '⏱ Messages auto-delete after 12h • 🔖 Save to keep'}
         </div>
 

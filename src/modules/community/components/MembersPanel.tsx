@@ -17,6 +17,7 @@ interface MembersPanelProps {
 
 export function MembersPanel({ members, language, currentUserId }: MembersPanelProps) {
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const [search, setSearch] = useState('');
 
   const onlineMembers = members.filter((m) => m.isOnline);
@@ -41,11 +42,11 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
     const date = new Date(dateStr);
     const diffMs = Date.now() - date.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 5) return isPunjabi ? 'ਹੁਣੇ' : 'just now';
-    if (diffMins < 60) return `${diffMins}${isPunjabi ? ' ਮਿੰਟ' : 'm'}`;
+    if (diffMins < 5) return isPunjabi ? 'ਹੁਣੇ' : isHindi ? 'अभी' : 'just now';
+    if (diffMins < 60) return `${diffMins}${isPunjabi ? ' ਮਿੰਟ' : isHindi ? ' मिनट' : 'm'}`;
     const diffHours = Math.floor(diffMs / 3600000);
-    if (diffHours < 24) return `${diffHours}${isPunjabi ? ' ਘੰਟੇ' : 'h'}`;
-    return date.toLocaleDateString(isPunjabi ? 'pa-IN' : 'en-US', { month: 'short', day: 'numeric' });
+    if (diffHours < 24) return `${diffHours}${isPunjabi ? ' ਘੰਟੇ' : isHindi ? ' घंटे' : 'h'}`;
+    return date.toLocaleDateString(isPunjabi ? 'pa-IN' : isHindi ? 'hi-IN' : 'en-US', { month: 'short', day: 'numeric' });
   };
 
   const renderMember = (member: ChatUser) => {
@@ -81,12 +82,13 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
         <div className="min-w-0 flex-1">
           <div className={cn(
             'text-sm font-medium text-gray-900 dark:text-white truncate',
-            isPunjabi && 'font-gurmukhi'
+            isPunjabi && 'font-gurmukhi',
+            isHindi && 'font-devanagari'
           )}>
             {displayName}
             {isYou && (
               <span className="ml-1.5 text-[11px] text-amber-500 font-normal">
-                ({isPunjabi ? 'ਤੁਸੀਂ' : 'you'})
+                ({isPunjabi ? 'ਤੁਸੀਂ' : isHindi ? 'आप' : 'you'})
               </span>
             )}
           </div>
@@ -105,12 +107,13 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
       <div className="p-4 border-b border-gray-100 dark:border-gray-800">
         <h3 className={cn(
           'text-sm font-bold text-gray-900 dark:text-white flex items-center gap-2',
-          isPunjabi && 'font-gurmukhi text-base'
+          isPunjabi && 'font-gurmukhi text-base',
+          isHindi && 'font-devanagari text-base'
         )}>
           <svg className="w-4 h-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197" />
           </svg>
-          {isPunjabi ? 'ਮੈਂਬਰ' : 'Members'}
+          {isPunjabi ? 'ਮੈਂਬਰ' : isHindi ? 'सदस्य' : 'Members'}
           <span className="text-xs font-normal text-gray-400 ml-auto">
             {members.length}
           </span>
@@ -128,11 +131,12 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
               type="text"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              placeholder={isPunjabi ? 'ਮੈਂਬਰ ਲੱਭੋ...' : 'Search members...'}
+              placeholder={isPunjabi ? 'ਮੈਂਬਰ ਲੱਭੋ...' : isHindi ? 'सदस्य खोजें...' : 'Search members...'}
               className={cn(
                 'w-full pl-8 pr-3 py-1.5 text-xs bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg',
                 'text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-amber-500/50 transition-all',
-                isPunjabi && 'font-gurmukhi'
+                isPunjabi && 'font-gurmukhi',
+                isHindi && 'font-devanagari'
               )}
             />
           </div>
@@ -146,7 +150,7 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
             <div className="px-4 py-1.5 flex items-center gap-2">
               <div className="w-2 h-2 bg-green-500 rounded-full" />
               <span className="text-xs font-semibold text-green-600 dark:text-green-400 uppercase tracking-wider">
-                {isPunjabi ? 'ਔਨਲਾਈਨ' : 'Online'} — {filteredOnline.length}
+                {isPunjabi ? 'ਔਨਲਾਈਨ' : isHindi ? 'ऑनलाइन' : 'Online'} — {filteredOnline.length}
               </span>
             </div>
             {filteredOnline.map(renderMember)}
@@ -159,7 +163,7 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
             <div className="px-4 py-1.5 flex items-center gap-2">
               <div className="w-2 h-2 bg-gray-300 dark:bg-gray-600 rounded-full" />
               <span className="text-xs font-semibold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
-                {isPunjabi ? 'ਔਫ਼ਲਾਈਨ' : 'Offline'} — {filteredOffline.length}
+                {isPunjabi ? 'ਔਫ਼ਲਾਈਨ' : isHindi ? 'ऑफलाइन' : 'Offline'} — {filteredOffline.length}
               </span>
             </div>
             {filteredOffline.map(renderMember)}
@@ -175,9 +179,10 @@ export function MembersPanel({ members, language, currentUserId }: MembersPanelP
             </div>
             <p className={cn(
               'text-sm text-gray-400',
-              isPunjabi && 'font-gurmukhi'
+              isPunjabi && 'font-gurmukhi',
+              isHindi && 'font-devanagari'
             )}>
-              {isPunjabi ? 'ਕੋਈ ਮੈਂਬਰ ਨਹੀਂ' : 'No members yet'}
+              {isPunjabi ? 'ਕੋਈ ਮੈਂਬਰ ਨਹੀਂ' : isHindi ? 'कोई सदस्य नहीं' : 'No members yet'}
             </p>
           </div>
         )}

@@ -801,26 +801,28 @@ export async function sendMessage(data: {
   roomId: string;
   replyToId?: string;
 }) {
-  // Check if user is banned
-  const sender = await prisma.chatUser.findUnique({
-    where: { id: data.userId },
-    select: { isBanned: true, bannedUntil: true },
-  });
+  // Run ban check + membership check in parallel (saves ~10-40ms)
+  const [sender, membership] = await Promise.all([
+    prisma.chatUser.findUnique({
+      where: { id: data.userId },
+      select: { isBanned: true, bannedUntil: true },
+    }),
+    prisma.chatRoomMember.findUnique({
+      where: { userId_roomId: { userId: data.userId, roomId: data.roomId } },
+    }),
+  ]);
+
   if (sender?.isBanned) {
     const permBan = !sender.bannedUntil;
     const stillBanned = permBan || sender.bannedUntil! > new Date();
     if (stillBanned) throw new Error('You are banned from sending messages');
-    // Auto-unban if expired
-    await prisma.chatUser.update({
+    // Auto-unban if expired (fire-and-forget)
+    prisma.chatUser.update({
       where: { id: data.userId },
       data: { isBanned: false, banReason: null, bannedUntil: null },
-    });
+    }).catch(() => {});
   }
 
-  // Verify membership
-  const membership = await prisma.chatRoomMember.findUnique({
-    where: { userId_roomId: { userId: data.userId, roomId: data.roomId } },
-  });
   if (!membership) {
     throw new Error('You must join this room to send messages');
   }
@@ -854,21 +856,16 @@ export async function sendMessage(data: {
     },
   });
 
-  // Update user presence (non-critical)
-  await prisma.chatUser.update({
+  // Fire-and-forget: presence update, pruning, cleanup, cache invalidation
+  // None of these need to block the response
+  prisma.chatUser.update({
     where: { id: data.userId },
     data: { lastSeenAt: new Date(), isOnline: true },
   }).catch(() => {});
 
-  // Auto-prune: keep DB small by removing old messages beyond cap
-  // Runs async — doesn't block the response
   pruneRoomMessages(data.roomId).catch(() => {});
-
-  // Periodic background cleanup (stale users, soft-deleted messages)
   maybeRunCleanup().catch(() => {});
-
-  // Invalidate messages + rooms cache (message count changed)
-  await cacheDel(CACHE_KEYS.messages(data.roomId), CACHE_KEYS.rooms(), CACHE_KEYS.room(data.roomId));
+  cacheDel(CACHE_KEYS.messages(data.roomId), CACHE_KEYS.rooms(), CACHE_KEYS.room(data.roomId)).catch(() => {});
 
   return messageToResponse(message);
 }

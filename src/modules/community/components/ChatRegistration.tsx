@@ -30,12 +30,13 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
   const [step, setStep] = useState<'name' | 'avatar'>('name');
 
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (step === 'name') {
       if (!displayName.trim() || displayName.trim().length < 2) {
-        setError(isPunjabi ? 'ਘੱਟੋ-ਘੱਟ 2 ਅੱਖਰ ਲੋੜੀਂਦੇ ਹਨ' : 'At least 2 characters required');
+        setError(isPunjabi ? 'ਘੱਟੋ-ਘੱਟ 2 ਅੱਖਰ ਲੋੜੀਂਦੇ ਹਨ' : isHindi ? 'कम से कम 2 अक्षर चाहिए' : 'At least 2 characters required');
         return;
       }
       setError('');
@@ -49,7 +50,7 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
     try {
       await onRegister(displayName.trim(), gurmukhiName.trim() || undefined, selectedColor, email.trim() || undefined);
     } catch (err: any) {
-      setError(err.message || (isPunjabi ? 'ਗਲਤੀ ਹੋਈ' : 'Something went wrong'));
+      setError(err.message || (isPunjabi ? 'ਗਲਤੀ ਹੋਈ' : isHindi ? 'कुछ गलत हो गई' : 'Something went wrong'));
     } finally {
       setIsSubmitting(false);
     }
@@ -96,16 +97,19 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
                   </div>
                   <h2 className={cn(
                     'text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
                   )}>
-                    {isPunjabi ? 'ਸੰਗਤ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ' : 'Join the Sangat'}
+                    {isPunjabi ? 'ਸੰਗਤ ਵਿੱਚ ਸ਼ਾਮਲ ਹੋਵੋ' : isHindi ? 'संगत में शामिल हों' : 'Join the Sangat'}
                   </h2>
                   <p className={cn(
                     'text-sm text-gray-500 dark:text-gray-400 mt-2 max-w-xs mx-auto',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
                   )}>
                     {isPunjabi
                       ? 'ਸਿੱਖ ਸੰਗਤ ਨਾਲ ਗੱਲਬਾਤ ਕਰੋ ਅਤੇ ਸਿੱਖੋ'
+                      : isHindi ? 'सिख संगत से जुड़ें और सीखें'
                       : 'Connect and learn with the Sikh community'}
                   </p>
                 </div>
@@ -123,7 +127,7 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
                 <form onSubmit={handleSubmit} className="space-y-5">
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {isPunjabi ? 'ਤੁਹਾਡਾ ਨਾਮ' : 'Your Display Name'}
+                      {isPunjabi ? 'ਤੁਹਾਡਾ ਨਾਮ' : isHindi ? 'आपका नाम' : 'Your Display Name'}
                       <span className="text-red-400 ml-1">*</span>
                     </label>
                     <div className="relative">
@@ -136,7 +140,7 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
                         type="text"
                         value={displayName}
                         onChange={(e) => setDisplayName(e.target.value)}
-                        placeholder={isPunjabi ? 'ਨਾਮ ਦਰਜ ਕਰੋ...' : 'Enter your name...'}
+                        placeholder={isPunjabi ? 'ਨਾਮ ਦਰਜ ਕਰੋ...' : isHindi ? 'अपना नाम दर्ज करें...' : 'Enter your name...'}
                         maxLength={30}
                         className="w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-400 transition-all text-base"
                         autoFocus
@@ -166,7 +170,7 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
 
                   <div>
                     <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                      {isPunjabi ? 'ਈਮੇਲ' : 'Email'}
+                      {isPunjabi ? 'ਈਮੇਲ' : isHindi ? 'ईमेल' : 'Email'}
                       <span className="text-gray-400 ml-2 text-xs font-normal">(optional — for account recovery & admin contact)</span>
                     </label>
                     <div className="relative">
@@ -179,7 +183,7 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
                         type="email"
                         value={email}
                         onChange={(e) => setEmail(e.target.value)}
-                        placeholder={isPunjabi ? 'ਈਮੇਲ ਦਰਜ ਕਰੋ...' : 'your@email.com'}
+                        placeholder={isPunjabi ? 'ਈਮੇਲ ਦਰਜ ਕਰੋ...' : isHindi ? 'ईमेल दर्ज करें...' : 'your@email.com'}
                         maxLength={254}
                         className="w-full pl-11 pr-4 py-3.5 bg-gray-50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-amber-500/50 focus:border-amber-400 transition-all text-base"
                       />
@@ -204,10 +208,11 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
                       'disabled:opacity-50 disabled:cursor-not-allowed',
                       'shadow-lg hover:shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40',
                       'active:scale-[0.98]',
-                      isPunjabi && 'font-gurmukhi text-lg'
+                      isPunjabi && 'font-gurmukhi text-lg',
+                      isHindi && 'font-devanagari text-lg'
                     )}
                   >
-                    {isPunjabi ? 'ਅੱਗੇ ਵਧੋ' : 'Continue'}
+                    {isPunjabi ? 'ਅੱਗੇ ਵਧੋ' : isHindi ? 'आगे बढ़ें' : 'Continue'}
                     <span className="ml-2">→</span>
                   </button>
                 </form>
@@ -223,7 +228,7 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
                     </svg>
-                    {isPunjabi ? 'ਪਿੱਛੇ' : 'Back'}
+                    {isPunjabi ? 'ਪਿੱਛੇ' : isHindi ? 'पीछे' : 'Back'}
                   </button>
 
                   {/* Live avatar preview */}
@@ -243,15 +248,17 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
 
                   <h2 className={cn(
                     'text-xl font-bold text-gray-900 dark:text-white',
-                    isPunjabi && 'font-gurmukhi text-2xl'
+                    isPunjabi && 'font-gurmukhi text-2xl',
+                    isHindi && 'font-devanagari text-2xl'
                   )}>
-                    {isPunjabi ? 'ਆਪਣਾ ਰੰਗ ਚੁਣੋ' : 'Choose your color'}
+                    {isPunjabi ? 'ਆਪਣਾ ਰੰਗ ਚੁਣੋ' : isHindi ? 'अपना रंग चुनें' : 'Choose your color'}
                   </h2>
                   <p className={cn(
                     'text-sm text-gray-400 mt-1',
-                    isPunjabi && 'font-gurmukhi'
+                    isPunjabi && 'font-gurmukhi',
+                    isHindi && 'font-devanagari'
                   )}>
-                    {isPunjabi ? 'ਇਹ ਤੁਹਾਡੀ ਫੋਟੋ ਵਜੋਂ ਦਿਖਾਈ ਦੇਵੇਗਾ' : 'This will be your avatar in chat'}
+                    {isPunjabi ? 'ਇਹ ਤੁਹਾਡੀ ਫੋਟੋ ਵਜੋਂ ਦਿਖਾਈ ਦੇਵੇਗਾ' : isHindi ? 'यह चैट में आपका अवतार होगा' : 'This will be your avatar in chat'}
                   </p>
                 </div>
 
@@ -292,12 +299,13 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
                       'disabled:opacity-50 disabled:cursor-not-allowed',
                       'shadow-lg hover:shadow-xl shadow-amber-500/25 hover:shadow-amber-500/40',
                       'active:scale-[0.98]',
-                      isPunjabi && 'font-gurmukhi text-lg'
+                      isPunjabi && 'font-gurmukhi text-lg',
+                      isHindi && 'font-devanagari text-lg'
                     )}
                   >
                     {isSubmitting
-                      ? (isPunjabi ? 'ਜੋੜ ਰਿਹਾ ਹੈ...' : 'Joining...')
-                      : (isPunjabi ? 'ਸ਼ਾਮਲ ਹੋਵੋ' : 'Join Community')}
+                      ? (isPunjabi ? 'ਜੋੜ ਰਿਹਾ ਹੈ...' : isHindi ? 'जोड़ रहा है...' : 'Joining...')
+                      : (isPunjabi ? 'ਸ਼ਾਮਲ ਹੋਵੋ' : isHindi ? 'समुदाय में शामिल हों' : 'Join Community')}
                   </button>
                 </form>
               </>
@@ -305,10 +313,12 @@ export function ChatRegistration({ onRegister, language }: ChatRegistrationProps
 
             <p className={cn(
               'text-xs text-gray-400 text-center mt-6 leading-relaxed',
-              isPunjabi && 'font-gurmukhi text-sm'
+              isPunjabi && 'font-gurmukhi text-sm',
+              isHindi && 'font-devanagari text-sm'
             )}>
               {isPunjabi
                 ? '🙏 ਕਿਰਪਾ ਕਰਕੇ ਸਤਿਕਾਰ ਨਾਲ ਗੱਲਬਾਤ ਕਰੋ'
+                : isHindi ? '🙏 कृपया सम्मान और गरिमा से बात करें'
                 : '🙏 Please communicate with respect and dignity'}
             </p>
           </div>

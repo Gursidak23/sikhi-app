@@ -43,6 +43,7 @@ export const MessageBubble = memo(function MessageBubble({
   const editInputRef = useRef<HTMLTextAreaElement>(null);
   const isOwn = currentUser?.id === message.userId;
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const isOptimistic = (message as any)._optimistic;
 
   // Live countdown: re-render periodically to update expiry label
@@ -134,10 +135,10 @@ export const MessageBubble = memo(function MessageBubble({
     const diffMins = Math.floor(diffMs / 60000);
     const diffHours = Math.floor(diffMs / 3600000);
 
-    if (diffMins < 1) return isPunjabi ? 'ਹੁਣੇ' : 'just now';
-    if (diffMins < 60) return `${diffMins}${isPunjabi ? ' ਮਿੰਟ ਪਹਿਲਾਂ' : 'm ago'}`;
-    if (diffHours < 24) return `${diffHours}${isPunjabi ? ' ਘੰਟੇ ਪਹਿਲਾਂ' : 'h ago'}`;
-    return date.toLocaleDateString(isPunjabi ? 'pa-IN' : 'en-US', {
+    if (diffMins < 1) return isPunjabi ? 'ਹੁਣੇ' : isHindi ? 'अभी' : 'just now';
+    if (diffMins < 60) return `${diffMins}${isPunjabi ? ' ਮਿੰਟ ਪਹਿਲਾਂ' : isHindi ? ' मिनट पहले' : 'm ago'}`;
+    if (diffHours < 24) return `${diffHours}${isPunjabi ? ' ਘੰਟੇ ਪਹਿਲਾਂ' : isHindi ? ' घंटे पहले' : 'h ago'}`;
+    return date.toLocaleDateString(isPunjabi ? 'pa-IN' : isHindi ? 'hi-IN' : 'en-US', {
       month: 'short',
       day: 'numeric',
       hour: '2-digit',
@@ -155,7 +156,7 @@ export const MessageBubble = memo(function MessageBubble({
     const expiresAt = new Date(message.expiresAt).getTime();
     const now = Date.now();
     const remaining = expiresAt - now;
-    if (remaining <= 0) return isPunjabi ? 'ਮਿਆਦ ਪੁੱਗੀ' : 'Expired';
+    if (remaining <= 0) return isPunjabi ? 'ਮਿਆਦ ਪੁੱਗੀ' : isHindi ? 'समाप्त' : 'Expired';
     const hours = Math.floor(remaining / 3600000);
     const mins = Math.floor((remaining % 3600000) / 60000);
     const secs = Math.floor((remaining % 60000) / 1000);
@@ -179,9 +180,10 @@ export const MessageBubble = memo(function MessageBubble({
           </svg>
           <span className={cn(
             'text-xs text-gray-400 italic',
-            isPunjabi && 'font-gurmukhi'
+            isPunjabi && 'font-gurmukhi',
+            isHindi && 'font-devanagari'
           )}>
-            {isPunjabi ? 'ਸੁਨੇਹਾ ਮਿਟਾਇਆ ਗਿਆ' : 'Message deleted'}
+            {isPunjabi ? 'ਸੁਨੇਹਾ ਮਿਟਾਇਆ ਗਿਆ' : isHindi ? 'संदेश हटाया गया' : 'Message deleted'}
           </span>
         </div>
       </div>
@@ -229,15 +231,16 @@ export const MessageBubble = memo(function MessageBubble({
         )}>
           <span className={cn(
             'text-[13px] sm:text-sm font-semibold text-gray-900 dark:text-white truncate max-w-[120px] sm:max-w-none',
-            isPunjabi && 'font-gurmukhi'
+            isPunjabi && 'font-gurmukhi',
+            isHindi && 'font-devanagari'
           )}>
             {displayName}
           </span>
           <span className="text-[10px] sm:text-[11px] text-gray-400 tabular-nums whitespace-nowrap">
-            {isOptimistic ? (isPunjabi ? 'ਭੇਜ ਰਿਹਾ...' : 'Sending...') : formatTime(message.createdAt)}
+            {isOptimistic ? (isPunjabi ? 'ਭੇਜ ਰਿਹਾ...' : isHindi ? 'भेज रहा है...' : 'Sending...') : formatTime(message.createdAt)}
           </span>
           {message.isSaved && (
-            <span className="text-[10px] sm:text-[11px] text-amber-500" title={isPunjabi ? 'ਸੇਵ ਕੀਤਾ' : 'Saved'}>
+            <span className="text-[10px] sm:text-[11px] text-amber-500" title={isPunjabi ? 'ਸੇਵ ਕੀਤਾ' : isHindi ? 'सेव किया' : 'Saved'}>
               🔖
             </span>
           )}
@@ -247,13 +250,13 @@ export const MessageBubble = memo(function MessageBubble({
               isExpiringSoon
                 ? 'text-red-500 animate-pulse font-medium'
                 : 'text-gray-400/70 hidden sm:flex'
-            )} title={isPunjabi ? 'ਮਿਆਦ ਪੁੱਗਣ ਤੱਕ' : 'Expires in'}>
+            )} title={isPunjabi ? 'ਮਿਆਦ ਪੁੱਗਣ ਤੱਕ' : isHindi ? 'समाप्ति तक' : 'Expires in'}>
               ⏱ {expiryLabel}
             </span>
           )}
           {message.isEdited && (
             <span className="text-[10px] sm:text-[11px] text-gray-400 italic">
-              ({isPunjabi ? 'ਸੋਧਿਆ' : 'edited'})
+              ({isPunjabi ? 'ਸੋਧਿਆ' : isHindi ? 'संपादित' : 'edited'})
             </span>
           )}
         </div>
@@ -282,7 +285,7 @@ export const MessageBubble = memo(function MessageBubble({
         {message.isPinned && (
           <div className={cn('flex items-center gap-1 mb-1', isOwn && 'justify-end')}>
             <span className="text-[10px] text-amber-600 dark:text-amber-400 font-medium flex items-center gap-0.5">
-              📌 {isPunjabi ? 'ਪਿੰਨ ਕੀਤਾ' : 'Pinned'}
+              📌 {isPunjabi ? 'ਪਿੰਨ ਕੀਤਾ' : isHindi ? 'पिन किया' : 'Pinned'}
             </span>
           </div>
         )}
@@ -304,16 +307,16 @@ export const MessageBubble = memo(function MessageBubble({
                 onClick={handleEditSubmit}
                 className="text-xs px-3 py-1 rounded-full bg-amber-500 text-white hover:bg-amber-600 transition-colors"
               >
-                {isPunjabi ? 'ਸੇਵ' : 'Save'}
+                {isPunjabi ? 'ਸੇਵ' : isHindi ? 'सेव' : 'Save'}
               </button>
               <button
                 onClick={() => { setIsEditing(false); setEditContent(message.content); }}
                 className="text-xs px-3 py-1 rounded-full bg-gray-200 dark:bg-gray-700 text-gray-600 dark:text-gray-300 hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
               >
-                {isPunjabi ? 'ਰੱਦ' : 'Cancel'}
+                {isPunjabi ? 'ਰੱਦ' : isHindi ? 'रद्द' : 'Cancel'}
               </button>
               <span className="text-[10px] text-gray-400">
-                Enter ↵ {isPunjabi ? 'ਸੇਵ ਕਰੋ' : 'save'} · Esc {isPunjabi ? 'ਰੱਦ ਕਰੋ' : 'cancel'}
+                Enter ↵ {isPunjabi ? 'ਸੇਵ ਕਰੋ' : isHindi ? 'सेव करें' : 'save'} · Esc {isPunjabi ? 'ਰੱਦ ਕਰੋ' : isHindi ? 'रद्द करें' : 'cancel'}
               </span>
             </div>
           </div>
@@ -377,7 +380,7 @@ export const MessageBubble = memo(function MessageBubble({
                     ? 'text-amber-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20'
                     : 'text-gray-500 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20'
                 )}
-                title={message.isSaved ? (isPunjabi ? 'ਅਣਸੇਵ' : 'Unsave') : (isPunjabi ? 'ਸੇਵ' : 'Save')}
+                title={message.isSaved ? (isPunjabi ? 'ਅਣਸੇਵ' : isHindi ? 'अनसेव' : 'Unsave') : (isPunjabi ? 'ਸੇਵ' : isHindi ? 'सेव' : 'Save')}
               >
                 <svg className="w-4 h-4" fill={message.isSaved ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
@@ -399,7 +402,7 @@ export const MessageBubble = memo(function MessageBubble({
                 <button
                   onClick={() => { setIsEditing(true); setEditContent(message.content); setShowActions(false); }}
                   className="w-8 h-8 flex items-center justify-center rounded-full text-gray-500 hover:text-blue-500 hover:bg-blue-50 dark:hover:bg-blue-900/20 transition-colors"
-                  title={isPunjabi ? 'ਸੋਧੋ' : 'Edit'}
+                  title={isPunjabi ? 'ਸੋਧੋ' : isHindi ? 'संपादित करें' : 'Edit'}
                 >
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
@@ -474,6 +477,7 @@ interface DateDividerProps {
 
 export function DateDivider({ date, language }: DateDividerProps) {
   const isPunjabi = language === 'pa';
+  const isHindi = language === 'hi';
   const d = new Date(date);
   const today = new Date();
   const yesterday = new Date(today);
@@ -481,11 +485,11 @@ export function DateDivider({ date, language }: DateDividerProps) {
 
   let label: string;
   if (d.toDateString() === today.toDateString()) {
-    label = isPunjabi ? 'ਅੱਜ' : 'Today';
+    label = isPunjabi ? 'ਅੱਜ' : isHindi ? 'आज' : 'Today';
   } else if (d.toDateString() === yesterday.toDateString()) {
-    label = isPunjabi ? 'ਕੱਲ੍ਹ' : 'Yesterday';
+    label = isPunjabi ? 'ਕੱਲ੍ਹ' : isHindi ? 'कल' : 'Yesterday';
   } else {
-    label = d.toLocaleDateString(isPunjabi ? 'pa-IN' : 'en-US', {
+    label = d.toLocaleDateString(isPunjabi ? 'pa-IN' : isHindi ? 'hi-IN' : 'en-US', {
       weekday: 'long',
       month: 'long',
       day: 'numeric',
@@ -497,7 +501,8 @@ export function DateDivider({ date, language }: DateDividerProps) {
       <div className="flex-1 h-px bg-gradient-to-r from-transparent via-gray-200 dark:via-gray-700 to-transparent" />
       <span className={cn(
         'text-xs font-semibold text-gray-400 dark:text-gray-500 px-3 py-1 rounded-full bg-gray-50 dark:bg-gray-800/50',
-        isPunjabi && 'font-gurmukhi'
+        isPunjabi && 'font-gurmukhi',
+        isHindi && 'font-devanagari'
       )}>
         {label}
       </span>
