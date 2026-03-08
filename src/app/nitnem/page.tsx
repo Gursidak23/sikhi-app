@@ -7,7 +7,7 @@
 // Japji Sahib, Rehras Sahib, Kirtan Sohila, etc.
 // ============================================================================
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { useLanguage } from '@/components/common/LanguageProvider';
@@ -16,11 +16,22 @@ import { ReadingProgress } from '@/components/common/ReadingProgress';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
 import { FontSizeControls } from '@/components/common/FontSizeControls';
 import { NitnemStreakTracker, markBaniComplete } from '@/components/common/NitnemStreakTracker';
-import { ReadAloudControls, ReadAloudMini } from '@/components/common/ReadAloudControls';
-import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { fetchBani } from '@/lib/api/banidb-client';
 import { NITNEM_BANIS_CONFIG } from '@/lib/constants/raag-ranges';
 import type { Language } from '@/types';
+
+// SikhNet Play playlist URLs for each Nitnem bani (real audio recordings)
+const SIKHNET_AUDIO_URLS: Record<string, string> = {
+  'japji': 'https://play.sikhnet.com/playlist/japji-sahib-64',
+  'jaap': 'https://play.sikhnet.com/playlist/jaap-sahib-30',
+  'tav-prasad-savaiye': 'https://play.sikhnet.com/playlist/tav-prasad-savaiye',
+  'chaupai': 'https://play.sikhnet.com/playlist/chaupai-sahib-2',
+  'anand': 'https://play.sikhnet.com/playlist/anand-sahib-7',
+  'rehras': 'https://play.sikhnet.com/playlist/rehras-sahib',
+  'kirtan-sohila': 'https://play.sikhnet.com/playlist/kirtan-sohila',
+  'sukhmani': 'https://play.sikhnet.com/playlist/sukhmani-sahib',
+  'asa-di-var': 'https://play.sikhnet.com/playlist/asa-di-var',
+};
 
 // Use the complete Nitnem Banis from shared constants
 const NITNEM_BANIS = NITNEM_BANIS_CONFIG;
@@ -68,7 +79,6 @@ export default function NitnemPage() {
   const [showStreak, setShowStreak] = useState(true);
   const contentEndRef = useRef<HTMLDivElement>(null);
   const hasMarkedRef = useRef<string | null>(null);
-  const verseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const loadBani = useCallback(async (baniId: number) => {
     setLoading(true);
@@ -100,36 +110,7 @@ export default function NitnemPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Text-to-speech for reading bani aloud
-  const handleLineChange = useCallback((index: number) => {
-    verseRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, []);
-
-  const tts = useTextToSpeech({
-    language,
-    onLineChange: handleLineChange,
-  });
-
-  // Build TTS lines from bani content
-  const ttsLines = useMemo(() => {
-    return baniContent.map((item) => ({
-      text: item.verse?.verse?.unicode || item.verse?.verse?.gurmukhi || '',
-      lang: 'pa' as const,
-    }));
-  }, [baniContent]);
-
-  const handlePlayAll = useCallback(() => {
-    if (ttsLines.length > 0) {
-      tts.speakAll(ttsLines);
-    }
-  }, [tts, ttsLines]);
-
-  const handleSpeakLine = useCallback((text: string) => {
-    tts.speakSingle(text, 'pa');
-  }, [tts]);
-
   const handleBack = () => {
-    tts.stop();
     setSelectedBani(null);
     setBaniContent([]);
     hasMarkedRef.current = null;
@@ -362,23 +343,24 @@ export default function NitnemPage() {
                     </div>
                   </div>
 
-                  {/* Read Aloud Controls */}
-                  {baniContent.length > 0 && (
-                    <ReadAloudControls
-                      isPlaying={tts.isPlaying}
-                      isPaused={tts.isPaused}
-                      isSupported={tts.isSupported}
-                      currentLineIndex={tts.currentLineIndex}
-                      totalLines={baniContent.length}
-                      playbackRate={tts.playbackRate}
-                      language={language}
-                      onPlay={handlePlayAll}
-                      onPause={tts.pause}
-                      onResume={tts.resume}
-                      onStop={tts.stop}
-                      onRateChange={tts.updateRate}
-                      className="mb-6"
-                    />
+                  {/* Listen on SikhNet Play */}
+                  {selectedBani && SIKHNET_AUDIO_URLS[selectedBani] && (
+                    <a
+                      href={SIKHNET_AUDIO_URLS[selectedBani]}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center justify-center gap-2 mb-6 px-5 py-3 bg-gradient-to-r from-neela-600 to-neela-700 hover:from-neela-700 hover:to-neela-800 text-white rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
+                    >
+                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
+                      </svg>
+                      <span className={cn('font-medium', language === 'pa' && 'font-gurmukhi')}>
+                        {language === 'pa' ? '🔊 ਸੁਣੋ — SikhNet Play' : isHindi ? '🔊 सुनें — SikhNet Play' : '🔊 Listen — SikhNet Play'}
+                      </span>
+                      <svg className="w-4 h-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                      </svg>
+                    </a>
                   )}
 
                   {/* Loading State */}
@@ -421,11 +403,7 @@ export default function NitnemPage() {
                             return (
                             <div
                               key={verseData.verseId}
-                              ref={(el) => { verseRefs.current[index] = el; }}
-                              className={cn(
-                                'pankti-traditional transition-colors duration-300',
-                                tts.currentLineIndex === index && tts.isPlaying && 'bg-neela-50/80 dark:bg-neela-900/30 rounded-lg ring-1 ring-neela-300 dark:ring-neela-700'
-                              )}
+                              className="pankti-traditional"
                             >
                               {/* Section header */}
                               {item.header === 1 && index > 0 && (
@@ -434,8 +412,8 @@ export default function NitnemPage() {
                                 </div>
                               )}
                               
-                              {/* Gurmukhi with listen button */}
-                              <div className="flex items-start justify-center gap-1">
+                              {/* Gurmukhi */}
+                              <div className="flex items-start justify-center">
                                 <p 
                                   className="gurbani-traditional text-center flex-1"
                                   style={{ fontSize: 'var(--gurbani-font-size, 1.375rem)' }}
@@ -443,11 +421,6 @@ export default function NitnemPage() {
                                 >
                                   {verseData.verse?.unicode || verseData.verse?.gurmukhi}
                                 </p>
-                                <ReadAloudMini
-                                  onClick={() => handleSpeakLine(verseData.verse?.unicode || verseData.verse?.gurmukhi || '')}
-                                  isActive={tts.currentLineIndex === index && tts.isPlaying}
-                                  language={language}
-                                />
                               </div>
                               
                               {/* Transliteration */}

@@ -7,7 +7,7 @@
 // Teeka (Punjabi meanings), and sharing capabilities
 // ============================================================================
 
-import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
@@ -16,8 +16,6 @@ import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { ReadingProgress } from '@/components/common/ReadingProgress';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
 import { FontSizeControls } from '@/components/common/FontSizeControls';
-import { ReadAloudControls, ReadAloudMini } from '@/components/common/ReadAloudControls';
-import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { fetchShabad, type BaniDBVerse, type BaniDBShabadResponse } from '@/lib/api/banidb-client';
 import { getRaagForAng } from '@/lib/constants/raag-ranges';
 import type { Language } from '@/types';
@@ -108,34 +106,6 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
   };
 
   const raag = shabad?.shabadInfo ? getRaagForAng(shabad.shabadInfo.pageNo) : null;
-
-  // Text-to-speech for reading shabad aloud
-  const handleLineChange = useCallback((index: number) => {
-    verseRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
-  }, []);
-
-  const tts = useTextToSpeech({
-    language,
-    onLineChange: handleLineChange,
-  });
-
-  const ttsLines = useMemo(() => {
-    if (!shabad) return [];
-    return shabad.verses.map((verse) => ({
-      text: verse.verse?.unicode || verse.verse?.gurmukhi || '',
-      lang: 'pa' as const,
-    }));
-  }, [shabad]);
-
-  const handlePlayAll = useCallback(() => {
-    if (ttsLines.length > 0) {
-      tts.speakAll(ttsLines);
-    }
-  }, [tts, ttsLines]);
-
-  const handleSpeakLine = useCallback((text: string) => {
-    tts.speakSingle(text, 'pa');
-  }, [tts]);
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#fef9e7] via-white to-[#fef9e7] dark:from-[#1a1a1a] dark:via-[#1e1e1e] dark:to-[#1a1a1a]">
@@ -245,24 +215,6 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
                     ))}
                   </div>
                 </div>
-                {/* Read Aloud Controls */}
-                {shabad && shabad.verses.length > 0 && (
-                  <ReadAloudControls
-                    isPlaying={tts.isPlaying}
-                    isPaused={tts.isPaused}
-                    isSupported={tts.isSupported}
-                    currentLineIndex={tts.currentLineIndex}
-                    totalLines={shabad.verses.length}
-                    playbackRate={tts.playbackRate}
-                    language={language}
-                    onPlay={handlePlayAll}
-                    onPause={tts.pause}
-                    onResume={tts.resume}
-                    onStop={tts.stop}
-                    onRateChange={tts.updateRate}
-                    className="mb-2"
-                  />
-                )}
               </div>
             </div>
 
@@ -276,24 +228,17 @@ export default function ShabadPage({ params }: { params: { id: string } }) {
                     ref={(el) => { verseRefs.current[index] = el; }}
                     className={cn(
                       'text-center p-4 md:p-6 rounded-xl transition-all group',
-                      tts.currentLineIndex === index && tts.isPlaying
-                        ? 'bg-neela-50/80 dark:bg-neela-900/30 ring-2 ring-neela-400 dark:ring-neela-600'
-                        : highlightedLine === index + 1
+                      highlightedLine === index + 1
                           ? 'bg-amber-100/80 dark:bg-amber-900/30 ring-2 ring-amber-400 dark:ring-amber-600'
                           : 'hover:bg-amber-50/50 dark:hover:bg-neutral-800/50'
                     )}
                   >
-                    {/* Line number + listen + share */}
+                    {/* Line number + share */}
                     <div className="flex items-center justify-between mb-2 opacity-0 group-hover:opacity-100 transition-opacity">
                       <span className="text-xs text-amber-500 dark:text-amber-600 font-gurmukhi">
                         ਪੰਕਤੀ {index + 1}
                       </span>
                       <div className="flex items-center gap-1">
-                        <ReadAloudMini
-                          onClick={() => handleSpeakLine(verse.verse?.unicode || verse.verse?.gurmukhi || '')}
-                          isActive={tts.currentLineIndex === index && tts.isPlaying}
-                          language={language}
-                        />
                         <button
                           onClick={() => handleShareLine(verse, index)}
                           className="text-xs text-neutral-400 hover:text-neela-600 dark:hover:text-blue-400 transition-colors p-2 min-h-[36px] min-w-[36px] flex items-center justify-center"
