@@ -7,7 +7,7 @@
 // Japji Sahib, Rehras Sahib, Kirtan Sohila, etc.
 // ============================================================================
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { useLanguage } from '@/components/common/LanguageProvider';
@@ -16,6 +16,8 @@ import { ReadingProgress } from '@/components/common/ReadingProgress';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
 import { FontSizeControls } from '@/components/common/FontSizeControls';
 import { NitnemStreakTracker, markBaniComplete } from '@/components/common/NitnemStreakTracker';
+import { ReadAloudControls, ReadAloudMini } from '@/components/common/ReadAloudControls';
+import { useTextToSpeech } from '@/hooks/useTextToSpeech';
 import { fetchBani } from '@/lib/api/banidb-client';
 import { NITNEM_BANIS_CONFIG } from '@/lib/constants/raag-ranges';
 import type { Language } from '@/types';
@@ -66,6 +68,7 @@ export default function NitnemPage() {
   const [showStreak, setShowStreak] = useState(true);
   const contentEndRef = useRef<HTMLDivElement>(null);
   const hasMarkedRef = useRef<string | null>(null);
+  const verseRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const loadBani = useCallback(async (baniId: number) => {
     setLoading(true);
@@ -97,7 +100,36 @@ export default function NitnemPage() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
+  // Text-to-speech for reading bani aloud
+  const handleLineChange = useCallback((index: number) => {
+    verseRefs.current[index]?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, []);
+
+  const tts = useTextToSpeech({
+    language,
+    onLineChange: handleLineChange,
+  });
+
+  // Build TTS lines from bani content
+  const ttsLines = useMemo(() => {
+    return baniContent.map((item) => ({
+      text: item.verse?.verse?.unicode || item.verse?.verse?.gurmukhi || '',
+      lang: 'pa' as const,
+    }));
+  }, [baniContent]);
+
+  const handlePlayAll = useCallback(() => {
+    if (ttsLines.length > 0) {
+      tts.speakAll(ttsLines);
+    }
+  }, [tts, ttsLines]);
+
+  const handleSpeakLine = useCallback((text: string) => {
+    tts.speakSingle(text, 'pa');
+  }, [tts]);
+
   const handleBack = () => {
+    tts.stop();
     setSelectedBani(null);
     setBaniContent([]);
     hasMarkedRef.current = null;
@@ -301,7 +333,7 @@ export default function NitnemPage() {
                   </div>
 
                   {/* Controls */}
-                  <div className="flex flex-wrap items-center justify-center gap-4 mb-6 p-4 bg-amber-50 dark:bg-neutral-800 rounded-xl">
+                  <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 mb-6 p-3 sm:p-4 bg-amber-50 dark:bg-neutral-800 rounded-xl">
                     <FontSizeControls />
                     
                     <div className="flex gap-2">
@@ -329,6 +361,25 @@ export default function NitnemPage() {
                       </button>
                     </div>
                   </div>
+
+                  {/* Read Aloud Controls */}
+                  {baniContent.length > 0 && (
+                    <ReadAloudControls
+                      isPlaying={tts.isPlaying}
+                      isPaused={tts.isPaused}
+                      isSupported={tts.isSupported}
+                      currentLineIndex={tts.currentLineIndex}
+                      totalLines={baniContent.length}
+                      playbackRate={tts.playbackRate}
+                      language={language}
+                      onPlay={handlePlayAll}
+                      onPause={tts.pause}
+                      onResume={tts.resume}
+                      onStop={tts.stop}
+                      onRateChange={tts.updateRate}
+                      className="mb-6"
+                    />
+                  )}
 
                   {/* Loading State */}
                   {loading && (
@@ -368,7 +419,14 @@ export default function NitnemPage() {
                           {baniContent.map((item, index) => {
                             const verseData = item.verse;
                             return (
-                            <div key={verseData.verseId} className="pankti-traditional">
+                            <div
+                              key={verseData.verseId}
+                              ref={(el) => { verseRefs.current[index] = el; }}
+                              className={cn(
+                                'pankti-traditional transition-colors duration-300',
+                                tts.currentLineIndex === index && tts.isPlaying && 'bg-neela-50/80 dark:bg-neela-900/30 rounded-lg ring-1 ring-neela-300 dark:ring-neela-700'
+                              )}
+                            >
                               {/* Section header */}
                               {item.header === 1 && index > 0 && (
                                 <div className="my-6 text-center">
@@ -376,14 +434,21 @@ export default function NitnemPage() {
                                 </div>
                               )}
                               
-                              {/* Gurmukhi */}
-                              <p 
-                                className="gurbani-traditional text-center"
-                                style={{ fontSize: 'var(--gurbani-font-size, 1.375rem)' }}
-                                lang="pa"
-                              >
-                                {verseData.verse?.unicode || verseData.verse?.gurmukhi}
-                              </p>
+                              {/* Gurmukhi with listen button */}
+                              <div className="flex items-start justify-center gap-1">
+                                <p 
+                                  className="gurbani-traditional text-center flex-1"
+                                  style={{ fontSize: 'var(--gurbani-font-size, 1.375rem)' }}
+                                  lang="pa"
+                                >
+                                  {verseData.verse?.unicode || verseData.verse?.gurmukhi}
+                                </p>
+                                <ReadAloudMini
+                                  onClick={() => handleSpeakLine(verseData.verse?.unicode || verseData.verse?.gurmukhi || '')}
+                                  isActive={tts.currentLineIndex === index && tts.isPlaying}
+                                  language={language}
+                                />
+                              </div>
                               
                               {/* Transliteration */}
                               {showTransliteration && (verseData.transliteration?.en || verseData.transliteration?.english) && (
