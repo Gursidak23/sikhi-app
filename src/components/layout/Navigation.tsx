@@ -197,7 +197,7 @@ export function MainNavigation(_props?: MainNavigationProps) {
           </Link>
 
           {/* Desktop Navigation */}
-          <nav className="hidden md:flex items-center gap-0.5">
+          <nav className="hidden md:flex items-center gap-0">
             {navItems.map((item) => {
               const isActive = pathname?.startsWith(item.href);
               const isCommunity = item.href === '/community';
@@ -206,15 +206,15 @@ export function MainNavigation(_props?: MainNavigationProps) {
                   key={item.href}
                   href={item.href}
                   className={cn(
-                    'relative sikhi-nav-link px-3.5 py-2 rounded-lg text-sm font-medium transition-all duration-200',
-                    currentLanguage === 'pa' && 'font-gurmukhi',
+                    'relative sikhi-nav-link py-2 rounded-lg font-medium transition-all duration-200',
+                    currentLanguage === 'pa' ? 'font-gurmukhi px-3 text-sm' : 'px-2 lg:px-3 text-xs lg:text-sm',
                     isActive && 'active',
                     isActive && activeStyles[item.activeColor],
                     !isActive && 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800'
                   )}
                 >
                   <span className="flex items-center gap-1.5">
-                    <span className="opacity-70 text-sm">{item.icon}</span>
+                    <span className="opacity-70 text-sm hidden lg:inline">{item.icon}</span>
                     {getLabel(item)}
                     {/* Live indicator for Community */}
                     {isCommunity && (
@@ -233,14 +233,14 @@ export function MainNavigation(_props?: MainNavigationProps) {
               <button
                 onClick={() => setShowExplore(!showExplore)}
                 className={cn(
-                  'sikhi-nav-link px-3 py-2 rounded-lg text-sm font-medium transition-all duration-200 flex items-center gap-1',
-                  currentLanguage === 'pa' && 'font-gurmukhi',
+                  'sikhi-nav-link py-2 rounded-lg font-medium transition-all duration-200 flex items-center gap-1',
+                  currentLanguage === 'pa' ? 'font-gurmukhi px-3 text-sm' : 'px-2 lg:px-3 text-xs lg:text-sm',
                   isExploreSection
                     ? 'bg-purple-50 text-purple-800 dark:bg-purple-900/30 dark:text-purple-300 ring-1 ring-purple-200 dark:ring-purple-800'
                     : 'text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-100 dark:hover:bg-gray-800',
                 )}
               >
-                <span className="opacity-70 text-sm">✨</span>
+                <span className="opacity-70 text-sm hidden lg:inline">✨</span>
                 {currentLanguage === 'pa' ? 'ਹੋਰ' : currentLanguage === 'hi' ? 'और देखें' : 'Explore'}
                 <svg className={cn('w-3.5 h-3.5 transition-transform', showExplore && 'rotate-180')} fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
