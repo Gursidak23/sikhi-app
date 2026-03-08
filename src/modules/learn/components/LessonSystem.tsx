@@ -336,9 +336,9 @@ export default function LessonSystem() {
     return (
       <div className="max-w-2xl mx-auto">
         {/* Stats Bar */}
-        <div className="flex items-center justify-between bg-white dark:bg-neutral-800 rounded-2xl border border-purple-200 dark:border-purple-800 p-4 mb-8 shadow-sm">
-          <div className="flex items-center gap-3">
-            <span className="text-2xl">{level.emoji}</span>
+        <div className="flex items-center justify-between bg-white dark:bg-neutral-800 rounded-2xl border border-purple-200 dark:border-purple-800 p-3 sm:p-4 mb-6 sm:mb-8 shadow-sm">
+          <div className="flex items-center gap-2 sm:gap-3">
+            <span className="text-xl sm:text-2xl">{level.emoji}</span>
             <div>
               <p className={cn('text-sm font-medium text-neutral-900 dark:text-white', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
                 {t(level.title)}
@@ -385,18 +385,18 @@ export default function LessonSystem() {
               const isOdd = idx % 2 === 1;
 
               return (
-                <div key={unit.id} className={cn('flex items-center gap-4', isOdd ? 'flex-row-reverse' : '')}>
+                <div key={unit.id} className={cn('flex items-center gap-3 sm:gap-4', isOdd ? 'flex-row-reverse' : '')}>
                   {/* Info Card */}
-                  <div className={cn('flex-1', isOdd ? 'text-right' : 'text-left')}>
+                  <div className={cn('flex-1 min-w-0', isOdd ? 'text-right' : 'text-left')}>
                     <h3 className={cn(
-                      'text-sm font-semibold',
+                      'text-xs sm:text-sm font-semibold',
                       isCompleted ? 'text-emerald-700 dark:text-emerald-400' : isAvailable ? 'text-purple-900 dark:text-purple-200' : 'text-neutral-400 dark:text-neutral-600',
                       isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari'
                     )}>
                       {t(unit.title)}
                     </h3>
                     <p className={cn(
-                      'text-xs mt-0.5',
+                      'text-[10px] sm:text-xs mt-0.5 line-clamp-2',
                       isCompleted ? 'text-emerald-600 dark:text-emerald-500' : isAvailable ? 'text-neutral-500' : 'text-neutral-400 dark:text-neutral-600',
                       isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari'
                     )}>
@@ -409,7 +409,7 @@ export default function LessonSystem() {
                     onClick={() => isAvailable && startLesson(unit)}
                     disabled={!isAvailable}
                     className={cn(
-                      'relative z-10 w-16 h-16 rounded-full flex items-center justify-center text-2xl font-gurmukhi border-4 transition-all shrink-0',
+                      'relative z-10 w-14 h-14 sm:w-16 sm:h-16 rounded-full flex items-center justify-center text-xl sm:text-2xl font-gurmukhi border-4 transition-all shrink-0',
                       isCompleted
                         ? 'bg-emerald-500 border-emerald-400 text-white shadow-lg shadow-emerald-500/30'
                         : isAvailable

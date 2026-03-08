@@ -243,13 +243,13 @@ export default function LearnPage() {
         {/* Tabs */}
         <section>
           <div className="container-content">
-            <div className="flex flex-wrap justify-center gap-2 mb-8">
+            <div className="flex flex-wrap justify-center gap-1.5 sm:gap-2 mb-6 sm:mb-8">
               {tabs.map((t) => (
                 <button
                   key={t.id}
                   onClick={() => setTab(t.id)}
                   className={cn(
-                    'px-4 py-2.5 rounded-xl text-sm font-medium transition-all min-h-[44px] flex items-center gap-2',
+                    'px-2.5 py-2 sm:px-4 sm:py-2.5 rounded-xl text-xs sm:text-sm font-medium transition-all min-h-[40px] sm:min-h-[44px] flex items-center gap-1.5 sm:gap-2',
                     tab === t.id
                       ? 'bg-purple-600 text-white shadow-lg shadow-purple-500/20'
                       : 'bg-white dark:bg-neutral-800 text-neutral-600 dark:text-neutral-400 hover:bg-purple-50 dark:hover:bg-neutral-700 border border-neutral-200 dark:border-neutral-700'
