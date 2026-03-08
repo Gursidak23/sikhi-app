@@ -7,12 +7,15 @@
 // quizzes, and progress tracking
 // ============================================================================
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
 import type { Language } from '@/types';
+
+const LessonSystem = lazy(() => import('@/modules/learn/components/LessonSystem'));
+const GurbaniGlossary = lazy(() => import('@/modules/learn/components/GurbaniGlossary'));
 
 // Complete Gurmukhi alphabet data
 const CONSONANTS = [
@@ -78,7 +81,7 @@ const NUMBERS = [
   { gurmukhi: '੯', arabic: '9', punjabi: 'ਨੌਂ' },
 ];
 
-type Tab = 'alphabet' | 'vowels' | 'numbers' | 'practice' | 'quiz';
+type Tab = 'lessons' | 'glossary' | 'alphabet' | 'vowels' | 'numbers' | 'practice' | 'quiz';
 
 interface QuizQuestion {
   gurmukhi: string;
@@ -89,7 +92,7 @@ interface QuizQuestion {
 export default function LearnPage() {
   const { language, isPunjabi } = useLanguage();
   const isHindi = language === 'hi';
-  const [tab, setTab] = useState<Tab>('alphabet');
+  const [tab, setTab] = useState<Tab>('lessons');
   const [selectedLetter, setSelectedLetter] = useState<typeof CONSONANTS[0] | null>(null);
   const [practiceInput, setPracticeInput] = useState('');
   const [practiceTarget, setPracticeTarget] = useState<string>('');
@@ -196,6 +199,8 @@ export default function LearnPage() {
   const progress = Math.round((learnedLetters.size / CONSONANTS.length) * 100);
 
   const tabs: { id: Tab; label: { pa: string; en: string; hi?: string }; icon: string }[] = [
+    { id: 'lessons', label: { pa: 'ਸਬਕ', en: 'Lessons', hi: 'सबक' }, icon: '🎓' },
+    { id: 'glossary', label: { pa: 'ਗੁਰਬਾਣੀ ਸ਼ਬਦ', en: 'Gurbani Terms', hi: 'गुरबाणी शब्द' }, icon: '📖' },
     { id: 'alphabet', label: { pa: 'ਅੱਖਰ', en: 'Alphabet', hi: 'अक्षर' }, icon: 'ੳ' },
     { id: 'vowels', label: { pa: 'ਲਗਾਂ ਮਾਤਰਾ', en: 'Vowels', hi: 'स्वर' }, icon: 'ਾ' },
     { id: 'numbers', label: { pa: 'ਅੰਕ', en: 'Numbers', hi: 'अंक' }, icon: '੧' },
@@ -216,7 +221,7 @@ export default function LearnPage() {
               {isPunjabi ? 'ਗੁਰਮੁਖੀ ਸਿੱਖੋ' : isHindi ? 'गुरमुखी सीखें' : 'Learn Gurmukhi'}
             </h1>
             <p className={cn('text-purple-700 dark:text-purple-300 mt-2 text-lg', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
-              {isPunjabi ? 'ਗੁਰੂ ਦੀ ਲਿਪੀ — ਅੱਖਰ, ਲਗਾਂ, ਅੰਕ ਅਤੇ ਅਭਿਆਸ' : isHindi ? 'गुरु की लिपि — अक्षर, स्वर, अंक और अभ्यास' : "The Guru's Script — Letters, Vowels, Numbers & Practice"}
+              {isPunjabi ? 'ਗੁਰੂ ਦੀ ਲਿਪੀ — ਅੱਖਰ, ਸ਼ਬਦ, ਗੁਰਬਾਣੀ ਅਤੇ ਅਭਿਆਸ' : isHindi ? 'गुरु की लिपि — अक्षर, शब्द, गुरबाणी और अभ्यास' : "The Guru's Script — Letters, Words, Gurbani Terms & Practice"}
             </p>
 
             {/* Progress Bar */}
@@ -261,6 +266,20 @@ export default function LearnPage() {
         {/* Content */}
         <section className="pb-16">
           <div className="container-content max-w-6xl">
+            {/* Lessons Tab — Duolingo-style */}
+            {tab === 'lessons' && (
+              <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>}>
+                <LessonSystem />
+              </Suspense>
+            )}
+
+            {/* Gurbani Terms Glossary Tab */}
+            {tab === 'glossary' && (
+              <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>}>
+                <GurbaniGlossary />
+              </Suspense>
+            )}
+
             {/* Alphabet Tab */}
             {tab === 'alphabet' && (
               <div>
