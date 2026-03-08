@@ -196,14 +196,14 @@ export default function GurbaniGlossary() {
             }
           }}
           className={cn(
-            'w-full rounded-2xl border-2 p-8 shadow-lg text-center transition-all min-h-[300px] flex flex-col items-center justify-center cursor-pointer hover:shadow-xl',
+            'w-full rounded-2xl border-2 p-5 sm:p-8 shadow-lg text-center transition-all min-h-[280px] sm:min-h-[300px] flex flex-col items-center justify-center cursor-pointer hover:shadow-xl',
             colors.bg, colors.border
           )}
         >
           {!flashcardFlipped ? (
             <>
-              <div className="text-6xl font-gurmukhi text-neutral-900 dark:text-white mb-4">{term.gurmukhi}</div>
-              <p className="text-xl font-medium text-neutral-700 dark:text-neutral-300">{term.roman}</p>
+              <div className="text-5xl sm:text-6xl font-gurmukhi text-neutral-900 dark:text-white mb-4">{term.gurmukhi}</div>
+              <p className="text-lg sm:text-xl font-medium text-neutral-700 dark:text-neutral-300">{term.roman}</p>
               <p className="text-sm text-neutral-400 mt-4">
                 {isPunjabi ? 'ਅਰਥ ਦੇਖਣ ਲਈ ਟੈਪ ਕਰੋ' : isHindi ? 'अर्थ देखने के लिए टैप करें' : 'Tap to reveal meaning'}
               </p>
@@ -267,8 +267,8 @@ export default function GurbaniGlossary() {
           <p className={cn('text-sm text-purple-600 dark:text-purple-400 mb-4', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
             {isPunjabi ? 'ਇਸ ਸ਼ਬਦ ਦਾ ਅਰਥ ਕੀ ਹੈ?' : isHindi ? 'इस शब्द का अर्थ क्या है?' : 'What does this term mean?'}
           </p>
-          <div className="text-6xl font-gurmukhi text-purple-700 dark:text-purple-300 mb-2">{term.gurmukhi}</div>
-          <p className="text-lg text-neutral-600 dark:text-neutral-400 mb-8">{term.roman}</p>
+          <div className="text-5xl sm:text-6xl font-gurmukhi text-purple-700 dark:text-purple-300 mb-2">{term.gurmukhi}</div>
+          <p className="text-base sm:text-lg text-neutral-600 dark:text-neutral-400 mb-6 sm:mb-8">{term.roman}</p>
           <div className="space-y-3">
             {quizOptions.map(opt => (
               <button
@@ -314,7 +314,7 @@ export default function GurbaniGlossary() {
       </div>
 
       {/* Mode Buttons + Search */}
-      <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-3 mb-6">
+      <div className="max-w-2xl mx-auto flex flex-col sm:flex-row gap-2 sm:gap-3 mb-4 sm:mb-6">
         <div className="relative flex-1">
           <input
             type="text"
@@ -329,21 +329,21 @@ export default function GurbaniGlossary() {
           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-neutral-400">🔍</span>
         </div>
         <div className="flex gap-2">
-          <button onClick={startFlashcards} className="px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap">
+          <button onClick={startFlashcards} className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 transition-colors whitespace-nowrap">
             {isPunjabi ? '📇 ਫਲੈਸ਼ਕਾਰਡ' : isHindi ? '📇 फ्लैशकार्ड' : '📇 Flashcards'}
           </button>
-          <button onClick={startQuiz} className="px-4 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-colors whitespace-nowrap">
+          <button onClick={startQuiz} className="flex-1 sm:flex-none px-4 py-2.5 rounded-xl bg-amber-600 text-white text-sm font-medium hover:bg-amber-700 transition-colors whitespace-nowrap">
             {isPunjabi ? '🎯 ਕੁਇਜ਼' : isHindi ? '🎯 क्विज़' : '🎯 Quiz'}
           </button>
         </div>
       </div>
 
       {/* Category Filters */}
-      <div className="max-w-2xl mx-auto flex flex-wrap gap-2 mb-8">
+      <div className="max-w-2xl mx-auto flex flex-wrap gap-1.5 sm:gap-2 mb-6 sm:mb-8">
         <button
           onClick={() => setActiveCategory('all')}
           className={cn(
-            'px-3 py-1.5 rounded-lg text-sm border transition-all',
+            'px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm border transition-all',
             activeCategory === 'all'
               ? 'bg-purple-600 text-white border-purple-600'
               : 'bg-purple-50 dark:bg-purple-900/20 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800 hover:border-purple-400'
@@ -359,7 +359,7 @@ export default function GurbaniGlossary() {
               key={cat.id}
               onClick={() => setActiveCategory(cat.id)}
               className={cn(
-                'px-3 py-1.5 rounded-lg text-sm border transition-all',
+                'px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-lg text-xs sm:text-sm border transition-all',
                 activeCategory === cat.id ? colors.pillActive : colors.pill
               )}
             >
@@ -397,43 +397,43 @@ export default function GurbaniGlossary() {
                 {/* Header */}
                 <button
                   onClick={() => setExpandedTerm(isExpanded ? null : term.id)}
-                  className="w-full flex items-center gap-4 p-4 text-left"
+                  className="w-full flex items-center gap-3 sm:gap-4 p-3 sm:p-4 text-left"
                 >
-                  <div className="text-3xl font-gurmukhi text-neutral-900 dark:text-white shrink-0 w-16 text-center">
+                  <div className="text-2xl sm:text-3xl font-gurmukhi text-neutral-900 dark:text-white shrink-0 w-auto min-w-[3rem] sm:min-w-[4rem]">
                     {term.gurmukhi}
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-neutral-900 dark:text-white">{term.roman}</span>
+                      <span className="font-medium text-sm sm:text-base text-neutral-900 dark:text-white">{term.roman}</span>
                       {isLearned && <span className="text-xs text-emerald-500">✓</span>}
                     </div>
-                    <p className={cn('text-sm text-neutral-500 dark:text-neutral-400 truncate', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                    <p className={cn('text-xs sm:text-sm text-neutral-500 dark:text-neutral-400 line-clamp-2', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
                       {t(term.meaning)}
                     </p>
                   </div>
-                  <span className={cn('text-neutral-400 text-sm transition-transform', isExpanded && 'rotate-180')}>▼</span>
+                  <span className={cn('text-neutral-400 text-sm transition-transform shrink-0', isExpanded && 'rotate-180')}>▼</span>
                 </button>
 
                 {/* Expanded Content */}
                 {isExpanded && (
                   <div className="px-4 pb-4 border-t border-neutral-200/50 dark:border-neutral-700/50">
                     {/* Deep Meaning */}
-                    <div className="mt-4">
-                      <h4 className={cn('text-xs font-semibold uppercase tracking-wider mb-2', colors.text)}>
+                    <div className="mt-3 sm:mt-4">
+                      <h4 className={cn('text-[10px] sm:text-xs font-semibold uppercase tracking-wider mb-1.5 sm:mb-2', colors.text)}>
                         {isPunjabi ? 'ਡੂੰਘਾ ਅਰਥ' : isHindi ? 'गहरा अर्थ' : 'Deep Meaning'}
                       </h4>
-                      <p className={cn('text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                      <p className={cn('text-xs sm:text-sm text-neutral-700 dark:text-neutral-300 leading-relaxed', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
                         {t(term.deepMeaning)}
                       </p>
                     </div>
 
                     {/* Gurbani Usage */}
                     {term.usage && (
-                      <div className="mt-4 bg-white/60 dark:bg-black/20 rounded-lg p-3">
+                      <div className="mt-3 sm:mt-4 bg-white/60 dark:bg-black/20 rounded-lg p-2.5 sm:p-3">
                         <h4 className={cn('text-xs font-semibold uppercase tracking-wider mb-2', colors.text)}>
                           {isPunjabi ? 'ਗੁਰਬਾਣੀ ਵਿੱਚ' : isHindi ? 'गुरबाणी में' : 'In Gurbani'}
                         </h4>
-                        <p className="text-sm font-gurmukhi text-neutral-900 dark:text-white leading-relaxed mb-1">
+                        <p className="text-xs sm:text-sm font-gurmukhi text-neutral-900 dark:text-white leading-relaxed mb-1">
                           &ldquo;{term.usage.line}&rdquo;
                         </p>
                         <p className={cn('text-xs text-neutral-500', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
