@@ -73,12 +73,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ message }, { status: 201 });
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : '';
-    const status = errorMsg.includes('join') ? 403 : 500;
+    const isForbidden = errorMsg.includes('join');
+    const isModeration = errorMsg.includes('inappropriate') || errorMsg.includes('capital') || errorMsg.includes('repetitive') || errorMsg.includes('rejected');
+    const status = isForbidden ? 403 : isModeration ? 400 : 500;
     if (status === 500) {
       logApiError('POST /api/community/messages', error instanceof Error ? error : new Error(String(error)));
     }
     return NextResponse.json(
-      { error: status === 403 ? 'You must join this room first' : 'Failed to send message' },
+      { error: isForbidden ? 'You must join this room first' : isModeration ? errorMsg : 'Failed to send message' },
       { status }
     );
   }

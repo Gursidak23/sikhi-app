@@ -844,10 +844,16 @@ export async function sendMessage(data: {
     throw new Error('Message cannot be empty after sanitization');
   }
 
-  // Content moderation check
-  const moderation = moderateContent(sanitizedContent);
-  if (!moderation.safe) {
-    throw new Error(moderation.reason || 'Message rejected by content filter');
+  // Content moderation check — only moderate the text portion, not image data URLs
+  const isImageMsg = sanitizedContent.startsWith('[IMG]') && sanitizedContent.includes('[/IMG]');
+  const textToModerate = isImageMsg
+    ? sanitizedContent.slice(sanitizedContent.indexOf('[/IMG]') + 6)
+    : sanitizedContent;
+  if (textToModerate.trim()) {
+    const moderation = moderateContent(textToModerate);
+    if (!moderation.safe) {
+      throw new Error(moderation.reason || 'Message rejected by content filter');
+    }
   }
 
   const expiresAt = new Date(Date.now() + MESSAGE_LIFETIME_HOURS * 60 * 60 * 1000);
@@ -1194,10 +1200,16 @@ export async function editMessage(messageId: string, userId: string, newContent:
   const sanitized = sanitizeContent(newContent);
   if (!sanitized) throw new Error('Message cannot be empty after sanitization');
 
-  // Content moderation check
-  const moderation = moderateContent(sanitized);
-  if (!moderation.safe) {
-    throw new Error(moderation.reason || 'Message rejected by content filter');
+  // Content moderation check — only moderate text, not image data URLs
+  const isImgEdit = sanitized.startsWith('[IMG]') && sanitized.includes('[/IMG]');
+  const editTextToModerate = isImgEdit
+    ? sanitized.slice(sanitized.indexOf('[/IMG]') + 6)
+    : sanitized;
+  if (editTextToModerate.trim()) {
+    const moderation = moderateContent(editTextToModerate);
+    if (!moderation.safe) {
+      throw new Error(moderation.reason || 'Message rejected by content filter');
+    }
   }
 
   const updated = await prisma.chatMessage.update({
