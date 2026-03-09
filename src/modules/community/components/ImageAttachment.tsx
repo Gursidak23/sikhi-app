@@ -76,6 +76,21 @@ export function compressImage(file: File | Blob): Promise<string> {
         dataUrl = canvas.toDataURL('image/jpeg', QUALITY);
       }
 
+      // Re-compress at lower quality if the output is still too large for the API (150KB limit)
+      const MAX_DATA_URL_LENGTH = 140_000; // Leave room for markers and caption
+      if (dataUrl.length > MAX_DATA_URL_LENGTH) {
+        const lowerQuality = 0.3;
+        dataUrl = canvas.toDataURL('image/webp', lowerQuality);
+        if (!dataUrl.startsWith('data:image/webp')) {
+          dataUrl = canvas.toDataURL('image/jpeg', lowerQuality);
+        }
+      }
+
+      if (dataUrl.length > MAX_DATA_URL_LENGTH) {
+        reject(new Error('Image is too large even after compression'));
+        return;
+      }
+
       resolve(dataUrl);
     };
 
@@ -113,7 +128,7 @@ export function ImageAttachment({ language, onImageReady, onCancel }: ImageAttac
     }
 
     // Validate it's actually an image
-    if (file instanceof File && !file.type.startsWith('image/')) {
+    if (file.type && !file.type.startsWith('image/')) {
       setError(isPunjabi ? 'ਸਿਰਫ਼ ਤਸਵੀਰਾਂ ਭੇਜ ਸਕਦੇ ਹੋ' : isHindi ? 'सिर्फ़ तस्वीरें भेज सकते हैं' : 'Only images are allowed');
       return;
     }
@@ -122,8 +137,13 @@ export function ImageAttachment({ language, onImageReady, onCancel }: ImageAttac
     try {
       const dataUrl = await compressImage(file);
       setPreview(dataUrl);
-    } catch {
-      setError(isPunjabi ? 'ਤਸਵੀਰ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ' : isHindi ? 'तस्वीर लोड नहीं हो सकी' : 'Failed to load image');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : '';
+      if (msg.includes('too large')) {
+        setError(isPunjabi ? 'ਤਸਵੀਰ ਬਹੁਤ ਵੱਡੀ ਹੈ' : isHindi ? 'तस्वीर बहुत बड़ी है' : 'Image is too large even after compression');
+      } else {
+        setError(isPunjabi ? 'ਤਸਵੀਰ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕੀ' : isHindi ? 'तस्वीर लोड नहीं हो सकी' : 'Failed to load image');
+      }
     } finally {
       setIsCompressing(false);
     }

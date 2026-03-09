@@ -119,8 +119,14 @@ export function useChatMessages() {
       }
 
       if (!res.ok) {
-        const data = await res.json();
-        throw new Error(data.error || 'Failed to send message');
+        let errorMsg = 'Failed to send message';
+        try {
+          const data = await res.json();
+          errorMsg = data.error || errorMsg;
+        } catch {
+          if (res.status === 413) errorMsg = 'Message is too large';
+        }
+        throw new Error(errorMsg);
       }
 
       const { message } = await res.json();
