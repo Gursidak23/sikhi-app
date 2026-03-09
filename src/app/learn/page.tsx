@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
+import { FocusTrap } from '@/components/common/FocusTrap';
 import type { Language } from '@/types';
 
 const LessonSystem = lazy(() => import('@/modules/learn/components/LessonSystem'));
@@ -260,6 +261,7 @@ export default function LearnPage() {
                 {/* Letter Detail Modal */}
                 {selectedLetter && (
                   <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedLetter(null)}>
+                    <FocusTrap onEscape={() => setSelectedLetter(null)}>
                     <div className="bg-white dark:bg-neutral-800 rounded-2xl max-w-md w-full p-8 shadow-2xl" onClick={(e) => e.stopPropagation()}>
                       <div className="text-center">
                         <div className="text-8xl font-gurmukhi text-purple-600 dark:text-purple-400 mb-4">
@@ -286,6 +288,7 @@ export default function LearnPage() {
                         </div>
                       </div>
                     </div>
+                    </FocusTrap>
                   </div>
                 )}
 

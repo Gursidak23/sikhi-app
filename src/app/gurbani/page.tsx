@@ -14,6 +14,7 @@ import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { useLanguage } from '@/components/common/LanguageProvider';
 import { GurbaniDisclaimer } from '@/components/common/Disclaimer';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
+import { FocusTrap } from '@/components/common/FocusTrap';
 import { ReadingProgress } from '@/components/common/ReadingProgress';
 import { PageTurnWrapper } from '@/components/common/PageTurnWrapper';
 import { AngNavigator, RaagNavigator, QuickJump, AngSearch } from '@/modules/gurbani/components/AngNavigator';
@@ -234,6 +235,7 @@ export default function GurbaniPage() {
       {/* Maryada Disclaimer - Must be acknowledged */}
       {!hasAcknowledged && (
         <div className="fixed inset-0 z-50 bg-neutral-900/50 flex items-center justify-center p-4">
+          <FocusTrap>
           <div className="bg-white rounded-xl max-w-2xl w-full p-6 shadow-xl">
             <div className="text-center mb-6">
               <span className="text-4xl font-gurmukhi text-neela-700">ੴ</span>
@@ -248,6 +250,7 @@ export default function GurbaniPage() {
               onAcknowledge={handleAcknowledge}
             />
           </div>
+          </FocusTrap>
         </div>
       )}
 
