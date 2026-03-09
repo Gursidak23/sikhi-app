@@ -9,6 +9,7 @@
 
 import { createContext, useContext, useEffect, useState, useCallback, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { FocusTrap } from './FocusTrap';
 
 export interface Bookmark {
   id: string;
@@ -318,6 +319,7 @@ export function BookmarksPanel({ isOpen, onClose, language = 'en' }: BookmarksPa
       aria-modal="true"
       aria-label="Bookmarks"
     >
+      <FocusTrap onEscape={onClose}>
       <div 
         ref={panelRef}
         className="w-full max-w-lg max-h-[90vh] overflow-hidden bg-white dark:bg-neutral-900 rounded-2xl shadow-2xl animate-in fade-in zoom-in-95 duration-200 mt-16 sm:mt-0"
@@ -427,6 +429,7 @@ export function BookmarksPanel({ isOpen, onClose, language = 'en' }: BookmarksPa
           )}
         </div>
       </div>
+      </FocusTrap>
     </div>
   );
 

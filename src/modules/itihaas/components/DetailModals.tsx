@@ -9,6 +9,7 @@
 
 import { useState, useEffect } from 'react';
 import { cn } from '@/lib/utils';
+import { FocusTrap } from '@/components/common/FocusTrap';
 import type { Language } from '@/types';
 import type { GuruDetail } from '../data/guru-sahibaan-details';
 import { GURU_SAHIBAAN_DETAILS } from '../data/guru-sahibaan-details';
@@ -64,6 +65,7 @@ export function GuruDetailModal({ guruId, language, onClose }: GuruDetailModalPr
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
+      <FocusTrap onEscape={onClose}>
       <div className="relative w-full max-w-4xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
         {/* Header with Gradient */}
         <div className="relative bg-gradient-to-r from-kesri-500 to-kesri-600 text-white p-6 pb-16">
@@ -354,6 +356,7 @@ export function GuruDetailModal({ guruId, language, onClose }: GuruDetailModalPr
           )}
         </div>
       </div>
+      </FocusTrap>
     </div>
   );
 }
@@ -473,6 +476,7 @@ export function EventDetailModal({ event, language, onClose }: EventDetailModalP
       className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm animate-fade-in"
       onClick={(e) => e.target === e.currentTarget && onClose()}
     >
+      <FocusTrap onEscape={onClose}>
       <div className="relative w-full max-w-2xl max-h-[90vh] bg-white rounded-2xl shadow-2xl overflow-hidden animate-scale-in">
         {/* Header */}
         <div className="relative bg-gradient-to-r from-neela-600 to-neela-700 text-white p-6">
@@ -612,6 +616,7 @@ export function EventDetailModal({ event, language, onClose }: EventDetailModalP
           <SourcesSection sources={event.sources} isPunjabi={isPunjabi} />
         </div>
       </div>
+      </FocusTrap>
     </div>
   );
 }

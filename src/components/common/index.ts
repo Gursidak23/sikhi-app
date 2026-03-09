@@ -21,14 +21,6 @@ export {
   useToast,
 } from './Toast';
 
-// Scroll utilities
-export {
-  ScrollToTop,
-  ReadingProgress,
-  useKeyboardShortcuts,
-  KeyboardShortcutsModal,
-} from './ScrollUtilities';
-
 // Share functionality
 export {
   ShareButton,

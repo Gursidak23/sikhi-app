@@ -12,6 +12,7 @@ import { cn } from '@/lib/utils';
 import { MainNavigation, Footer } from '@/components/layout/Navigation';
 import { useLanguage } from '@/components/common/LanguageProvider';
 import { ScrollToTop } from '@/components/common/ScrollToTop';
+import { FocusTrap } from '@/components/common/FocusTrap';
 import { NanakshahiCalendarFull, gregorianToNanakshahi, NANAKSHAHI_MONTHS, GREGORIAN_MONTH_NAMES } from '@/components/common/NanakshahiCalendar';
 import type { Language } from '@/types';
 
@@ -313,6 +314,7 @@ export default function CalendarPage() {
         {/* Event Detail Modal */}
         {selectedEvent && (
           <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm" onClick={() => setSelectedEvent(null)}>
+            <FocusTrap onEscape={() => setSelectedEvent(null)}>
             <div className="bg-white dark:bg-neutral-900 rounded-2xl max-w-lg w-full max-h-[80vh] overflow-y-auto shadow-2xl" onClick={(e) => e.stopPropagation()}>
               <div className={cn('p-6 bg-gradient-to-r text-white', selectedEvent.color)}>
                 <div className="flex items-center justify-between">
@@ -346,6 +348,7 @@ export default function CalendarPage() {
                 </p>
               </div>
             </div>
+            </FocusTrap>
           </div>
         )}
       </main>
