@@ -6,7 +6,6 @@ import { ThemeProvider } from '@/components/common/ThemeProvider';
 import { BookmarkProvider } from '@/components/common/BookmarkSystem';
 import { FontSizeProvider } from '@/components/common/FontSizeControls';
 import { ServiceWorkerRegistrar } from '@/components/common/ServiceWorkerRegistrar';
-import { AmritVelaProvider } from '@/components/common/AmritVelaMode';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { LanguageProvider } from '@/components/common/LanguageProvider';
 
@@ -125,7 +124,6 @@ export default function RootLayout({
         <ErrorBoundary>
           <LanguageProvider>
             <ThemeProvider>
-              <AmritVelaProvider>
                 <BookmarkProvider>
                   <FontSizeProvider>
                     <SkipLink />
@@ -133,7 +131,6 @@ export default function RootLayout({
                     {children}
                   </FontSizeProvider>
                 </BookmarkProvider>
-              </AmritVelaProvider>
             </ThemeProvider>
           </LanguageProvider>
         </ErrorBoundary>

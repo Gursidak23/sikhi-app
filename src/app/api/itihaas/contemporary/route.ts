@@ -3,7 +3,7 @@ import { getContemporaryEvents } from '@/lib/api/history-handlers';
 import { rateLimit, getClientIdentifier, rateLimitHeaders } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
 
-export const revalidate = 1800; // ISR: revalidate every 30 min (contemporary content changes more)
+export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/itihaas/contemporary

@@ -37,15 +37,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
   // Apply theme to <html>
   useEffect(() => {
     if (!mounted) return;
-    const isAmritVela = document.documentElement.classList.contains('amrit-vela');
-    // Amrit Vela overrides everything to dark — but still allow toggle to store preference
-    if (isAmritVela) {
-      document.documentElement.classList.add('dark');
-      document.documentElement.classList.remove('light');
-      document.documentElement.setAttribute('data-theme', 'dark');
-      setResolvedTheme('dark');
-      return;
-    }
 
     let resolved: 'light' | 'dark' = 'light';
     if (theme === 'system') {
@@ -85,21 +76,6 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     mq.addEventListener('change', handler);
     return () => mq.removeEventListener('change', handler);
   }, [mounted, theme]);
-
-  // Re-apply theme when Amrit Vela mode changes
-  useEffect(() => {
-    if (!mounted) return;
-    const handler = () => {
-      // Force re-apply by reading theme and toggling a re-render
-      const saved = localStorage.getItem('sikhi-theme') as Theme | null;
-      const newTheme = saved === 'dark' || saved === 'light' || saved === 'system' ? saved : 'light';
-      // Always force a state update to re-trigger the apply effect
-      setThemeState('__reset' as Theme);
-      setTimeout(() => setThemeState(newTheme), 0);
-    };
-    window.addEventListener('amritvela-change', handler);
-    return () => window.removeEventListener('amritvela-change', handler);
-  }, [mounted]);
 
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
