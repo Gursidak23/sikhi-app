@@ -86,6 +86,7 @@ export function ChatView({ language }: ChatViewProps) {
   const [menuPos, setMenuPos] = useState<{ top: number; right: number } | null>(null);
   const [hydrated, setHydrated] = useState(false);
   const typingTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const highlightTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // New panel states
   const [showSearch, setShowSearch] = useState(false);
@@ -144,7 +145,8 @@ export function ChatView({ language }: ChatViewProps) {
     if (el) {
       el.scrollIntoView({ behavior: 'smooth', block: 'center' });
       el.classList.add('ring-2', 'ring-amber-400', 'ring-offset-2', 'dark:ring-offset-gray-900');
-      setTimeout(() => {
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
+      highlightTimerRef.current = setTimeout(() => {
         el.classList.remove('ring-2', 'ring-amber-400', 'ring-offset-2', 'dark:ring-offset-gray-900');
       }, 2000);
     }
@@ -157,6 +159,7 @@ export function ChatView({ language }: ChatViewProps) {
   useEffect(() => {
     return () => {
       if (typingTimerRef.current) clearTimeout(typingTimerRef.current);
+      if (highlightTimerRef.current) clearTimeout(highlightTimerRef.current);
     };
   }, []);
 

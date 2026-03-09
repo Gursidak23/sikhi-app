@@ -14,7 +14,7 @@ export async function GET(request: NextRequest) {
   try {
     // Rate limiting
     const clientId = getClientIdentifier(request);
-    const rateLimitResult = rateLimit(clientId, { limit: 30, windowSeconds: 60 });
+    const rateLimitResult = rateLimit(`gurbani-search:${clientId}`, { limit: 30, windowSeconds: 60 });
     
     if (!rateLimitResult.success) {
       return NextResponse.json(
