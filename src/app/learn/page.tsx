@@ -82,7 +82,7 @@ const NUMBERS = [
   { gurmukhi: '੯', arabic: '9', punjabi: 'ਨੌਂ' },
 ];
 
-type Tab = 'lessons' | 'glossary' | 'alphabet' | 'vowels' | 'numbers' | 'practice' | 'tracing' | 'quiz';
+type Tab = 'lessons' | 'glossary' | 'alphabet' | 'vowels' | 'numbers' | 'tracing' | 'quiz';
 
 interface QuizQuestion {
   gurmukhi: string;
@@ -95,9 +95,6 @@ export default function LearnPage() {
   const isHindi = language === 'hi';
   const [tab, setTab] = useState<Tab>('lessons');
   const [selectedLetter, setSelectedLetter] = useState<typeof CONSONANTS[0] | null>(null);
-  const [practiceInput, setPracticeInput] = useState('');
-  const [practiceTarget, setPracticeTarget] = useState<string>('');
-  const [streak, setStreak] = useState(0);
   const [quizQuestions, setQuizQuestions] = useState<QuizQuestion[]>([]);
   const [quizIndex, setQuizIndex] = useState(0);
   const [quizScore, setQuizScore] = useState(0);
@@ -129,30 +126,6 @@ export default function LearnPage() {
       next.add(letter);
       return next;
     });
-  };
-
-  // Practice mode - random letter matching
-  const generatePracticeTarget = useCallback(() => {
-    const allLetters = CONSONANTS.map(c => c.gurmukhi);
-    const target = allLetters[Math.floor(Math.random() * allLetters.length)];
-    setPracticeTarget(target);
-    setPracticeInput('');
-  }, []);
-
-  useEffect(() => {
-    if (tab === 'practice' && !practiceTarget) {
-      generatePracticeTarget();
-    }
-  }, [tab, practiceTarget, generatePracticeTarget]);
-
-  const checkPractice = () => {
-    if (practiceInput === practiceTarget) {
-      setStreak(prev => prev + 1);
-      markLearned(practiceTarget);
-      generatePracticeTarget();
-    } else {
-      setStreak(0);
-    }
   };
 
   // Quiz mode
@@ -205,8 +178,7 @@ export default function LearnPage() {
     { id: 'alphabet', label: { pa: 'ਅੱਖਰ', en: 'Alphabet', hi: 'अक्षर' }, icon: 'ੳ' },
     { id: 'vowels', label: { pa: 'ਲਗਾਂ ਮਾਤਰਾ', en: 'Vowels', hi: 'स्वर' }, icon: 'ਾ' },
     { id: 'numbers', label: { pa: 'ਅੰਕ', en: 'Numbers', hi: 'अंक' }, icon: '੧' },
-    { id: 'practice', label: { pa: 'ਅਭਿਆਸ', en: 'Practice', hi: 'अभ्यास' }, icon: '✍️' },
-    { id: 'tracing', label: { pa: 'ਅੱਖਰ ਲਿਖੋ', en: 'Trace', hi: 'अक्षर लिखें' }, icon: '👆' },
+    { id: 'tracing', label: { pa: 'ਅੱਖਰ ਲਿਖੋ', en: 'Trace', hi: 'अक्षर लिखें' }, icon: '✍️' },
     { id: 'quiz', label: { pa: 'ਕੁਇਜ਼', en: 'Quiz', hi: 'क्विज़' }, icon: '🎯' },
   ];
 
@@ -369,43 +341,6 @@ export default function LearnPage() {
                     <p className="text-xs font-gurmukhi text-amber-600 dark:text-amber-400">{num.punjabi}</p>
                   </div>
                 ))}
-              </div>
-            )}
-
-            {/* Practice Tab */}
-            {tab === 'practice' && (
-              <div className="max-w-lg mx-auto text-center">
-                <div className="bg-white dark:bg-neutral-800 rounded-2xl border border-purple-200 dark:border-purple-800 p-8 shadow-lg">
-                  <p className={cn('text-sm text-purple-600 dark:text-purple-400 mb-4', isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
-                    {isPunjabi ? 'ਇਹ ਅੱਖਰ ਟਾਈਪ ਕਰੋ:' : isHindi ? 'यह अक्षर टाइप करें:' : 'Type this letter:'}
-                  </p>
-                  <div className="text-8xl font-gurmukhi text-purple-700 dark:text-purple-300 mb-6">
-                    {practiceTarget}
-                  </div>
-                  <div className="text-sm text-neutral-500 mb-4">
-                    {CONSONANTS.find(c => c.gurmukhi === practiceTarget)?.roman || ''}
-                  </div>
-                  <input
-                    type="text"
-                    value={practiceInput}
-                    onChange={(e) => setPracticeInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && checkPractice()}
-                    className="w-32 text-center text-4xl font-gurmukhi px-4 py-3 border-2 border-purple-300 dark:border-purple-700 rounded-xl bg-purple-50 dark:bg-purple-900/20 focus:ring-2 focus:ring-purple-500 outline-none"
-                    autoFocus
-                    lang="pa"
-                  />
-                  <div className="flex gap-3 justify-center mt-6">
-                    <button onClick={checkPractice} className="px-6 py-3 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors">
-                      {isPunjabi ? 'ਚੈੱਕ ਕਰੋ' : isHindi ? 'जाँचें' : 'Check'}
-                    </button>
-                    <button onClick={generatePracticeTarget} className="px-6 py-3 bg-neutral-200 dark:bg-neutral-700 rounded-xl hover:bg-neutral-300 dark:hover:bg-neutral-600 transition-colors">
-                      {isPunjabi ? 'ਅਗਲਾ' : isHindi ? 'अगला' : 'Skip'}
-                    </button>
-                  </div>
-                  <div className="mt-6 text-lg">
-                    🔥 {isPunjabi ? 'ਲੜੀ' : isHindi ? 'लड़ी' : 'Streak'}: <span className="font-bold text-purple-600">{streak}</span>
-                  </div>
-                </div>
               </div>
             )}
 
