@@ -98,9 +98,7 @@ export function FontSizeProvider({ children }: { children: React.ReactNode }) {
     return FONT_SIZE_VALUES[fontSize];
   }, [fontSize]);
 
-  if (!mounted) {
-    return null;
-  }
+  // Always render children — don't return null to avoid white flash on mobile
 
   return (
     <FontSizeContext.Provider

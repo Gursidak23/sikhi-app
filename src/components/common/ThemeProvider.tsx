@@ -93,10 +93,8 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     setTheme(next);
   };
 
-  // Prevent flash of wrong theme
-  if (!mounted) {
-    return null;
-  }
+  // Render children immediately — use suppressHydrationWarning on html to avoid flash
+  // The inline script in layout.tsx sets the correct theme class before React hydrates
 
   return (
     <ThemeContext.Provider value={{ theme, resolvedTheme, setTheme, toggleTheme }}>

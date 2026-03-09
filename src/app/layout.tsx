@@ -107,15 +107,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="pa" dir="ltr" className={`${inter.variable} ${notoSansGurmukhi.variable} ${notoSansDevanagari.variable}`}>
+    <html lang="pa" dir="ltr" suppressHydrationWarning className={`${inter.variable} ${notoSansGurmukhi.variable} ${notoSansDevanagari.variable}`}>
       <head>
+        {/* Inline script to set theme BEFORE React hydrates — prevents flash */}
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `(function(){try{var t=localStorage.getItem('sikhi-theme');if(t==='dark'||(t==='system'&&matchMedia('(prefers-color-scheme:dark)').matches)){document.documentElement.classList.add('dark');document.documentElement.setAttribute('data-theme','dark')}else{document.documentElement.classList.add('light');document.documentElement.setAttribute('data-theme','light')}}catch(e){}})()`,
+          }}
+        />
         {/* Apple Touch Icon */}
         <link rel="apple-touch-icon" href="/icons/icon-192x192.svg" />
         {/* Favicon - Ik Onkar Symbol */}
         <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
         <link rel="icon" href="/favicon.svg" sizes="any" />
       </head>
-      <body className="min-h-screen bg-neutral-50 antialiased font-sans transition-colors">
+        <body className="min-h-screen bg-neutral-50 antialiased font-sans">
         <ErrorBoundary>
           <LanguageProvider>
             <ThemeProvider>
