@@ -194,6 +194,16 @@ export async function verifySessionToken(userId: string, rawToken: string): Prom
  * and control characters. Much safer than a single regex strip.
  */
 function sanitizeContent(input: string): string {
+  // Preserve image data URLs — only sanitize the caption text
+  const imgMatch = input.match(/^(\[IMG\])(data:image\/[a-zA-Z+]+;base64,[A-Za-z0-9+/=]+)(\[\/IMG\])([\s\S]*)$/);
+  if (imgMatch) {
+    const [, open, dataUrl, close, caption] = imgMatch;
+    return open + dataUrl + close + sanitizeText(caption);
+  }
+  return sanitizeText(input);
+}
+
+function sanitizeText(input: string): string {
   let text = input;
 
   // 1. Remove HTML comments
