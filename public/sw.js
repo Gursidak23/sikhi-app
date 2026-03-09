@@ -75,6 +75,12 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
+  // Handle navigation requests (HTML pages) — network first to prevent hydration mismatch
+  if (request.mode === 'navigate') {
+    event.respondWith(handleNavigationRequest(request));
+    return;
+  }
+
   // Handle static assets
   event.respondWith(handleStaticRequest(request));
 });
@@ -167,6 +173,25 @@ async function handleBaniDBRequest(request) {
       JSON.stringify({ error: 'Offline' }),
       { status: 503, headers: { 'Content-Type': 'application/json' } }
     );
+  }
+}
+
+// Handle navigation requests (HTML pages) — network first to avoid stale HTML hydration mismatch
+async function handleNavigationRequest(request) {
+  try {
+    const networkResponse = await fetch(request);
+    if (networkResponse.ok) {
+      const cache = await caches.open(STATIC_CACHE);
+      cache.put(request, networkResponse.clone());
+    }
+    return networkResponse;
+  } catch {
+    // Network failed — fall back to cached page or offline page
+    const cachedResponse = await caches.match(request);
+    if (cachedResponse) return cachedResponse;
+    // Try the cached home page as a fallback for SPA routing
+    const fallback = await caches.match('/');
+    return fallback || new Response('Offline', { status: 503 });
   }
 }
 

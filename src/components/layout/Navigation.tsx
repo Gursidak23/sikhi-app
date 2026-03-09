@@ -41,10 +41,10 @@ export function MainNavigation(_props?: MainNavigationProps) {
   // Calculate Nanakshahi date
   const nanakshahiDate = useMemo(() => gregorianToNanakshahi(new Date()), []);
 
-  // Set up portal root on mount
+  // Set up portal root on mount — use ref-based check to avoid extra re-render
   useEffect(() => {
-    setPortalRoot(document.body);
-  }, []);
+    if (!portalRoot) setPortalRoot(document.body);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Close calendar on ESC key and click-outside
   const closeCalendar = useCallback(() => setShowCalendar(false), []);
@@ -70,15 +70,15 @@ export function MainNavigation(_props?: MainNavigationProps) {
 
     document.addEventListener('keydown', handleKeyDown);
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('touchstart', handleClickOutside);
+    document.addEventListener('touchstart', handleClickOutside, { passive: true });
     // Prevent body scroll when calendar is open
-    document.body.style.overflow = 'hidden';
+    document.documentElement.classList.add('overflow-hidden');
 
     return () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.removeEventListener('mousedown', handleClickOutside);
       document.removeEventListener('touchstart', handleClickOutside);
-      document.body.style.overflow = '';
+      document.documentElement.classList.remove('overflow-hidden');
     };
   }, [showCalendar, closeCalendar]);
 

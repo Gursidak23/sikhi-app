@@ -195,9 +195,11 @@ export async function verifySessionToken(userId: string, rawToken: string): Prom
  */
 function sanitizeContent(input: string): string {
   // Preserve image data URLs — only sanitize the caption text
-  const imgMatch = input.match(/^(\[IMG\])(data:image\/[a-zA-Z+]+;base64,[A-Za-z0-9+/=]+)(\[\/IMG\])([\s\S]*)$/);
+  const imgMatch = input.match(/^(\[IMG\])(data:image\/[a-zA-Z+]+;base64,[A-Za-z0-9+/=\s]+)(\[\/IMG\])([\s\S]*)$/);
   if (imgMatch) {
-    const [, open, dataUrl, close, caption] = imgMatch;
+    const [, open, rawDataUrl, close, caption] = imgMatch;
+    // Strip any whitespace that browsers may inject into base64
+    const dataUrl = rawDataUrl.replace(/\s/g, '');
     return open + dataUrl + close + sanitizeText(caption);
   }
   return sanitizeText(input);

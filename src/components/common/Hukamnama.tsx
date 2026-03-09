@@ -107,15 +107,11 @@ export function Hukamnama({
       }
     } catch (err) {
       console.error('Hukamnama error:', err);
-      setError(language === 'pa' 
-        ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' 
-        : language === 'hi'
-        ? 'हुकमनामा लोड नहीं हो सका'
-        : 'Could not load Hukamnama');
+      setError('Could not load Hukamnama');
     } finally {
       setLoading(false);
     }
-  }, [language]);
+  }, []);
 
   useEffect(() => {
     fetchHukamnama();
@@ -379,14 +375,14 @@ export function HukamnamaSection({ language = 'pa' }: { language?: Language }) {
         }
       } catch (err) {
         console.error('Hukamnama error:', err);
-setError(language === 'pa' ? 'ਹੁਕਮਨਾਮਾ ਲੋਡ ਨਹੀਂ ਹੋ ਸਕਿਆ' : language === 'hi' ? 'हुकमनामा लोड नहीं हो सका' : 'Could not load Hukamnama');
+        setError('Could not load Hukamnama');
     } finally {
       setLoading(false);
     }
   }
   
   fetchHukamnama();
-}, [language]);
+}, []); // eslint-disable-line react-hooks/exhaustive-deps
 
 const isPunjabiSection = language === 'pa';
 const isHindiSection = language === 'hi';
