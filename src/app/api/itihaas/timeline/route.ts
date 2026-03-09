@@ -3,7 +3,7 @@ import { getTimeline } from '@/lib/api/history-handlers';
 import { rateLimit, getClientIdentifier, rateLimitHeaders } from '@/lib/rate-limit';
 import { logApiError } from '@/lib/error-tracking';
 
-export const revalidate = 3600; // ISR: revalidate every hour
+export const dynamic = 'force-dynamic';
 
 /**
  * GET /api/itihaas/timeline
