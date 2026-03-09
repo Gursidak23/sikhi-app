@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
 
     if (raagId) {
       // Validate raagId format
-      if (raagId.length > 100) {
+      if (!raagId.trim() || raagId.length > 100) {
         return NextResponse.json({ error: 'Invalid raag ID' }, { status: 400 });
       }
       const raag = await getShabadsByRaag(raagId);

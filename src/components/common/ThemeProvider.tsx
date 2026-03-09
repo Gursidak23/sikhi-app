@@ -83,6 +83,21 @@ export function ThemeProvider({ children }: { children: React.ReactNode }) {
     return () => mq.removeEventListener('change', handler);
   }, [mounted, theme]);
 
+  // Re-apply theme when Amrit Vela mode changes
+  useEffect(() => {
+    if (!mounted) return;
+    const handler = () => {
+      // Re-trigger the theme effect by toggling mounted state
+      setThemeState((prev) => {
+        // Force re-apply by reading from localStorage
+        const saved = localStorage.getItem('sikhi-theme') as Theme | null;
+        return saved === 'dark' || saved === 'light' || saved === 'system' ? saved : prev;
+      });
+    };
+    window.addEventListener('amritvela-change', handler);
+    return () => window.removeEventListener('amritvela-change', handler);
+  }, [mounted]);
+
   const setTheme = (newTheme: Theme) => {
     setThemeState(newTheme);
     localStorage.setItem('sikhi-theme', newTheme);

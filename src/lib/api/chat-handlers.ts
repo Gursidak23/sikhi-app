@@ -15,7 +15,7 @@
  */
 
 import { prisma } from '@/lib/db/prisma';
-import { randomBytes, createHash } from 'crypto';
+import { randomBytes, createHash, timingSafeEqual } from 'crypto';
 import { cacheGet, cacheSet, cacheDel, CACHE_KEYS, CACHE_TTL } from '@/lib/db/redis';
 
 /** Default message lifetime in hours */
@@ -161,10 +161,17 @@ function sessionCacheGet(userId: string): string | null {
 export async function verifySessionToken(userId: string, rawToken: string): Promise<boolean> {
   const hashed = hashToken(rawToken);
 
+  function safeCompare(a: string, b: string): boolean {
+    const bufA = Buffer.from(a, 'utf8');
+    const bufB = Buffer.from(b, 'utf8');
+    if (bufA.length !== bufB.length) return false;
+    return timingSafeEqual(bufA, bufB);
+  }
+
   // Fast path: check in-memory cache
   const cached = sessionCacheGet(userId);
   if (cached) {
-    return cached === hashed;
+    return safeCompare(cached, hashed);
   }
 
   // Slow path: check DB (survives cold starts)
@@ -176,7 +183,7 @@ export async function verifySessionToken(userId: string, rawToken: string): Prom
     if (user?.sessionTokenHash) {
       // Populate cache for next time
       sessionCacheSet(userId, user.sessionTokenHash);
-      return user.sessionTokenHash === hashed;
+      return safeCompare(user.sessionTokenHash, hashed);
     }
   } catch {
     // DB error — deny
@@ -904,31 +911,35 @@ export async function getMessages(roomId: string, cursor?: string, limit = 50) {
   // Paginated (cursor) requests bypass cache — only first page is cached
   if (cursor) {
     const cursorMsg = await prisma.chatMessage.findUnique({ where: { id: cursor } });
-    if (cursorMsg) {
-      const msgs = await prisma.chatMessage.findMany({
-        where: {
-          ...baseWhere,
-          createdAt: { lt: cursorMsg.createdAt },
-        },
-        orderBy: { createdAt: 'desc' },
-        take: safeLimit,
-        include: {
-          user: { select: SAFE_USER_SELECT },
-          replyTo: { include: { user: { select: SAFE_USER_SELECT } } },
-          savedBy: { select: { id: true } },
-          reactions: { select: { emoji: true, userId: true } },
-        },
-      });
-
-      const sorted = msgs.reverse();
-      const hasMore = msgs.length === safeLimit;
-
-      return {
-        messages: sorted.map((m) => messageToResponse(m)),
-        nextCursor: hasMore ? sorted[0]?.id : undefined,
-        hasMore,
-      };
+    if (!cursorMsg) {
+      // Invalid cursor — return empty page instead of silently falling through
+      return { messages: [], nextCursor: undefined, hasMore: false };
     }
+
+    const msgs = await prisma.chatMessage.findMany({
+      where: {
+        ...baseWhere,
+        createdAt: { lt: cursorMsg.createdAt },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: safeLimit + 1,
+      include: {
+        user: { select: SAFE_USER_SELECT },
+        replyTo: { include: { user: { select: SAFE_USER_SELECT } } },
+        savedBy: { select: { id: true } },
+        reactions: { select: { emoji: true, userId: true } },
+      },
+    });
+
+    const hasMore = msgs.length > safeLimit;
+    const display = hasMore ? msgs.slice(0, safeLimit) : msgs;
+    const sorted = display.reverse();
+
+    return {
+      messages: sorted.map((m) => messageToResponse(m)),
+      nextCursor: hasMore ? sorted[0]?.id : undefined,
+      hasMore,
+    };
   }
 
   // First page: try cache
@@ -940,7 +951,7 @@ export async function getMessages(roomId: string, cursor?: string, limit = 50) {
   const msgs = await prisma.chatMessage.findMany({
     where: baseWhere,
     orderBy: { createdAt: 'desc' },
-    take: safeLimit,
+    take: safeLimit + 1,
     include: {
       user: { select: SAFE_USER_SELECT },
       replyTo: { include: { user: { select: SAFE_USER_SELECT } } },
@@ -949,8 +960,9 @@ export async function getMessages(roomId: string, cursor?: string, limit = 50) {
     },
   });
 
-  const sorted = msgs.reverse();
-  const hasMore = msgs.length === safeLimit;
+  const hasMore = msgs.length > safeLimit;
+  const display = hasMore ? msgs.slice(0, safeLimit) : msgs;
+  const sorted = display.reverse();
 
   const result = {
     messages: sorted.map((m) => messageToResponse(m)),
