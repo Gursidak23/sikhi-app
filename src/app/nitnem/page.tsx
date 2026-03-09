@@ -20,19 +20,6 @@ import { fetchBani } from '@/lib/api/banidb-client';
 import { NITNEM_BANIS_CONFIG } from '@/lib/constants/raag-ranges';
 import type { Language } from '@/types';
 
-// SikhNet Play playlist URLs for each Nitnem bani (real audio recordings)
-const SIKHNET_AUDIO_URLS: Record<string, string> = {
-  'japji': 'https://play.sikhnet.com/playlist/japji-sahib-64',
-  'jaap': 'https://play.sikhnet.com/playlist/jaap-sahib-30',
-  'tav-prasad-savaiye': 'https://play.sikhnet.com/playlist/tav-prasad-savaiye',
-  'chaupai': 'https://play.sikhnet.com/playlist/chaupai-sahib-2',
-  'anand': 'https://play.sikhnet.com/playlist/anand-sahib-7',
-  'rehras': 'https://play.sikhnet.com/playlist/rehras-sahib',
-  'kirtan-sohila': 'https://play.sikhnet.com/playlist/kirtan-sohila',
-  'sukhmani': 'https://play.sikhnet.com/playlist/sukhmani-sahib',
-  'asa-di-var': 'https://play.sikhnet.com/playlist/asa-di-var',
-};
-
 // Use the complete Nitnem Banis from shared constants
 const NITNEM_BANIS = NITNEM_BANIS_CONFIG;
 
@@ -342,26 +329,6 @@ export default function NitnemPage() {
                       </button>
                     </div>
                   </div>
-
-                  {/* Listen on SikhNet Play */}
-                  {selectedBani && SIKHNET_AUDIO_URLS[selectedBani] && (
-                    <a
-                      href={SIKHNET_AUDIO_URLS[selectedBani]}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="flex items-center justify-center gap-2 mb-6 px-5 py-3 bg-gradient-to-r from-neela-600 to-neela-700 hover:from-neela-700 hover:to-neela-800 text-white rounded-xl shadow-md hover:shadow-lg transition-all active:scale-[0.98]"
-                    >
-                      <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z" />
-                      </svg>
-                      <span className={cn('font-medium', language === 'pa' && 'font-gurmukhi')}>
-                        {language === 'pa' ? '🔊 ਸੁਣੋ — SikhNet Play' : isHindi ? '🔊 सुनें — SikhNet Play' : '🔊 Listen — SikhNet Play'}
-                      </span>
-                      <svg className="w-4 h-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
-                      </svg>
-                    </a>
-                  )}
 
                   {/* Loading State */}
                   {loading && (

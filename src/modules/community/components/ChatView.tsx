@@ -527,18 +527,23 @@ export function ChatView({ language }: ChatViewProps) {
         )}
 
         {/* Chat Input */}
-        <div className="relative">
-          {/* Image attachment button */}
+        <div>
+          {/* Image attachment button - inline above input */}
           {!showImagePicker && (
-            <button
-              onClick={() => setShowImagePicker(true)}
-              className="absolute left-14 sm:left-16 bottom-[18px] sm:bottom-[22px] z-10 p-1.5 rounded-lg text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
-              aria-label={isPunjabi ? 'ਤਸਵੀਰ ਭੇਜੋ' : isHindi ? 'तस्वीर भेजें' : 'Send image'}
-            >
-              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-              </svg>
-            </button>
+            <div className="flex items-center px-3 sm:px-4 pt-1.5 pb-0.5 border-t border-gray-100 dark:border-gray-800/50">
+              <button
+                onClick={() => setShowImagePicker(true)}
+                className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs text-gray-400 hover:text-amber-600 hover:bg-amber-50 dark:hover:bg-amber-900/20 transition-colors"
+                aria-label={isPunjabi ? 'ਤਸਵੀਰ ਭੇਜੋ' : isHindi ? 'तस्वीर भेजें' : 'Send image'}
+              >
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className={cn(isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+                  {isPunjabi ? 'ਤਸਵੀਰ' : isHindi ? 'तस्वीर' : 'Image'}
+                </span>
+              </button>
+            </div>
           )}
           <ChatInput
             onSend={sendMessage}
