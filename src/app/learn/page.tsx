@@ -16,6 +16,7 @@ import type { Language } from '@/types';
 
 const LessonSystem = lazy(() => import('@/modules/learn/components/LessonSystem'));
 const GurbaniGlossary = lazy(() => import('@/modules/learn/components/GurbaniGlossary'));
+const GurmukhiTracing = lazy(() => import('@/modules/learn/components/GurmukhiTracing'));
 
 // Complete Gurmukhi alphabet data
 const CONSONANTS = [
@@ -81,7 +82,7 @@ const NUMBERS = [
   { gurmukhi: '੯', arabic: '9', punjabi: 'ਨੌਂ' },
 ];
 
-type Tab = 'lessons' | 'glossary' | 'alphabet' | 'vowels' | 'numbers' | 'practice' | 'quiz';
+type Tab = 'lessons' | 'glossary' | 'alphabet' | 'vowels' | 'numbers' | 'practice' | 'tracing' | 'quiz';
 
 interface QuizQuestion {
   gurmukhi: string;
@@ -205,6 +206,7 @@ export default function LearnPage() {
     { id: 'vowels', label: { pa: 'ਲਗਾਂ ਮਾਤਰਾ', en: 'Vowels', hi: 'स्वर' }, icon: 'ਾ' },
     { id: 'numbers', label: { pa: 'ਅੰਕ', en: 'Numbers', hi: 'अंक' }, icon: '੧' },
     { id: 'practice', label: { pa: 'ਅਭਿਆਸ', en: 'Practice', hi: 'अभ्यास' }, icon: '✍️' },
+    { id: 'tracing', label: { pa: 'ਅੱਖਰ ਲਿਖੋ', en: 'Trace', hi: 'अक्षर लिखें' }, icon: '👆' },
     { id: 'quiz', label: { pa: 'ਕੁਇਜ਼', en: 'Quiz', hi: 'क्विज़' }, icon: '🎯' },
   ];
 
@@ -405,6 +407,17 @@ export default function LearnPage() {
                   </div>
                 </div>
               </div>
+            )}
+
+            {/* Tracing Tab */}
+            {tab === 'tracing' && (
+              <Suspense fallback={<div className="flex justify-center py-20"><div className="w-8 h-8 border-4 border-purple-500 border-t-transparent rounded-full animate-spin" /></div>}>
+                <GurmukhiTracing
+                  letters={CONSONANTS}
+                  onLetterComplete={markLearned}
+                  learnedLetters={learnedLetters}
+                />
+              </Suspense>
             )}
 
             {/* Quiz Tab */}
