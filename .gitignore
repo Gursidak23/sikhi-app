@@ -40,3 +40,6 @@ coverage/
 
 # Local BaniDB API backup (cloned repos)
 banidb-local/
+
+# APK build outputs
+*.apk

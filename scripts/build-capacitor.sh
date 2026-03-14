@@ -16,14 +16,15 @@ mv src/app/api src/app/_api_backup 2>/dev/null || true
 mv src/middleware.ts src/_middleware.ts.bak 2>/dev/null || true
 mv src/app/sitemap.ts src/app/_sitemap.ts.bak 2>/dev/null || true
 
-# Replace dynamic shabad route with static page
-mv "src/app/shabad/[[...id]]" src/app/_shabad_backup 2>/dev/null || true
+# Replace dynamic shabad routes with static page
+mv "src/app/shabad/[[...id]]" src/app/_shabad_catchall_backup 2>/dev/null || true
+mv "src/app/shabad/[id]" src/app/_shabad_id_backup 2>/dev/null || true
 mkdir -p src/app/shabad
 cat > src/app/shabad/page.tsx << 'SHABAD_PAGE'
 'use client';
 import { Suspense } from 'react';
 import dynamic from 'next/dynamic';
-const ShabadPageClient = dynamic(() => import('../_shabad_backup/ShabadPageClient'), { ssr: false });
+const ShabadPageClient = dynamic(() => import('../_shabad_catchall_backup/ShabadPageClient'), { ssr: false });
 export default function ShabadPage() {
   return <Suspense><ShabadPageClient /></Suspense>;
 }
@@ -35,15 +36,15 @@ restore() {
   mv src/app/_api_backup src/app/api 2>/dev/null || true
   mv src/_middleware.ts.bak src/middleware.ts 2>/dev/null || true
   mv src/app/_sitemap.ts.bak src/app/sitemap.ts 2>/dev/null || true
-  # Restore shabad dynamic route
+  # Restore shabad dynamic routes
   rm -f src/app/shabad/page.tsx 2>/dev/null || true
-  mv src/app/_shabad_backup "src/app/shabad/[[...id]]" 2>/dev/null || true
+  mv src/app/_shabad_catchall_backup "src/app/shabad/[[...id]]" 2>/dev/null || true
+  mv src/app/_shabad_id_backup "src/app/shabad/[id]" 2>/dev/null || true
 }
 trap restore EXIT
 
 echo "==> Building Next.js static export..."
 CAPACITOR_BUILD=true \
-NEXT_PUBLIC_API_BASE_URL=https://shabad-itehas.vercel.app \
 npx next build
 
 echo "==> Static export complete! Output in ./out/"
