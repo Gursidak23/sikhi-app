@@ -7,6 +7,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { apiUrl } from '@/lib/api-url';
 import { useChatStore, type ChatUser } from '../store/chatStore';
 
 const CHAT_USER_KEY = 'sikhi-chat-user';
@@ -25,7 +26,7 @@ export function useChatAuth() {
   ) => {
     try {
       setError(null);
-      const res = await fetch('/api/community/user', {
+      const res = await fetch(apiUrl('/api/community/user'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ displayName, displayNameGurmukhi, avatarColor, email }),
@@ -49,7 +50,7 @@ export function useChatAuth() {
     const currentUser = useChatStore.getState().user;
     if (!currentUser) return null;
     try {
-      const res = await fetch('/api/community/user', {
+      const res = await fetch(apiUrl('/api/community/user'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -78,7 +79,7 @@ export function useChatAuth() {
     const currentUser = useChatStore.getState().user;
     if (!currentUser?.sessionToken) return;
     try {
-      const res = await fetch('/api/community/user', {
+      const res = await fetch(apiUrl('/api/community/user'), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -105,7 +106,7 @@ export function useChatAuth() {
   const logout = useCallback(() => {
     const currentUser = useChatStore.getState().user;
     if (currentUser) {
-      fetch('/api/community/user', {
+      fetch(apiUrl('/api/community/user'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

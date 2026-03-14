@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { apiUrl } from '@/lib/api-url';
 import type {
   TimelineResponse,
   EraResponse,
@@ -26,7 +27,7 @@ export function useTimeline(): UseQueryResult<TimelineResponse> {
       setError(null);
 
       try {
-        const response = await fetch('/api/itihaas/timeline');
+        const response = await fetch(apiUrl('/api/itihaas/timeline'));
         if (!response.ok) {
           throw new Error('Failed to fetch timeline');
         }
@@ -64,7 +65,7 @@ export function useEra(eraId: string | null): UseQueryResult<EraResponse> {
       setError(null);
 
       try {
-        const response = await fetch(`/api/itihaas/era/${eraId}`);
+        const response = await fetch(apiUrl(`/api/itihaas/era/${eraId}`));
         if (!response.ok) {
           throw new Error('Failed to fetch Era');
         }
@@ -100,7 +101,7 @@ export function useEvent(eventId: string | null): UseQueryResult<EventResponse> 
       setError(null);
 
       try {
-        const response = await fetch(`/api/itihaas/event/${eventId}`);
+        const response = await fetch(apiUrl(`/api/itihaas/event/${eventId}`));
         if (!response.ok) {
           throw new Error('Failed to fetch event');
         }
@@ -136,7 +137,7 @@ export function useFigure(figureId: string | null) {
       setError(null);
 
       try {
-        const response = await fetch(`/api/itihaas/figure?id=${figureId}`);
+        const response = await fetch(apiUrl(`/api/itihaas/figure?id=${figureId}`));
         if (!response.ok) {
           throw new Error('Failed to fetch figure');
         }
@@ -167,7 +168,7 @@ export function useGuruSahibaan() {
       setError(null);
 
       try {
-        const response = await fetch('/api/itihaas/figure?guru-sahibaan');
+        const response = await fetch(apiUrl('/api/itihaas/figure?guru-sahibaan'));
         if (!response.ok) {
           throw new Error('Failed to fetch Guru Sahibaan');
         }
@@ -200,7 +201,7 @@ export function useContemporaryEvents() {
       setError(null);
 
       try {
-        const response = await fetch('/api/itihaas/contemporary');
+        const response = await fetch(apiUrl('/api/itihaas/contemporary'));
         if (!response.ok) {
           throw new Error('Failed to fetch contemporary events');
         }
@@ -241,7 +242,7 @@ export function useHistorySearch(query: string) {
 
       try {
         const response = await fetch(
-          `/api/itihaas/search?q=${encodeURIComponent(query)}`
+          apiUrl(`/api/itihaas/search?q=${encodeURIComponent(query)}`)
         );
         if (!response.ok) {
           throw new Error('Search failed');
