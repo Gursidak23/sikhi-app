@@ -1,7 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { 
+import { apiUrl } from '@/lib/api-url';
+import type {
   BaniDBAngResponse, 
   BaniDBShabadResponse, 
   BaniDBSearchResult,
@@ -32,7 +33,7 @@ export function useAng(angNumber: number): UseQueryResult<BaniDBAngResponse> {
       setError(null);
 
       try {
-        const response = await fetch(`/api/gurbani/ang/${angNumber}`);
+        const response = await fetch(apiUrl(`/api/gurbani/ang/${angNumber}`));
         if (!response.ok) {
           throw new Error('Failed to fetch Ang');
         }
@@ -63,7 +64,7 @@ export function useRaags(): UseQueryResult<Raag[]> {
       setError(null);
 
       try {
-        const response = await fetch('/api/gurbani/raag');
+        const response = await fetch(apiUrl('/api/gurbani/raag'));
         if (!response.ok) {
           throw new Error('Failed to fetch Raags');
         }
@@ -100,7 +101,7 @@ export function useGurbaniSearch(query: string): UseQueryResult<BaniDBSearchResu
 
       try {
         const response = await fetch(
-          `/api/gurbani/search?q=${encodeURIComponent(query)}`
+          apiUrl(`/api/gurbani/search?q=${encodeURIComponent(query)}`)
         );
         if (!response.ok) {
           throw new Error('Search failed');
@@ -139,7 +140,7 @@ export function useShabad(shabadId: string | null): UseQueryResult<BaniDBShabadR
       setError(null);
 
       try {
-        const response = await fetch(`/api/gurbani/shabad/${shabadId}`);
+        const response = await fetch(apiUrl(`/api/gurbani/shabad/${shabadId}`));
         if (!response.ok) {
           throw new Error('Failed to fetch Shabad');
         }

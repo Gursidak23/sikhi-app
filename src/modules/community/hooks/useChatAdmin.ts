@@ -7,6 +7,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { apiUrl } from '@/lib/api-url';
 import { useChatStore } from '../store/chatStore';
 
 export function useChatAdmin() {
@@ -16,7 +17,7 @@ export function useChatAdmin() {
     const currentUser = useChatStore.getState().user;
     if (!currentUser?.sessionToken) return;
     try {
-      const res = await fetch('/api/community/admin', {
+      const res = await fetch(apiUrl('/api/community/admin'), {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({

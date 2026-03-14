@@ -8,6 +8,7 @@
 'use client';
 
 import { useEffect, useCallback, useRef } from 'react';
+import { apiUrl } from '@/lib/api-url';
 import { useChatStore, type ChatUser, type ChatMessage } from '../store/chatStore';
 
 // ============================================================================
@@ -127,7 +128,7 @@ export function useChatPresence() {
         if (!currentActiveRoom) return;
 
         const skipMembers = pollCountRef.current % MEMBER_POLL_FREQUENCY !== 0;
-        let pollUrl = `/api/community/messages/poll?roomId=${currentActiveRoom.id}&since=${encodeURIComponent(lastPollTimeRef.current)}`;
+        let pollUrl = apiUrl(`/api/community/messages/poll?roomId=${currentActiveRoom.id}&since=${encodeURIComponent(lastPollTimeRef.current)}`);
         if (skipMembers) pollUrl += '&skipMembers=1';
         if (user?.id) {
           pollUrl += `&userId=${user.id}`;
@@ -288,7 +289,7 @@ export function useChatPresence() {
       if (!currentUser) return;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (currentUser.sessionToken) headers['X-Session-Token'] = currentUser.sessionToken;
-      fetch('/api/community/user', {
+      fetch(apiUrl('/api/community/user'), {
         method: 'PUT',
         headers,
         body: JSON.stringify({ userId: currentUser.id, isOnline: true }),
@@ -298,7 +299,7 @@ export function useChatPresence() {
     const setOffline = () => {
       const currentUser = useChatStore.getState().user;
       if (!currentUser) return;
-      fetch('/api/community/user', {
+      fetch(apiUrl('/api/community/user'), {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

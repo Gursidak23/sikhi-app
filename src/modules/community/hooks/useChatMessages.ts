@@ -7,6 +7,7 @@
 'use client';
 
 import { useCallback } from 'react';
+import { apiUrl } from '@/lib/api-url';
 import { useChatStore, type ChatMessage } from '../store/chatStore';
 import { useChatAuth } from './useChatAuth';
 
@@ -23,7 +24,7 @@ export function useChatMessages() {
     if (!activeRoom || !nextCursor || !canLoadMore) return;
     try {
       const res = await fetch(
-        `/api/community/messages?roomId=${activeRoom.id}&cursor=${nextCursor}&limit=50`
+        apiUrl(`/api/community/messages?roomId=${activeRoom.id}&cursor=${nextCursor}&limit=50`)
       );
       if (!res.ok) throw new Error('Failed to load more messages');
       const data = await res.json();
@@ -77,7 +78,7 @@ export function useChatMessages() {
       let currentUser = user;
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (currentUser.sessionToken) headers['X-Session-Token'] = currentUser.sessionToken;
-      let res = await fetch('/api/community/messages', {
+      let res = await fetch(apiUrl('/api/community/messages'), {
         method: 'POST',
         headers,
         body: JSON.stringify({
@@ -94,12 +95,12 @@ export function useChatMessages() {
           currentUser = recovered;
           const retryHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
           if (recovered.sessionToken) retryHeaders['X-Session-Token'] = recovered.sessionToken;
-          await fetch(`/api/community/rooms/${activeRoom.id}`, {
+          await fetch(apiUrl(`/api/community/rooms/${activeRoom.id}`), {
             method: 'POST',
             headers: retryHeaders,
             body: JSON.stringify({ userId: recovered.id }),
           }).catch(() => {});
-          res = await fetch('/api/community/messages', {
+          res = await fetch(apiUrl('/api/community/messages'), {
             method: 'POST',
             headers: retryHeaders,
             body: JSON.stringify({
@@ -143,7 +144,7 @@ export function useChatMessages() {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
-      const res = await fetch('/api/community/messages', {
+      const res = await fetch(apiUrl('/api/community/messages'), {
         method: 'DELETE',
         headers,
         body: JSON.stringify({ messageId, userId: user.id }),
@@ -163,7 +164,7 @@ export function useChatMessages() {
     const user = useChatStore.getState().user;
     if (!user?.sessionToken) return;
     try {
-      const res = await fetch('/api/community/messages', {
+      const res = await fetch(apiUrl('/api/community/messages'), {
         method: 'PATCH',
         headers: {
           'Content-Type': 'application/json',
@@ -190,7 +191,7 @@ export function useChatMessages() {
     const user = useChatStore.getState().user;
     if (!user?.sessionToken) return;
     try {
-      const res = await fetch('/api/community/messages/react', {
+      const res = await fetch(apiUrl('/api/community/messages/react'), {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -218,7 +219,7 @@ export function useChatMessages() {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
-      const res = await fetch('/api/community/messages/save', {
+      const res = await fetch(apiUrl('/api/community/messages/save'), {
         method: 'POST',
         headers,
         body: JSON.stringify({ userId: user.id, messageId }),
@@ -235,7 +236,7 @@ export function useChatMessages() {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
-      const res = await fetch('/api/community/messages/save', {
+      const res = await fetch(apiUrl('/api/community/messages/save'), {
         method: 'DELETE',
         headers,
         body: JSON.stringify({ userId: user.id, messageId }),
@@ -252,7 +253,7 @@ export function useChatMessages() {
     try {
       const headers: Record<string, string> = {};
       if (user.sessionToken) headers['X-Session-Token'] = user.sessionToken;
-      const res = await fetch(`/api/community/messages/save?userId=${user.id}`, { headers });
+      const res = await fetch(apiUrl(`/api/community/messages/save?userId=${user.id}`), { headers });
       if (res.ok) {
         const data = await res.json();
         useChatStore.getState().setSavedMessages(data.saved);
@@ -267,7 +268,7 @@ export function useChatMessages() {
     if (!activeRoom) return { results: [], total: 0 };
     try {
       const res = await fetch(
-        `/api/community/messages/search?roomId=${activeRoom.id}&q=${encodeURIComponent(query)}`
+        apiUrl(`/api/community/messages/search?roomId=${activeRoom.id}&q=${encodeURIComponent(query)}`)
       );
       if (!res.ok) throw new Error('Search failed');
       return await res.json();
@@ -281,7 +282,7 @@ export function useChatMessages() {
     if (!activeRoom) return [];
     try {
       const res = await fetch(
-        `/api/community/messages/search?roomId=${activeRoom.id}&pinned=true`
+        apiUrl(`/api/community/messages/search?roomId=${activeRoom.id}&pinned=true`)
       );
       if (!res.ok) return [];
       const data = await res.json();

@@ -1,10 +1,15 @@
 /** @type {import('next').NextConfig} */
+const isCapacitorBuild = process.env.CAPACITOR_BUILD === 'true';
+
 const nextConfig = {
   // Note: i18n is handled manually in App Router
   // The built-in i18n config only works with Pages Router
-  
+
   // Strict mode for better development practices
   reactStrictMode: true,
+
+  // Static export for Capacitor Android builds
+  ...(isCapacitorBuild && { output: 'export' }),
 
   // Image optimization
   images: {
@@ -15,8 +20,8 @@ const nextConfig = {
         hostname: '**.sikhividhya.com',
       },
     ],
-    // Disable image optimization in development
-    unoptimized: process.env.NODE_ENV === 'development',
+    // Must be true for static export; also skip in dev
+    unoptimized: isCapacitorBuild || process.env.NODE_ENV === 'development',
   },
 
   // Experimental features
@@ -48,37 +53,37 @@ const nextConfig = {
       return config;
     },
   }),
-  
-  // Cache headers only — security headers are managed by middleware.ts to avoid conflicts
-  async headers() {
-    return [
-      // Sacred Gurbani content should not be cached  
-      {
-        source: '/gurbani/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'no-store, must-revalidate',
-          },
-        ],
-      },
-      // Cache static assets
-      {
-        source: '/static/:path*',
-        headers: [
-          {
-            key: 'Cache-Control',
-            value: 'public, max-age=31536000, immutable',
-          },
-        ],
-      },
-    ];
-  },
-  
-  // Redirects for proper URL structure
-  async redirects() {
-    return [];
-  },
+
+  // Cache headers and redirects — not supported in static export
+  ...(!isCapacitorBuild && {
+    async headers() {
+      return [
+        // Sacred Gurbani content should not be cached
+        {
+          source: '/gurbani/:path*',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'no-store, must-revalidate',
+            },
+          ],
+        },
+        // Cache static assets
+        {
+          source: '/static/:path*',
+          headers: [
+            {
+              key: 'Cache-Control',
+              value: 'public, max-age=31536000, immutable',
+            },
+          ],
+        },
+      ];
+    },
+    async redirects() {
+      return [];
+    },
+  }),
 };
 
 module.exports = nextConfig;

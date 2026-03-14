@@ -7,6 +7,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
+import { apiUrl } from '@/lib/api-url';
 import { useChatStore, type ChatRoom } from '../store/chatStore';
 import { useChatAuth } from './useChatAuth';
 
@@ -21,7 +22,7 @@ export function useChatRooms() {
 
   const fetchRooms = useCallback(async () => {
     try {
-      const res = await fetch('/api/community/rooms');
+      const res = await fetch(apiUrl('/api/community/rooms'));
       if (!res.ok) throw new Error('Failed to fetch rooms');
       const data = await res.json();
       useChatStore.getState().setRooms(data.rooms);
@@ -38,7 +39,7 @@ export function useChatRooms() {
     try {
       const headers: Record<string, string> = { 'Content-Type': 'application/json' };
       if (currentUser.sessionToken) headers['X-Session-Token'] = currentUser.sessionToken;
-      const res = await fetch(`/api/community/rooms/${roomId}`, {
+      const res = await fetch(apiUrl(`/api/community/rooms/${roomId}`), {
         method: 'POST',
         headers,
         body: JSON.stringify({ userId: currentUser.id }),
@@ -48,7 +49,7 @@ export function useChatRooms() {
         if (recovered) {
           const retryHeaders: Record<string, string> = { 'Content-Type': 'application/json' };
           if (recovered.sessionToken) retryHeaders['X-Session-Token'] = recovered.sessionToken;
-          await fetch(`/api/community/rooms/${roomId}`, {
+          await fetch(apiUrl(`/api/community/rooms/${roomId}`), {
             method: 'POST',
             headers: retryHeaders,
             body: JSON.stringify({ userId: recovered.id }),
@@ -75,7 +76,7 @@ export function useChatRooms() {
     }
 
     try {
-      const res = await fetch(`/api/community/messages?roomId=${room.id}&limit=50`);
+      const res = await fetch(apiUrl(`/api/community/messages?roomId=${room.id}&limit=50`));
       if (!res.ok) throw new Error('Failed to fetch messages');
       const data = await res.json();
       useChatStore.getState().setMessages(data.messages);
@@ -89,7 +90,7 @@ export function useChatRooms() {
 
     // Fetch members
     try {
-      const res = await fetch(`/api/community/rooms/${room.id}`);
+      const res = await fetch(apiUrl(`/api/community/rooms/${room.id}`));
       if (res.ok) {
         const data = await res.json();
         useChatStore.getState().setMembers(data.members);

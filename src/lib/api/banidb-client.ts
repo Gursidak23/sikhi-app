@@ -12,6 +12,8 @@
 
 const BANIDB_API_BASE = process.env.NEXT_PUBLIC_BANIDB_API_URL || 'https://api.banidb.com/v2';
 
+import { apiUrl } from '@/lib/api-url';
+
 export interface BaniDBVerse {
   verseId: number;
   shabadId: number;
@@ -257,8 +259,8 @@ async function fetchAngInternal(angNumber: number, sourceId: string): Promise<Ba
     const doFetch = rfetch || fetch;
 
     // Try cached API route first
-    const response = await doFetch(`/api/gurbani/cached/${angNumber}?source=${sourceId}`);
-    
+    const response = await doFetch(apiUrl(`/api/gurbani/cached/${angNumber}?source=${sourceId}`));
+
     if (response.ok) {
       const data = await response.json();
       angCache.set(angNumber, { data, timestamp: Date.now() });
@@ -269,7 +271,7 @@ async function fetchAngInternal(angNumber: number, sourceId: string): Promise<Ba
     }
 
     // Layer 4: Fallback to direct BaniDB proxy
-    const fallbackResponse = await doFetch(`/api/gurbani/banidb/${angNumber}?source=${sourceId}`);
+    const fallbackResponse = await doFetch(apiUrl(`/api/gurbani/banidb/${angNumber}?source=${sourceId}`));
     if (fallbackResponse.ok) {
       const data = await fallbackResponse.json();
       angCache.set(angNumber, { data, timestamp: Date.now() });
@@ -299,7 +301,7 @@ async function refreshAngInBackground(angNumber: number, sourceId: string): Prom
   if (existing && Date.now() - existing.timestamp < STALE_THRESHOLD) return;
 
   try {
-    const response = await fetch(`/api/gurbani/cached/${angNumber}?source=${sourceId}`);
+    const response = await fetch(apiUrl(`/api/gurbani/cached/${angNumber}?source=${sourceId}`));
     if (response.ok) {
       const data = await response.json();
       angCache.set(angNumber, { data, timestamp: Date.now() });
@@ -396,7 +398,7 @@ export async function searchGurbani(
     // Layer 1: Use our own API search proxy (avoids CORS)
     try {
       const proxyResponse = await doFetch(
-        `/api/gurbani/search?q=${encodeURIComponent(query)}&searchtype=${searchType}&page=${page}`
+        apiUrl(`/api/gurbani/search?q=${encodeURIComponent(query)}&searchtype=${searchType}&page=${page}`)
       );
       if (proxyResponse.ok) {
         const data = await proxyResponse.json();
@@ -566,7 +568,7 @@ export async function fetchRandomShabad(sourceId: string = 'G'): Promise<BaniDBS
 
     // Layer 1: Use our own API proxy (avoids CORS & adds resilience)
     try {
-      const proxyResponse = await doFetch(`/api/gurbani/random?source=${sourceId}`);
+      const proxyResponse = await doFetch(apiUrl(`/api/gurbani/random?source=${sourceId}`));
       if (proxyResponse.ok) {
         const data = await proxyResponse.json();
         return data as BaniDBShabadResponse;
