@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 
 /**
@@ -12,24 +12,26 @@ export function CapacitorBackButton() {
   const pathname = usePathname();
   const router = useRouter();
   const [showExitDialog, setShowExitDialog] = useState(false);
+  const pathnameRef = useRef(pathname);
+  const appRef = useRef<typeof import('@capacitor/app').App | null>(null);
 
-  const handleExit = useCallback(async () => {
-    try {
-      const { App } = await import('@capacitor/app');
-      App.exitApp();
-    } catch {
-      // Not in Capacitor
-    }
-  }, []);
+  // Keep pathname ref in sync
+  pathnameRef.current = pathname;
 
+  // Register the back button listener once on mount
   useEffect(() => {
-    let cleanup: (() => void) | undefined;
+    let removed = false;
+    let listenerHandle: { remove: () => Promise<void> } | null = null;
 
-    async function setup() {
+    (async () => {
       try {
         const { App } = await import('@capacitor/app');
-        const listener = await App.addListener('backButton', ({ canGoBack }) => {
-          if (pathname === '/') {
+        appRef.current = App;
+
+        if (removed) return;
+
+        listenerHandle = await App.addListener('backButton', ({ canGoBack }) => {
+          if (pathnameRef.current === '/') {
             setShowExitDialog(true);
             return;
           }
@@ -40,21 +42,20 @@ export function CapacitorBackButton() {
             router.push('/');
           }
         });
-
-        cleanup = () => {
-          listener.remove();
-        };
       } catch {
-        // Not running in Capacitor
+        // Not running in Capacitor — no-op
       }
-    }
-
-    setup();
+    })();
 
     return () => {
-      cleanup?.();
+      removed = true;
+      listenerHandle?.remove();
     };
-  }, [pathname, router]);
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+
+  const handleExit = () => {
+    appRef.current?.exitApp();
+  };
 
   if (!showExitDialog) return null;
 
