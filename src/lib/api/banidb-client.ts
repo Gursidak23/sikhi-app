@@ -172,9 +172,24 @@ function evictIfNeeded(): void {
   }
 }
 
+/** Try loading a bundled static JSON file (works in Capacitor and static export) */
+async function fetchBundledJson<T>(path: string): Promise<T | null> {
+  if (typeof window === 'undefined') return null;
+  try {
+    const response = await fetch(path);
+    if (response.ok) return await response.json() as T;
+  } catch {
+    // Bundled file not available
+  }
+  return null;
+}
+
 // Cached dynamic imports (avoid re-importing every call)
 let offlineStorageModule: Awaited<ReturnType<typeof getOfflineStorageInner>> | null = null;
 let resilientFetchFn: ((input: RequestInfo | URL, init?: RequestInit) => Promise<Response>) | null | undefined = undefined;
+
+/** Cached offline search index */
+let searchIndexCache: Array<{ i: number; s: number; g: string; f: string; p: number }> | null = null;
 
 async function getOfflineStorageInner() {
   if (typeof window === 'undefined') return null;
@@ -246,11 +261,20 @@ async function fetchAngInternal(angNumber: number, sourceId: string): Promise<Ba
       const data = idbCached as BaniDBAngResponse;
       angCache.set(angNumber, { data, timestamp: Date.now() });
       evictIfNeeded();
-      
+
       // Background refresh only if data is stale (older than 5 min)
       refreshAngInBackground(angNumber, sourceId).catch(() => {});
       return data;
     }
+  }
+
+  // Layer 2.5: Bundled static JSON (offline APK)
+  const bundled = await fetchBundledJson<BaniDBAngResponse>(`/data/gurbani/ang-${angNumber}.json`);
+  if (bundled) {
+    angCache.set(angNumber, { data: bundled, timestamp: Date.now() });
+    evictIfNeeded();
+    storage?.saveAng(angNumber, bundled).catch(() => {});
+    return bundled;
   }
 
   // Layer 3: Network fetch with resilience
@@ -279,12 +303,12 @@ async function fetchAngInternal(angNumber: number, sourceId: string): Promise<Ba
       storage?.saveAng(angNumber, data).catch(() => {});
       return data as BaniDBAngResponse;
     }
-    
+
     console.error(`API error: ${fallbackResponse.status}`);
     return null;
   } catch (error) {
     console.error('Error fetching from API:', error);
-    
+
     // Final fallback: try IndexedDB one more time (network may have just gone down)
     if (storage) {
       const offlineData = await storage.getAng(angNumber);
@@ -351,23 +375,37 @@ export function getCacheStats(): { size: number; keys: number[] } {
 }
 
 /**
- * Fetch a specific Shabad by ID (with resilient fetch)
+ * Fetch a specific Shabad by ID (with resilient fetch + IndexedDB caching)
  */
 export async function fetchShabad(shabadId: number): Promise<BaniDBShabadResponse | null> {
+  // Check IndexedDB first for offline support
+  const storage = await getOfflineStorage();
+  if (storage) {
+    const cached = await storage.getSearchResults(`shabad:${shabadId}`);
+    if (cached) return cached as BaniDBShabadResponse;
+  }
+
   try {
     const rfetch = await getResilientFetch();
     const doFetch = rfetch || fetch;
     const response = await doFetch(`${BANIDB_API_BASE}/shabads/${shabadId}`);
-    
+
     if (!response.ok) {
       console.error(`BaniDB API error: ${response.status}`);
       return null;
     }
-    
+
     const data = await response.json();
+    // Cache for offline
+    storage?.saveSearchResults(`shabad:${shabadId}`, data).catch(() => {});
     return data as BaniDBShabadResponse;
   } catch (error) {
     console.error('Error fetching shabad from BaniDB:', error);
+    // Offline fallback: check IndexedDB again
+    if (storage) {
+      const cached = await storage.getSearchResults(`shabad:${shabadId}`);
+      if (cached) return cached as BaniDBShabadResponse;
+    }
     return null;
   }
 }
@@ -437,7 +475,9 @@ export async function searchGurbani(
     return data as BaniDBSearchResponse;
   } catch (error) {
     console.error('Error searching BaniDB:', error);
-    return null;
+
+    // Offline fallback: client-side search using bundled index
+    return searchOfflineIndex(query, searchType, page);
   }
 }
 
@@ -484,7 +524,8 @@ export async function fetchHukamnama(): Promise<HukamnamaResponse | null> {
       const cached = await storage.getHukamnama(today);
       if (cached) return cached as HukamnamaResponse;
     }
-    return null;
+    // Final fallback: bundled Hukamnama
+    return fetchBundledJson<HukamnamaResponse>('/data/hukamnama/latest.json');
   }
 }
 
@@ -513,20 +554,29 @@ export async function fetchBani(baniId: number): Promise<{ verses: unknown[] } |
       }
     }
 
+    // Try bundled static JSON (offline APK)
+    const bundled = await fetchBundledJson<{ verses: unknown[] }>(`/data/nitnem/bani-${baniId}.json`);
+    if (bundled) {
+      const storage2 = await getOfflineStorage();
+      storage2?.saveBani(baniId, bundled).catch(() => {});
+      return bundled;
+    }
+
     const rfetch = await getResilientFetch();
     const doFetch = rfetch || fetch;
     const response = await doFetch(`${BANIDB_API_BASE}/banis/${baniId}`);
-    
+
     if (!response.ok) {
       console.error(`BaniDB API error: ${response.status}`);
       return null;
     }
-    
+
     const data = await response.json();
-    
+
     // Cache Bani for offline use (these are static sacred texts)
-    storage?.saveBani(baniId, data).catch(() => {});
-    
+    const storage3 = await getOfflineStorage();
+    storage3?.saveBani(baniId, data).catch(() => {});
+
     return data;
   } catch (error) {
     console.error('Error fetching bani from BaniDB:', error);
@@ -589,6 +639,25 @@ export async function fetchRandomShabad(sourceId: string = 'G'): Promise<BaniDBS
     return data as BaniDBShabadResponse;
   } catch (error) {
     console.error('Error fetching random shabad from BaniDB:', error);
+    // Offline fallback: load a random Ang from bundled data
+    const randomAng = Math.floor(Math.random() * 1430) + 1;
+    const angData = await fetchBundledJson<BaniDBAngResponse>(`/data/gurbani/ang-${randomAng}.json`);
+    if (angData?.page?.length) {
+      const verse = angData.page[0];
+      return {
+        shabadInfo: {
+          shabadId: verse.shabadId,
+          shabadName: verse.shabadId,
+          pageNo: verse.pageNo,
+          source: angData.source,
+          raag: verse.raag || { raagId: 0, gurmukhi: '', unicode: '', english: '', raagWithPage: '' },
+          writer: verse.writer ? { writerId: verse.writer.writerId, gurmukhi: verse.writer.gurmukhi, unicode: verse.writer.unicode || '', english: verse.writer.english } : { writerId: 0, gurmukhi: '', unicode: '', english: '' },
+        },
+        count: 1,
+        navigation: { previous: null, next: null },
+        verses: angData.page.filter(v => v.shabadId === verse.shabadId),
+      };
+    }
     return null;
   }
 }
@@ -611,7 +680,9 @@ export async function fetchRaags(): Promise<Array<{ raagId: number; gurmukhi: st
     return data.rows || [];
   } catch (error) {
     console.error('Error fetching raags from BaniDB:', error);
-    return [];
+    // Offline fallback: bundled raags
+    const bundled = await fetchBundledJson<{ rows: Array<{ raagId: number; gurmukhi: string; unicode: string; english: string }> }>('/data/meta/raags.json');
+    return bundled?.rows || [];
   }
 }
 
@@ -633,7 +704,9 @@ export async function fetchWriters(): Promise<Array<{ writerId: number; gurmukhi
     return data.rows || [];
   } catch (error) {
     console.error('Error fetching writers from BaniDB:', error);
-    return [];
+    // Offline fallback: bundled writers
+    const bundled = await fetchBundledJson<{ rows: Array<{ writerId: number; gurmukhi: string; unicode: string; english: string }> }>('/data/meta/writers.json');
+    return bundled?.rows || [];
   }
 }
 
@@ -647,3 +720,61 @@ export const BANIDB_SOURCES = {
   S: 'Bhai Gurdas Singh Ji Vaaran',
   R: 'Rehatnamas & Panthic Sources',
 } as const;
+
+/**
+ * Offline search using bundled search index.
+ * Supports first-letter (type 0,1) and full-word (type 2) search.
+ */
+async function searchOfflineIndex(
+  query: string,
+  searchType: number,
+  page: number
+): Promise<BaniDBSearchResponse | null> {
+  if (typeof window === 'undefined') return null;
+
+  // Lazy-load search index
+  if (!searchIndexCache) {
+    const data = await fetchBundledJson<Array<{ i: number; s: number; g: string; f: string; p: number }>>('/data/search-index.json');
+    if (!data) return null;
+    searchIndexCache = data;
+  }
+
+  const RESULTS_PER_PAGE = 20;
+  let matches: typeof searchIndexCache;
+
+  if (searchType === 0) {
+    // First letter — starts with
+    matches = searchIndexCache.filter(e => e.f.startsWith(query));
+  } else if (searchType === 1) {
+    // First letter — anywhere
+    matches = searchIndexCache.filter(e => e.f.includes(query));
+  } else {
+    // Full word Gurmukhi
+    matches = searchIndexCache.filter(e => e.g.includes(query));
+  }
+
+  const totalResults = matches.length;
+  const totalPages = Math.ceil(totalResults / RESULTS_PER_PAGE);
+  const start = (page - 1) * RESULTS_PER_PAGE;
+  const pageResults = matches.slice(start, start + RESULTS_PER_PAGE);
+
+  return {
+    resultsInfo: {
+      totalResults,
+      pageResults: pageResults.length,
+      pages: { page, resultsPerPage: RESULTS_PER_PAGE, totalPages },
+    },
+    verses: pageResults.map(e => ({
+      verseId: e.i,
+      shabadId: e.s,
+      verse: { gurmukhi: e.g, unicode: e.g },
+      larivaar: { gurmukhi: e.g.replace(/\s+/g, ''), unicode: e.g.replace(/\s+/g, '') },
+      translation: { en: { bdb: null, ms: null, ssk: null }, pu: { bdb: null } },
+      transliteration: { english: '', hindi: '', en: '', hi: '', ipa: '', ur: '' },
+      pageNo: e.p,
+      lineNo: 0,
+      updated: '',
+      visraam: { sttm: [], igurbani: [], sttm2: [] },
+    })),
+  };
+}

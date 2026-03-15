@@ -14,6 +14,7 @@ import { ScrollToTop } from '@/components/common/ScrollToTop';
 import { ReadingProgress } from '@/components/common/ReadingProgress';
 import { BookmarkButton } from '@/components/common/BookmarkSystem';
 import { FontSizeControls } from '@/components/common/FontSizeControls';
+import { fetchHukamnama as fetchHukamnamaClient } from '@/lib/api/banidb-client';
 import type { Language } from '@/types';
 
 interface HukamnamaVerse {
@@ -57,14 +58,37 @@ export default function HukamnamaPage() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('https://api.banidb.com/v2/hukamnamas/today');
-      if (!response.ok) throw new Error('Failed to fetch');
-      const data = await response.json();
-      if (data.shabads?.[0]) {
-        setHukamnama(data.shabads[0]);
-      } else {
-        throw new Error('No Hukamnama');
+      // Try the /today endpoint first for the page-specific format
+      let data: Record<string, unknown> | null = null;
+      try {
+        const response = await fetch('https://api.banidb.com/v2/hukamnamas/today');
+        if (response.ok) data = await response.json();
+      } catch {
+        // Network unavailable
       }
+
+      if (data?.shabads && Array.isArray(data.shabads) && data.shabads[0]) {
+        setHukamnama(data.shabads[0] as HukamnamaData);
+        return;
+      }
+
+      // Fallback: use cached client (has IndexedDB + bundled JSON fallbacks)
+      const clientData = await fetchHukamnamaClient();
+      if (clientData?.verses?.length) {
+        const firstVerse = clientData.verses[0] as HukamnamaVerse;
+        setHukamnama({
+          shabadInfo: {
+            shabadId: clientData.hukamnamainfo?.shabadid || firstVerse.shabadId || 0,
+            pageNo: clientData.hukamnamainfo?.pageno || firstVerse.pageNo || 0,
+            raag: firstVerse.raag ? { unicode: firstVerse.raag.unicode, english: firstVerse.raag.english } : undefined,
+            writer: firstVerse.writer ? { unicode: firstVerse.writer.unicode || undefined, english: firstVerse.writer.english } : undefined,
+          },
+          verses: clientData.verses as HukamnamaVerse[],
+        });
+        return;
+      }
+
+      throw new Error('No Hukamnama');
     } catch {
       setError('Could not load Hukamnama');
     } finally {

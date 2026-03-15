@@ -43,3 +43,6 @@ banidb-local/
 
 # APK build outputs
 *.apk
+
+# Generated offline data (fetched from BaniDB API)
+public/data/

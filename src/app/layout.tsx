@@ -6,6 +6,7 @@ import { ThemeProvider } from '@/components/common/ThemeProvider';
 import { BookmarkProvider } from '@/components/common/BookmarkSystem';
 import { FontSizeProvider } from '@/components/common/FontSizeControls';
 import { ServiceWorkerRegistrar } from '@/components/common/ServiceWorkerRegistrar';
+import { CapacitorBackButton } from '@/components/common/CapacitorBackButton';
 import { ErrorBoundary } from '@/components/common/ErrorBoundary';
 import { LanguageProvider } from '@/components/common/LanguageProvider';
 
@@ -128,6 +129,7 @@ export default function RootLayout({
                   <FontSizeProvider>
                     <SkipLink />
                     <ServiceWorkerRegistrar />
+                    <CapacitorBackButton />
                     {children}
                   </FontSizeProvider>
                 </BookmarkProvider>

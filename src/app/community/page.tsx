@@ -9,15 +9,32 @@ import { cn } from '@/lib/utils';
 import { MainNavigation } from '@/components/layout/Navigation';
 import { useLanguage } from '@/components/common/LanguageProvider';
 import { ChatView } from '@/modules/community/components/ChatView';
+import { useOfflineStatus } from '@/lib/service-worker';
 import type { Language } from '@/types';
 
 export default function CommunityPage() {
   const { language, isPunjabi } = useLanguage();
   const isHindi = language === 'hi';
+  const offline = useOfflineStatus();
 
   return (
     <div className="min-h-screen flex flex-col bg-gradient-to-b from-[#FDF8F0] via-white to-[#fef9e7] dark:from-gray-950 dark:via-gray-900 dark:to-gray-950">
       <MainNavigation />
+
+      {/* Offline notice */}
+      {offline && (
+        <div className="w-full bg-red-50 border-b border-red-200 text-red-800 text-sm py-3 px-4 flex items-center justify-center gap-2 dark:bg-red-900/30 dark:text-red-300 dark:border-red-800/30">
+          <svg className="w-4 h-4 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M18.364 5.636a9 9 0 11-12.728 0M12 9v4m0 4h.01" />
+          </svg>
+          <span className={cn(isPunjabi && 'font-gurmukhi', isHindi && 'font-devanagari')}>
+            {isPunjabi
+              ? 'ਸੰਗਤ ਚੈਟ ਲਈ ਇੰਟਰਨੈੱਟ ਕਨੈਕਸ਼ਨ ਲੋੜੀਂਦਾ ਹੈ। ਕਿਰਪਾ ਕਰਕੇ ਇੰਟਰਨੈੱਟ ਨਾਲ ਜੁੜੋ।'
+              : isHindi ? 'संगत चैट के लिए इंटरनेट कनेक्शन आवश्यक है। कृपया इंटरनेट से जुड़ें।'
+              : 'Community chat requires an internet connection. Please connect to participate.'}
+          </span>
+        </div>
+      )}
 
       {/* Ephemeral chat info banner - more subtle */}
       <div className="w-full bg-amber-50/80 border-b border-amber-200/50 text-amber-800 text-xs py-1.5 px-4 flex items-center justify-center gap-2 dark:bg-amber-900/20 dark:text-amber-300 dark:border-amber-800/30">
