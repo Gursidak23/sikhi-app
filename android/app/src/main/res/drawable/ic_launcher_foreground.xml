@@ -4,17 +4,34 @@
     android:height="108dp"
     android:viewportWidth="108"
     android:viewportHeight="108">
-    <!-- Background circle (within safe zone: 18dp inset on all sides) -->
+    <!-- Central double-edged sword (Khanda blade) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M52.5,16 L55.5,16 L55.5,88 L54,92 L52.5,88 Z"/>
+    <!-- Sword guard/hilt -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M46,16 Q54,10 62,16 Q54,14 46,16Z"/>
+    <!-- Chakkar (circle) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M54,54m-24,0a24,24 0,1 1,48 0a24,24 0,1 1,-48 0"
+        android:strokeWidth="0"/>
     <path
         android:fillColor="#1E3A8A"
-        android:pathData="M54,54m-36,0a36,36 0,1 1,72 0a36,36 0,1 1,-72 0"/>
-    <!-- Ik Onkar ੴ symbol approximation in gold -->
-    <!-- Main body: stylized "1" (ik) -->
+        android:pathData="M54,54m-20,0a20,20 0,1 1,40 0a20,20 0,1 1,-40 0"/>
+    <!-- Left Kirpan (curved sword) -->
     <path
         android:fillColor="#F59E0B"
-        android:pathData="M40,42 L40,38 Q40,35 43,35 L48,35 Q51,35 51,38 L51,42 L48,42 L48,39 Q48,38 47,38 L44,38 Q43,38 43,39 L43,62 Q43,65 46,65 L50,65 Q53,65 53,62 L53,55 L50,55 L50,58 Q50,59 49,59 L47,59 Q46,59 46,58 L46,52 Q46,49 49,49 L55,49 Q58,49 58,52 L58,62 Q58,68 53,68 L46,68 Q40,68 40,62 Z"/>
-    <!-- Onkar loop -->
+        android:pathData="M30,54 Q18,34 24,18 Q28,12 30,18 Q24,34 33,50 Z"/>
     <path
         android:fillColor="#F59E0B"
-        android:pathData="M58,38 Q58,35 61,35 L67,35 Q70,35 70,38 L70,45 Q70,48 67,48 L61,48 Q58,48 58,45 Z M61,38 L61,45 L67,45 L67,38 Z"/>
+        android:pathData="M30,54 Q18,74 24,90 Q28,96 30,90 Q24,74 33,58 Z"/>
+    <!-- Right Kirpan (curved sword) -->
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M78,54 Q90,34 84,18 Q80,12 78,18 Q84,34 75,50 Z"/>
+    <path
+        android:fillColor="#F59E0B"
+        android:pathData="M78,54 Q90,74 84,90 Q80,96 78,90 Q84,74 75,58 Z"/>
 </vector>
