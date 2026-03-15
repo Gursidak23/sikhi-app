@@ -110,7 +110,7 @@ export function precacheNitnemBanis(): void {
   if (typeof window === 'undefined') return;
   if (!('serviceWorker' in navigator)) return;
 
-  const baniIds = [2, 3, 4, 5, 10, 21, 23, 31, 15]; // All Nitnem Bani IDs
+  const baniIds = [2, 4, 6, 9, 10, 21, 23, 31, 90]; // All Nitnem Bani IDs
   
   navigator.serviceWorker.ready.then((registration) => {
     baniIds.forEach(id => {
